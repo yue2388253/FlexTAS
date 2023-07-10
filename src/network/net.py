@@ -136,16 +136,19 @@ class Link:
         """
         return not self.reserved_binaries.is_conflict(duration)
 
-    def add_gating(self, period: int):
-        old_cycle = self.gcl_cycle
-        old_length = self.gcl_length
-        self.gcl_cycle = math.lcm(self.gcl_cycle, period)
-        self.gcl_length *= (self.gcl_cycle // old_cycle)
-        self.gcl_length += ((self.gcl_cycle // period) * 2)
-        if self.gcl_length > self.max_gcl_length:
-            self.gcl_cycle = old_cycle
-            self.gcl_length = old_length
-            raise RuntimeError("Gating constraint is not satisfied.")
+    def add_gating(self, period: int, attempt=False) -> bool:
+        new_cycle = math.lcm(self.gcl_cycle, period)
+        new_length = self.gcl_length * (new_cycle // self.gcl_cycle)
+        new_length += ((self.gcl_cycle // period) * 2)
+        if new_length > self.max_gcl_length:
+            if attempt:
+                return False
+            else:
+                raise RuntimeError("Gating constraint is not satisfied.")
+        elif not attempt:
+            self.gcl_cycle = new_cycle
+            self.gcl_length = new_length
+        return True
 
 
 class Flow:

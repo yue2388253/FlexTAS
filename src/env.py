@@ -26,6 +26,7 @@ class NetEnv(gym.Env):
         self.links_operations: dict[Link, list[tuple[Flow, Operation]]] = defaultdict(list)
 
         self.flows_scheduled: list[int] = [0 for _ in range(self.num_flows)]
+        self.gating_mask: list[list[int]] = [[0, 0] for _ in range(self.num_flows)]
 
         self.last_action = None
 
@@ -58,6 +59,11 @@ class NetEnv(gym.Env):
         self.links_operations.clear()
 
         self.flows_scheduled = [0 for _ in range(self.num_flows)]
+
+        for i, flow in enumerate(self.flows):
+            link = self.link_dict[flow.path[0]]
+            can_gating = link.add_gating(flow.period, attempt=True)
+            self.gating_mask[i] = [0, 0 if can_gating else 1]
 
         self.reward = 0
 
@@ -110,19 +116,16 @@ class NetEnv(gym.Env):
 
         self.last_action = (flow_index, gating)
 
-        assert self.flows_scheduled[flow_index] == 0
+        if self.flows_scheduled[flow_index] != 0:
+            return self.state, self.reward, False, False, {}
+
+        if gating and self.gating_mask[flow_index][1] == 1:
+            # cannot gating
+            return self.state, self.reward - 100, True, False, {}
+
         hop_index = len(self.flows_operations[flow])
 
         link = self.link_dict[flow.path[hop_index]]
-
-        # change gating to False in case it is invalid to enable gating due to GCL constraint.
-        # todo: this might make learning hard, since the agent does not know the gating action is changed.
-        if gating:
-            try:
-                link.add_gating(flow.period)
-            except RuntimeError:
-                logging.debug(f"enable gating for flow {flow.flow_id} with period {flow.period} at {link} is invalid.")
-                gating = False
 
         if hop_index == 0:
             operation = Operation(0, 0 if gating else None, 0, link.transmission_time(flow.payload))
@@ -134,6 +137,21 @@ class NetEnv(gym.Env):
                 flow.payload) + Net.DELAY_PROP + Net.DELAY_PROC_MIN
             latest_time = last_link_latest + last_link.transmission_time(
                 flow.payload) + Net.SYNC_PRECISION + Net.DELAY_PROP + Net.DELAY_PROC_MAX
+
+            if (not gating) and (hop_index == len(flow.path) - 1):
+                # reach the dst, check jitter constraint.
+                # force gating enable if jitter constraint is not satisfied.
+                accumulated_jitter = latest_time - earliest_time
+                if accumulated_jitter > flow.jitter:
+                    # can_gating = (self.gating_mask[flow_index][1] == 0)
+                    # if not can_gating:
+                    #     logging.debug("The jitter constraint is not satisfied.")
+                    #     jitter_valid = False
+                    # else:
+                    #     logging.debug("Force gating to satisfy jitter constraint.")
+                    #     gating = True
+                    return self.state, self.reward - 100, True, False, {}
+
             gating_time = latest_time if gating else None
             end_time = latest_time + link.transmission_time(flow.payload)
 
@@ -160,10 +178,14 @@ class NetEnv(gym.Env):
         done = False
         if scheduled:
             self.reward += 0.1
+            link.add_gating(flow.period)
 
             if len(flow.path) == len(self.flows_operations[flow]):
                 self.flows_scheduled[flow_index] = 1
                 done = all(self.flows_scheduled)
+            else:
+                next_link = self.link_dict[flow.path[hop_index+1]]
+                self.gating_mask[flow_index] = [0, 0 if next_link.add_gating(flow.period, attempt=True) else 1]
         else:
             done = True
             self.reward -= 100

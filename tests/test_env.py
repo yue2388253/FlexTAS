@@ -25,6 +25,12 @@ class TestEnv(unittest.TestCase):
         for gating in gating_list:
             obs, reward, done, _, info = self.env.step([0, gating])
             self.assertTrue(self.env.observation_space.contains(obs))
+            self.assertFalse(done)
 
-        with self.assertRaises(AssertionError):
-            obs, reward, done, _, info = self.env.step([0, 1])
+        obs, reward, done, _, info = self.env.step([1, 1])
+        self.assertTrue(self.env.observation_space.contains(obs))
+        self.assertFalse(done)
+
+        obs, reward, done, _, info = self.env.step([0, 1])
+        self.assertFalse(done)
+
