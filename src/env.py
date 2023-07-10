@@ -83,8 +83,12 @@ class NetEnv(gym.Env):
     def get_action_mask(self) -> list[int]:
         return self.flows_scheduled
 
-    # return None if valid, else return the conflict operation
     def check_valid_flow(self, flow: Flow) -> Optional[int]:
+        """
+        :param flow:
+        :return: None if valid, else return the conflict operation
+        """
+        # return
         for link, operation in self.flows_operations[flow]:
             offset = self.check_valid_link(link)
             if isinstance(offset, int):
