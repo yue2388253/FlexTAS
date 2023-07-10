@@ -93,8 +93,16 @@ class Link:
         self.reserved_durations: list[Duration] = []
         self.reserved_binaries = Duration(None, None, Net.GCL_CYCLE_MAX)
 
-    def __str__(self):
-        return f"Link {self.link_id}"
+    def __hash__(self):
+        return hash(self.link_id)
+
+    def __eq__(self, other):
+        if isinstance(other, Link):
+            return self.link_id == other.link_id
+        return False
+
+    def __repr__(self):
+        return f"Link{self.link_id}"
 
     def reset(self):
         self.gcl_cycle = 1
@@ -149,6 +157,14 @@ class Flow:
         assert self.jitter <= self.period, f"jitter ({self.jitter}) must be not greater than period ({self.period})."
 
         self.wait_time_allowed = self._wait_time_allowed()
+
+    def __hash__(self):
+        return hash(self.flow_id)
+
+    def __eq__(self, other):
+        if isinstance(other, Flow):
+            return self.flow_id == other.flow_id
+        return False
 
     def __str__(self):
         return f"Flow {self.flow_id} [{self.src_id}-->{self.dst_id}] with period {self.period}, payload {self.payload}B," \
