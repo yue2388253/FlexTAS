@@ -13,9 +13,9 @@ class Operation:
 
     def __post_init__(self):
         if self.gating_time is not None:
-            assert self.start_time < self.gating_time == self.latest_time < self.end_time, "Invalid Operation"
+            assert self.start_time <= self.gating_time == self.latest_time < self.end_time, "Invalid Operation"
         else:
-            assert self.start_time < self.latest_time < self.end_time, "Invalid Operation"
+            assert self.start_time <= self.latest_time < self.end_time, "Invalid Operation"
 
         self.earliest_time = self.start_time if self.gating_time is None else self.gating_time
 
@@ -28,6 +28,9 @@ class Operation:
         self.end_time += other
         self.earliest_time += other
         return self
+
+    def __repr__(self):
+        return f"Operation({self.start_time, self.gating_time, self.end_time})"
 
 
 # add tests
