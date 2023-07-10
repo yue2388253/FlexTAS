@@ -1,6 +1,7 @@
 import logging
 import os.path
 from stable_baselines3.common.env_checker import check_env
+from sb3_contrib import MaskablePPO
 import unittest
 
 from definitions import ROOT_DIR
@@ -11,7 +12,7 @@ from src.network.from_json import generate_net_flows_from_json
 class TestEnv(unittest.TestCase):
     def setUp(self) -> None:
         logging.basicConfig(level=logging.DEBUG)
-        graph, flows = generate_net_flows_from_json(os.path.join(ROOT_DIR, 'data/input/smt_output.json'))
+        graph, flows = generate_net_flows_from_json(os.path.join(ROOT_DIR, 'data/input/smt_output/FlexTAS_50_1204.json'))
         self.env = NetEnv(graph, flows)
 
     def test_check_env(self):
@@ -33,4 +34,8 @@ class TestEnv(unittest.TestCase):
 
         obs, reward, done, _, info = self.env.step([0, 1])
         self.assertFalse(done)
+
+    def test_action_masks(self):
+        model = MaskablePPO("MlpPolicy", self.env, verbose=1)
+        model.learn(5000)
 

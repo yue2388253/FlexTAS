@@ -26,7 +26,6 @@ class NetEnv(gym.Env):
         self.links_operations: dict[Link, list[tuple[Flow, Operation]]] = defaultdict(list)
 
         self.flows_scheduled: list[int] = [0 for _ in range(self.num_flows)]
-        self.gating_mask: list[list[int]] = [[0, 0] for _ in range(self.num_flows)]
 
         self.last_action = None
 
@@ -34,10 +33,11 @@ class NetEnv(gym.Env):
 
         self.state: ObsType = None
 
-        self.observation_space = spaces.Dict({
-            'adjacency_matrix': spaces.MultiBinary([len(self.link_dict), len(self.link_dict)]),
-            'nodes_features': spaces.Box(low=0, high=1, shape=(len(self.link_dict), 3))
-        })
+        # self.observation_space = spaces.Dict({
+        #     'adjacency_matrix': spaces.MultiBinary([len(self.link_dict), len(self.link_dict)]),
+        #     'nodes_features': spaces.Box(low=0, high=1, shape=(len(self.link_dict), 3))
+        # })
+        self.observation_space = spaces.Box(low=0, high=1, shape=(10, ))
 
         # action space:
         # 1. which flow to schedule.
@@ -55,15 +55,13 @@ class NetEnv(gym.Env):
 
         super().reset(seed=seed)
 
+        for link in self.link_dict.values():
+            link.reset()
+
         self.flows_operations.clear()
         self.links_operations.clear()
 
         self.flows_scheduled = [0 for _ in range(self.num_flows)]
-
-        for i, flow in enumerate(self.flows):
-            link = self.link_dict[flow.path[0]]
-            can_gating = link.add_gating(flow.period, attempt=True)
-            self.gating_mask[i] = [0, 0 if can_gating else 1]
 
         self.reward = 0
 
@@ -73,15 +71,16 @@ class NetEnv(gym.Env):
 
     def _generate_state(self) -> ObsType:
         # todo: generate state
-        adjacency_matrix = nx.to_scipy_sparse_array(self.line_graph).todense().astype(np.int8)
-        features = np.random.uniform(size=(len(self.link_dict), 3)).astype(np.float32)
-        return {
-            'adjacency_matrix': adjacency_matrix,
-            'nodes_features': features
-        }
+        # adjacency_matrix = nx.to_scipy_sparse_array(self.line_graph).todense().astype(np.int8)
+        # features = np.random.uniform(size=(len(self.link_dict), 3)).astype(np.float32)
+        # return {
+        #     'adjacency_matrix': adjacency_matrix,
+        #     'nodes_features': features
+        # }
+        return self.observation_space.sample()
 
-    def get_action_mask(self) -> list[int]:
-        return self.flows_scheduled
+    def action_masks(self) -> list[int]:
+        return [i == 0 for i in self.flows_scheduled] + [True, True]
 
     def check_valid_flow(self, flow: Flow) -> Optional[int]:
         """
@@ -121,11 +120,8 @@ class NetEnv(gym.Env):
         self.last_action = (flow_index, gating)
 
         if self.flows_scheduled[flow_index] != 0:
+            logging.debug(f"This flow {flow.flow_id} has already been scheduled.")
             return self.state, self.reward, False, False, {}
-
-        if gating and self.gating_mask[flow_index][1] == 1:
-            # cannot gating
-            return self.state, self.reward - 100, True, False, {}
 
         hop_index = len(self.flows_operations[flow])
 
@@ -147,13 +143,7 @@ class NetEnv(gym.Env):
                 # force gating enable if jitter constraint is not satisfied.
                 accumulated_jitter = latest_time - earliest_time
                 if accumulated_jitter > flow.jitter:
-                    # can_gating = (self.gating_mask[flow_index][1] == 0)
-                    # if not can_gating:
-                    #     logging.debug("The jitter constraint is not satisfied.")
-                    #     jitter_valid = False
-                    # else:
-                    #     logging.debug("Force gating to satisfy jitter constraint.")
-                    #     gating = True
+                    logging.debug("Invalid due to jitter constraint.")
                     return self.state, self.reward - 100, True, False, {}
 
             gating_time = latest_time if gating else None
@@ -181,16 +171,25 @@ class NetEnv(gym.Env):
 
         done = False
         if scheduled:
-            self.reward += 0.1
-            link.add_gating(flow.period)
+            if gating:
+                try:
+                    link.add_gating(flow.period)
+                except RuntimeError:
+                    logging.debug("Invalid due to gating constraint.")
+                    self.reward -= 100
+                    return self.state, self.reward, True, False, {}
 
-            if len(flow.path) == len(self.flows_operations[flow]):
+            self.reward += 0.1
+
+            if len(flow.path) == hop_index + 1:
+                # reach the dst
                 self.flows_scheduled[flow_index] = 1
                 done = all(self.flows_scheduled)
-            else:
-                next_link = self.link_dict[flow.path[hop_index+1]]
-                self.gating_mask[flow_index] = [0, 0 if next_link.add_gating(flow.period, attempt=True) else 1]
+                if done:
+                    logging.critical("Good job! Finish scheduling!")
+                    self.reward += 100
         else:
+            logging.debug("Fail to find a valid solution.")
             done = True
             self.reward -= 100
 
