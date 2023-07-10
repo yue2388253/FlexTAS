@@ -1,6 +1,6 @@
 import unittest
 
-from src.lib.operation import Operation
+from src.lib.operation import Operation, check_operation_isolation
 
 
 class TestOperation(unittest.TestCase):
@@ -24,3 +24,35 @@ class TestOperation(unittest.TestCase):
 
         o4 = o2.add(5)
         self.assertEqual(o4.earliest_time, 5)
+
+    def test_isolation(self):
+        o1 = Operation(0, None, 10, 20)
+        o2 = Operation(100, None, 110, 120)
+        safe_distance = 1
+
+        self.assertEqual(
+            check_operation_isolation((o1, 100), (o2, 1000), safe_distance),
+            21
+        )
+
+        self.assertEqual(
+            check_operation_isolation((o1, 200), (o2, 300), safe_distance),
+            21
+        )
+
+        self.assertEqual(
+            check_operation_isolation((o1, 20), (o2, 120), safe_distance),
+            41
+        )
+
+        self.assertEqual(
+            check_operation_isolation((o1, 200), (o2, 200), safe_distance),
+            None
+        )
+
+        with self.assertRaises(AssertionError):
+            check_operation_isolation((o1, 200), (o2, 100), safe_distance)
+
+        # The original value should not change
+        self.assertEqual(o1.start_time, 0)
+        self.assertEqual(o2.start_time, 100)
