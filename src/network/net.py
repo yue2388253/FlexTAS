@@ -113,6 +113,10 @@ class Link:
     def transmission_time(self, payload: int) -> int:
         return math.ceil(payload * 8 / Net.LINK_RATE)
 
+    def safe_distance(self) -> int:
+        # inter-frame gap
+        return self.transmission_time(12)
+
     def embedding(self) -> np.ndarray:
         return np.array([self.reserved_binaries.utilization(),
                          self.gcl_cycle / Net.GCL_CYCLE_MAX,
@@ -132,10 +136,16 @@ class Link:
         """
         return not self.reserved_binaries.is_conflict(duration)
 
-    def check_gating(self, cycle):
-        new_cycle = math.lcm(self.gcl_cycle, cycle)
-        new_length = self.gcl_length * new_cycle / self.gcl_cycle + 2 * new_cycle / cycle
-        return new_length <= self.max_gcl_length
+    def add_gating(self, period: int):
+        old_cycle = self.gcl_cycle
+        old_length = self.gcl_length
+        self.gcl_cycle = math.lcm(self.gcl_cycle, period)
+        self.gcl_length *= (self.gcl_cycle // old_cycle)
+        self.gcl_length += ((self.gcl_cycle // period) * 2)
+        if self.gcl_length <= self.max_gcl_length:
+            self.gcl_cycle = old_cycle
+            self.gcl_length = old_length
+            raise RuntimeError("Gating constraint is not satisfied.")
 
 
 class Flow:
