@@ -43,7 +43,7 @@ def check_operation_isolation(operation1: tuple[Operation, int],
     :param operation2:
     :param safe_distance:
     :return: None if isolation constraint is satisfied,
-             otherwise, it returns the offset that `opertion1` should add.
+             otherwise, it returns the offset that `operation1` should add.
              Notice that the adding the returned offset might make `operation` out of period.
     """
     operation1, period1 = operation1
