@@ -121,6 +121,7 @@ class NetEnv(gym.Env):
             try:
                 link.add_gating(flow.period)
             except RuntimeError:
+                logging.debug(f"enable gating for flow {flow.flow_id} with period {flow.period} at {link} is invalid.")
                 gating = False
 
         if hop_index == 0:

@@ -142,7 +142,7 @@ class Link:
         self.gcl_cycle = math.lcm(self.gcl_cycle, period)
         self.gcl_length *= (self.gcl_cycle // old_cycle)
         self.gcl_length += ((self.gcl_cycle // period) * 2)
-        if self.gcl_length <= self.max_gcl_length:
+        if self.gcl_length > self.max_gcl_length:
             self.gcl_cycle = old_cycle
             self.gcl_length = old_length
             raise RuntimeError("Gating constraint is not satisfied.")
