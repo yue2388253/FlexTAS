@@ -5,7 +5,7 @@ from sb3_contrib import MaskablePPO
 import unittest
 
 from definitions import ROOT_DIR
-from src.env import NetEnv
+from src.env.env import NetEnv
 from src.network.from_json import generate_net_flows_from_json
 
 

@@ -29,7 +29,14 @@ class SchedulingError(Exception):
 class _StateEncoder:
     def __init__(self, env: 'NetEnv'):
         self.env = env
-        self.observation_space = spaces.Box(low=0, high=1, shape=(10, ))
+        num_operations = sum([len(flow.path) for flow in self.env.flows])
+        num_links = len(self.env.link_dict)
+
+        # self.observation_space = spaces.Box(low=0, high=1, shape=(10, ))
+        self.observation_space = spaces.Dict({
+            "adjacency_matrix": spaces.Box(low=0, high=1, shape=(num_operations+2, num_operations+2), dtype=np.int8),
+            "features_matrix": spaces.Box(low=0, high=1, shape=(num_operations+2, num_links), dtype=np.int8)
+        })
 
     def state(self):
         # links_id = self.link_dict.keys()
