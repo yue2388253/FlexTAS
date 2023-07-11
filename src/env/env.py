@@ -41,15 +41,14 @@ class _StateEncoder:
         flows = self.env.flows
         edges = []
         nodes = ["S", "T"]
-        for flow in flows:
+        for flow_index, flow in enumerate(flows):
             path = flow.path
-            flow_id = flow.flow_id
-            nodes.append((flow_id, path[0]))
-            edges.append(("S", (flow_id, path[0])))
+            nodes.append((flow_index, path[0]))
+            edges.append(("S", (flow_index, path[0])))
             for i in range(len(path) - 1):
-                nodes.append((flow_id, path[i+1]))
-                edges.append(((flow_id, path[i]), (flow_id, path[i+1])))
-            edges.append(((flow_id, path[len(path)-1]), "T"))
+                nodes.append((flow_index, path[i+1]))
+                edges.append(((flow_index, path[i]), (flow_index, path[i+1])))
+            edges.append(((flow_index, path[len(path)-1]), "T"))
 
         graph = nx.DiGraph()
         graph.add_nodes_from(nodes)
