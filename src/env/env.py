@@ -29,14 +29,6 @@ class SchedulingError(Exception):
 class _StateEncoder:
     def __init__(self, env: 'NetEnv'):
         self.env = env
-        num_operations = sum([len(flow.path) for flow in self.env.flows])
-        num_links = len(self.env.link_dict)
-
-        # self.observation_space = spaces.Box(low=0, high=1, shape=(10, ))
-        self.observation_space = spaces.Dict({
-            "adjacency_matrix": spaces.Box(low=0, high=1, shape=(num_operations+2, num_operations+2), dtype=np.int8),
-            "features_matrix": spaces.Box(low=0, high=1, shape=(num_operations+2, num_links), dtype=np.float32)
-        })
 
         flows = self.env.flows
         edges = []
@@ -58,9 +50,18 @@ class _StateEncoder:
         # the shape would be (num_operations+2, num_operations+2)
         self.adjacency_matrix = np.array(nx.to_scipy_sparse_array(self.graph).todense(), dtype=np.int8)
 
+        num_operations = sum([len(flow.path) for flow in self.env.flows])
+        state = self.state()
+        self.observation_space = spaces.Dict({
+            "adjacency_matrix": spaces.Box(low=0, high=1, shape=(num_operations+2, num_operations+2), dtype=np.int8),
+            "features_matrix": spaces.Box(low=0, high=1, shape=state['features_matrix'].shape, dtype=np.float32)
+        })
+
     def state(self):
         links_id = self.env.link_dict.keys()
         one_hot_dict = pd.get_dummies(links_id)
+        flows = self.env.flows
+        link_dict = self.env.link_dict
 
         # the shape would be (num_operations+2, num_links) after encoding
         feature_matrix = []
@@ -68,11 +69,38 @@ class _StateEncoder:
         num_links = len(self.env.link_dict)
         for node in self.graph.nodes:
             if node == "S" or node == "T":
-                feature_matrix.append(np.zeros(num_links,))
+                feature_matrix.append(np.zeros(num_links+2+7,))
                 continue
 
-            flow_id, link_id = node
-            feature_matrix.append(np.array(one_hot_dict[link_id].values, dtype=np.int8))
+            flow_index, link_id = node
+            flow = flows[flow_index]
+            link = link_dict[link_id]
+
+            link_one_hot_feature = one_hot_dict[link_id].values
+
+            link_gcl_feature = np.array([link.gcl_cycle / Net.GCL_CYCLE_MAX, link.gcl_length / Net.GCL_LENGTH_MAX])
+
+            operation_feature = None
+            operations = self.env.flows_operations[flow]
+            for link, operation in operations:
+                if link.link_id == link_id:
+                    operation_feature = np.array([
+                        1,  # indicate this operation has been scheduled
+                        1 if operation.gating_time is not None else 0,  # indicate enable gating
+                        operation.start_time / flow.period,
+                        operation.earliest_time / flow.period,
+                        operation.latest_time / flow.period,
+                        operation.end_time / flow.period,
+                        max((operation.latest_time - operation.earliest_time) / flow.jitter, 1)
+                    ])
+            if operation_feature is None:
+                operation_feature = np.zeros(7, )
+
+            feature = np.concatenate((
+                link_one_hot_feature, link_gcl_feature, operation_feature
+            ))
+
+            feature_matrix.append(feature)
 
         feature_matrix = np.array(feature_matrix, dtype=np.float32)
 
@@ -244,7 +272,8 @@ class NetEnv(gym.Env):
 
         except SchedulingError as e:
             logging.debug(e)
-            logging.debug(f"Scheduled flows num: {sum(self.flows_scheduled)}")
+            logging.debug(f"Scheduled flows num: {sum(self.flows_scheduled)},\t"
+                          f"Operations num: {sum([len(value) for value in self.flows_operations.values()])}")
             if e.error_type == ErrorType.AlreadyScheduled:
                 done = False
             elif e.error_type == ErrorType.JitterExceed:
