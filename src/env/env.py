@@ -35,27 +35,50 @@ class _StateEncoder:
         # self.observation_space = spaces.Box(low=0, high=1, shape=(10, ))
         self.observation_space = spaces.Dict({
             "adjacency_matrix": spaces.Box(low=0, high=1, shape=(num_operations+2, num_operations+2), dtype=np.int8),
-            "features_matrix": spaces.Box(low=0, high=1, shape=(num_operations+2, num_links), dtype=np.int8)
+            "features_matrix": spaces.Box(low=0, high=1, shape=(num_operations+2, num_links), dtype=np.float32)
         })
 
+        flows = self.env.flows
+        edges = []
+        nodes = ["S", "T"]
+        for flow in flows:
+            path = flow.path
+            flow_id = flow.flow_id
+            nodes.append((flow_id, path[0]))
+            edges.append(("S", (flow_id, path[0])))
+            for i in range(len(path) - 1):
+                nodes.append((flow_id, path[i+1]))
+                edges.append(((flow_id, path[i]), (flow_id, path[i+1])))
+            edges.append(((flow_id, path[len(path)-1]), "T"))
+
+        graph = nx.DiGraph()
+        graph.add_nodes_from(nodes)
+        graph.add_edges_from(edges)
+        self.graph = graph
+
+        # the shape would be (num_operations+2, num_operations+2)
+        self.adjacency_matrix = np.array(nx.to_scipy_sparse_array(self.graph).todense(), dtype=np.int8)
+
     def state(self):
-        # links_id = self.link_dict.keys()
-        # one_hot_dict = pd.get_dummies(links_id)
-        #
-        # # the shape would be (num_operations + 2, num_operations + 2)
-        # adjacency_matrx = []
-        #
-        # # the shape would be (num_operations, num_links) after encoding
-        # feature_matrix = []
-        #
-        # for flow in self.flows:
-        #     operations = self.flows_operations[flow]
-        #     for hop, link in enumerate(flow.path):
-        #         feature_matrix.append(np.array(one_hot_dict[link].values, dtype=np.int8))
-        #
-        # feature_matrix = np.array(feature_matrix)
-        #
-        return self.observation_space.sample()
+        links_id = self.env.link_dict.keys()
+        one_hot_dict = pd.get_dummies(links_id)
+
+        # the shape would be (num_operations+2, num_links) after encoding
+        feature_matrix = []
+
+        num_links = len(self.env.link_dict)
+        for node in self.graph.nodes:
+            if node == "S" or node == "T":
+                feature_matrix.append(np.zeros(num_links,))
+                continue
+
+            flow_id, link_id = node
+            feature_matrix.append(np.array(one_hot_dict[link_id].values, dtype=np.int8))
+
+        feature_matrix = np.array(feature_matrix, dtype=np.float32)
+
+        return {"adjacency_matrix": self.adjacency_matrix,
+                "features_matrix": feature_matrix}
 
 
 class NetEnv(gym.Env):
@@ -80,11 +103,7 @@ class NetEnv(gym.Env):
 
         self.state_encoder: _StateEncoder = _StateEncoder(self)
 
-        # self.observation_space = spaces.Dict({
-        #     'adjacency_matrix': spaces.MultiBinary([len(self.link_dict), len(self.link_dict)]),
-        #     'nodes_features': spaces.Box(low=0, high=1, shape=(len(self.link_dict), 3))
-        # })
-        self.observation_space = spaces.Box(low=0, high=1, shape=(10, ))
+        self.observation_space = self.state_encoder.observation_space
 
         # action space:
         # 1. which flow to schedule.
@@ -115,13 +134,6 @@ class NetEnv(gym.Env):
         return self._generate_state(), {}
 
     def _generate_state(self) -> ObsType:
-        # todo: generate state
-        # adjacency_matrix = nx.to_scipy_sparse_array(self.line_graph).todense().astype(np.int8)
-        # features = np.random.uniform(size=(len(self.link_dict), 3)).astype(np.float32)
-        # return {
-        #     'adjacency_matrix': adjacency_matrix,
-        #     'nodes_features': features
-        # }
         return self.state_encoder.state()
 
     def action_masks(self) -> list[int]:
@@ -233,6 +245,7 @@ class NetEnv(gym.Env):
 
         except SchedulingError as e:
             logging.debug(e)
+            logging.debug(f"Scheduled flows num: {sum(self.flows_scheduled)}")
             if e.error_type == ErrorType.AlreadyScheduled:
                 done = False
             elif e.error_type == ErrorType.JitterExceed:
@@ -264,12 +277,9 @@ class NetEnv(gym.Env):
         return self._generate_state(), self.reward, done, False, {}
 
     def render(self) -> RenderFrame | list[RenderFrame] | None:
-        logging.debug(self.flows_scheduled)
-        logging.debug(self.last_action)
-
         flow_index, gating = self.last_action
-
-        logging.debug(self.flows_operations[self.flows[flow_index]][-1])
+        flow_id = self.flows[flow_index]
+        logging.debug(f"Action: ({flow_id}, {gating}), {self.flows_operations[self.flows[flow_index]][-1]}")
         return
 
     def close(self):
