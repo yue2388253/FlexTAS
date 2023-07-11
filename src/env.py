@@ -1,4 +1,5 @@
 from collections import defaultdict
+from enum import Enum, auto
 import gymnasium as gym
 from gymnasium import spaces
 from gymnasium.core import ActType, ObsType, RenderFrame
@@ -9,6 +10,19 @@ from typing import SupportsFloat, Any, Optional
 
 from src.network.net import Duration, Flow, Link, transform_line_graph, Net
 from src.lib.operation import Operation, check_operation_isolation
+
+
+class ErrorType(Enum):
+    AlreadyScheduled = auto()
+    JitterExceed = auto()
+    PeriodExceed = auto()
+    GatingExceed = auto()
+
+
+class SchedulingError(Exception):
+    def __init__(self, error_type: ErrorType, msg):
+        super().__init__(f"SchedulingError: {msg}")
+        self.error_type: ErrorType = error_type
 
 
 class NetEnv(gym.Env):
@@ -119,79 +133,101 @@ class NetEnv(gym.Env):
 
         self.last_action = (flow_index, gating)
 
-        if self.flows_scheduled[flow_index] != 0:
-            logging.debug(f"This flow {flow.flow_id} has already been scheduled.")
-            return self.state, self.reward, False, False, {}
+        try:
+            if self.flows_scheduled[flow_index] != 0:
+                raise SchedulingError(ErrorType.AlreadyScheduled,
+                                      f"This flow {flow.flow_id} has already been scheduled.")
 
-        hop_index = len(self.flows_operations[flow])
+            hop_index = len(self.flows_operations[flow])
 
-        link = self.link_dict[flow.path[hop_index]]
+            link = self.link_dict[flow.path[hop_index]]
 
-        if hop_index == 0:
-            operation = Operation(0, 0 if gating else None, 0, link.transmission_time(flow.payload))
-        else:
-            last_link, last_operation = self.flows_operations[flow][hop_index - 1]
-            last_link_earliest, last_link_latest = last_operation.earliest_time, last_operation.latest_time
-            last_link_earliest + last_link.transmission_time(flow.payload) + Net.DELAY_PROP + Net.DELAY_PROC_MIN,
-            earliest_time = last_link_earliest + last_link.transmission_time(
-                flow.payload) + Net.DELAY_PROP + Net.DELAY_PROC_MIN
-            latest_time = last_link_latest + last_link.transmission_time(
-                flow.payload) + Net.SYNC_PRECISION + Net.DELAY_PROP + Net.DELAY_PROC_MAX
+            if hop_index == 0:
+                operation = Operation(0, 0 if gating else None, 0, link.transmission_time(flow.payload))
+            else:
+                last_link, last_operation = self.flows_operations[flow][hop_index - 1]
+                last_link_earliest, last_link_latest = last_operation.earliest_time, last_operation.latest_time
+                last_link_earliest + last_link.transmission_time(flow.payload) + Net.DELAY_PROP + Net.DELAY_PROC_MIN,
+                earliest_time = last_link_earliest + last_link.transmission_time(
+                    flow.payload) + Net.DELAY_PROP + Net.DELAY_PROC_MIN
+                latest_time = last_link_latest + last_link.transmission_time(
+                    flow.payload) + Net.SYNC_PRECISION + Net.DELAY_PROP + Net.DELAY_PROC_MAX
 
-            if (not gating) and (hop_index == len(flow.path) - 1):
-                # reach the dst, check jitter constraint.
-                # force gating enable if jitter constraint is not satisfied.
-                accumulated_jitter = latest_time - earliest_time
-                if accumulated_jitter > flow.jitter:
-                    logging.debug("Invalid due to jitter constraint.")
-                    return self.state, self.reward - 100, True, False, {}
+                if (not gating) and (hop_index == len(flow.path) - 1):
+                    # reach the dst, check jitter constraint.
+                    # force gating enable if jitter constraint is not satisfied.
+                    accumulated_jitter = latest_time - earliest_time
+                    if accumulated_jitter > flow.jitter:
+                        raise SchedulingError(ErrorType.JitterExceed,
+                                              "Invalid due to jitter constraint.")
 
-            gating_time = latest_time if gating else None
-            end_time = latest_time + link.transmission_time(flow.payload)
+                gating_time = latest_time if gating else None
+                end_time = latest_time + link.transmission_time(flow.payload)
 
-            operation = Operation(earliest_time, gating_time, latest_time, end_time)
+                if end_time > flow.period:
+                    raise SchedulingError(ErrorType.PeriodExceed,
+                                          "Fail to find a valid solution.")
 
-        self.flows_operations[flow].append((link, operation))
-        self.links_operations[link].append((flow, operation))
+                operation = Operation(earliest_time, gating_time, latest_time, end_time)
 
-        scheduled = False
-        while True:
-            offset = self.check_valid_flow(flow)
-            if offset is None:
-                scheduled = True
-                break
+            self.flows_operations[flow].append((link, operation))
+            self.links_operations[link].append((flow, operation))
 
-            assert isinstance(offset, int)
-
-            for link, operation in self.flows_operations[flow]:
-                operation.add(offset)
-                if operation.end_time > flow.period:
-                    # cannot be scheduled
+            scheduled = False
+            while True:
+                offset = self.check_valid_flow(flow)
+                if offset is None:
+                    scheduled = True
                     break
 
-        done = False
-        if scheduled:
+                assert isinstance(offset, int)
+
+                for link, operation in self.flows_operations[flow]:
+                    operation.add(offset)
+                    if operation.end_time > flow.period:
+                        # cannot be scheduled
+                        break
+
+            if not scheduled:
+                raise SchedulingError(ErrorType.PeriodExceed, "Fail to find a valid solution.")
+
             if gating:
                 try:
                     link.add_gating(flow.period)
                 except RuntimeError:
-                    logging.debug("Invalid due to gating constraint.")
-                    self.reward -= 100
-                    return self.state, self.reward, True, False, {}
+                    raise SchedulingError(ErrorType.GatingExceed,
+                                          "Invalid due to gating constraint.")
 
             self.reward += 0.1
 
-            if len(flow.path) == hop_index + 1:
-                # reach the dst
-                self.flows_scheduled[flow_index] = 1
-                done = all(self.flows_scheduled)
-                if done:
-                    logging.critical("Good job! Finish scheduling!")
-                    self.reward += 100
-        else:
-            logging.debug("Fail to find a valid solution.")
-            done = True
-            self.reward -= 100
+        except SchedulingError as e:
+            logging.debug(e)
+            if e.error_type == ErrorType.AlreadyScheduled:
+                done = False
+            elif e.error_type == ErrorType.JitterExceed:
+                self.reward -= 100
+                done = True
+            elif e.error_type == ErrorType.GatingExceed:
+                self.reward -= 100
+                done = True
+            elif e.error_type == ErrorType.PeriodExceed:
+                self.reward -= 100
+                done = True
+            else:
+                assert False, "Unknown error type."
+            return self.state, self.reward, done, False, {}
+
+        done = False
+        # successfully scheduling
+        if len(flow.path) == hop_index + 1:
+            # reach the dst
+            self.flows_scheduled[flow_index] = 1
+
+            if all(self.flows_scheduled):
+                # all flows are scheduled.
+                done = True
+                logging.info("Good job! Finish scheduling!")
+                self.reward += 100
 
         self.state = self._generate_state()
 
