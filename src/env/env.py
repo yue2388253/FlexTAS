@@ -51,12 +51,12 @@ class _StateEncoder:
         self.graph = graph
 
         # the shape would be (num_operations+2, num_operations+2)
-        self.adjacency_matrix = np.array(nx.to_scipy_sparse_array(self.graph).todense(), dtype=np.int8)
+        self.adjacency_matrix = np.array(nx.to_scipy_sparse_array(self.graph).todense(), dtype=np.float32)
 
         num_operations = sum([len(flow.path) for flow in self.env.flows])
         state = self.state()
         self.observation_space = spaces.Dict({
-            "adjacency_matrix": spaces.Box(low=0, high=1, shape=(num_operations+2, num_operations+2), dtype=np.int8),
+            "adjacency_matrix": spaces.Box(low=0, high=1, shape=(num_operations+2, num_operations+2), dtype=np.float32),
             "features_matrix": spaces.Box(low=0, high=1, shape=state['features_matrix'].shape, dtype=np.float32)
         })
 
