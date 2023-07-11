@@ -1,15 +1,18 @@
 from collections import defaultdict
 from enum import Enum, auto
 import gymnasium as gym
-import pandas as pd
 from gymnasium import spaces
 from gymnasium.core import ActType, ObsType, RenderFrame
 import logging
 import numpy as np
 import networkx as nx
+import os
+import pandas as pd
 from typing import SupportsFloat, Any, Optional
 
+from definitions import ROOT_DIR
 from src.network.net import Duration, Flow, Link, transform_line_graph, Net
+from src.network.from_json import generate_net_flows_from_json
 from src.lib.operation import Operation, check_operation_isolation
 
 
@@ -109,15 +112,21 @@ class _StateEncoder:
 
 
 class NetEnv(gym.Env):
-    def __init__(self, graph: nx.Graph, flows: list[Flow]):
+    def __init__(self, graph: nx.Graph = None, flows: list[Flow] = None):
         super().__init__()
 
-        self.graph: nx.Graph = graph
-        self.flows: list[Flow] = flows
-        self.num_flows: int = len(flows)
+        if graph is None and flows is None:
+            self.graph, self.flows = generate_net_flows_from_json(os.path.join(ROOT_DIR, 'data/input/smt_output.json'))
+        elif graph is not None and flows is not None:
+            self.graph: nx.Graph = graph
+            self.flows: list[Flow] = flows
+
+        assert self.graph is not None and self.flows is not None, "fail to init env, invalid graph or flows"
+
+        self.num_flows: int = len(self.flows)
         self.line_graph: nx.Graph
         self.link_dict: dict[str, Link]
-        self.line_graph, self.link_dict = transform_line_graph(graph)
+        self.line_graph, self.link_dict = transform_line_graph(self.graph)
 
         self.flows_operations: dict[Flow, list[tuple[Link, Operation]]] = defaultdict(list)
         self.links_operations: dict[Link, list[tuple[Flow, Operation]]] = defaultdict(list)
@@ -130,7 +139,7 @@ class NetEnv(gym.Env):
 
         self.state_encoder: _StateEncoder = _StateEncoder(self)
 
-        self.observation_space = self.state_encoder.observation_space
+        self.observation_space: spaces.Dict = self.state_encoder.observation_space
 
         # action space:
         # 1. which flow to schedule.
