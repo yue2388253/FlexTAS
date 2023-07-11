@@ -1,6 +1,7 @@
 from collections import defaultdict
 from enum import Enum, auto
 import gymnasium as gym
+import pandas as pd
 from gymnasium import spaces
 from gymnasium.core import ActType, ObsType, RenderFrame
 import logging
@@ -24,6 +25,31 @@ class SchedulingError(Exception):
         super().__init__(f"SchedulingError: {msg}")
         self.error_type: ErrorType = error_type
 
+        
+class _StateEncoder:
+    def __init__(self, env: 'NetEnv'):
+        self.env = env
+        self.observation_space = spaces.Box(low=0, high=1, shape=(10, ))
+
+    def state(self):
+        # links_id = self.link_dict.keys()
+        # one_hot_dict = pd.get_dummies(links_id)
+        #
+        # # the shape would be (num_operations + 2, num_operations + 2)
+        # adjacency_matrx = []
+        #
+        # # the shape would be (num_operations, num_links) after encoding
+        # feature_matrix = []
+        #
+        # for flow in self.flows:
+        #     operations = self.flows_operations[flow]
+        #     for hop, link in enumerate(flow.path):
+        #         feature_matrix.append(np.array(one_hot_dict[link].values, dtype=np.int8))
+        #
+        # feature_matrix = np.array(feature_matrix)
+        #
+        return self.observation_space.sample()
+
 
 class NetEnv(gym.Env):
     def __init__(self, graph: nx.Graph, flows: list[Flow]):
@@ -45,7 +71,7 @@ class NetEnv(gym.Env):
 
         self.reward: float = 0
 
-        self.state: ObsType = None
+        self.state_encoder: _StateEncoder = _StateEncoder(self)
 
         # self.observation_space = spaces.Dict({
         #     'adjacency_matrix': spaces.MultiBinary([len(self.link_dict), len(self.link_dict)]),
@@ -79,9 +105,7 @@ class NetEnv(gym.Env):
 
         self.reward = 0
 
-        self.state = self._generate_state()
-
-        return self.state, {}
+        return self._generate_state(), {}
 
     def _generate_state(self) -> ObsType:
         # todo: generate state
@@ -91,7 +115,7 @@ class NetEnv(gym.Env):
         #     'adjacency_matrix': adjacency_matrix,
         #     'nodes_features': features
         # }
-        return self.observation_space.sample()
+        return self.state_encoder.state()
 
     def action_masks(self) -> list[int]:
         return [i == 0 for i in self.flows_scheduled] + [True, True]
@@ -215,7 +239,7 @@ class NetEnv(gym.Env):
                 done = True
             else:
                 assert False, "Unknown error type."
-            return self.state, self.reward, done, False, {}
+            return self._generate_state(), self.reward, done, False, {}
 
         done = False
         # successfully scheduling
@@ -229,10 +253,8 @@ class NetEnv(gym.Env):
                 logging.info("Good job! Finish scheduling!")
                 self.reward += 100
 
-        self.state = self._generate_state()
-
         self.render()
-        return self.state, self.reward, done, False, {}
+        return self._generate_state(), self.reward, done, False, {}
 
     def render(self) -> RenderFrame | list[RenderFrame] | None:
         logging.debug(self.flows_scheduled)
