@@ -1,8 +1,10 @@
+import functools
 import time
 
 
 def timing_decorator(log_func):
     def real_decorator(func):
+        @functools.wraps(func)
         def wrapper(*args, **kwargs):
             start_time = time.time()
             result = func(*args, **kwargs)

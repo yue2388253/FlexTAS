@@ -1,8 +1,11 @@
+import argparse
+import inspect
 import logging
+import multiprocessing
 import os
 from sb3_contrib import MaskablePPO
 from stable_baselines3.common.callbacks import BaseCallback
-from stable_baselines3.common.vec_env import DummyVecEnv, SubprocVecEnv
+from stable_baselines3.common.vec_env import SubprocVecEnv
 import time
 
 from src.agent.encoder import FeaturesExtractor
@@ -52,11 +55,13 @@ class SuccessCallback(BaseCallback):
 @timing_decorator(logging.info)
 def schedule(
         filename: os.PathLike | str,
-        num_envs: int = 1,
+        num_envs: int = multiprocessing.cpu_count() - 1,
         time_steps: int = 10000,
         time_limit: int = 3600
 ):
     assert os.path.isfile(filename), f"No such file {filename}"
+
+    logging.basicConfig(level=logging.INFO)
 
     env = SubprocVecEnv([lambda: from_file(filename) for _ in range(num_envs)])
 
@@ -78,3 +83,26 @@ def schedule(
         logging.error("Fail to find a valid solution.")
 
     return is_scheduled
+
+
+if __name__ == '__main__':
+    # Get the signature of the function
+    sig = inspect.signature(schedule)
+
+    # Create the argument parser
+    parser = argparse.ArgumentParser()
+
+    # Add arguments to the parser
+    for name, param in sig.parameters.items():
+        if param.default is param.empty:  # it's a required argument
+            parser.add_argument('--' + name, required=True)
+        else:  # it's an optional argument, use default value from function definition
+            parser.add_argument('--' + name, default=param.default)
+
+    args = parser.parse_args()
+
+    # Convert args to a dictionary
+    args_dict = vars(args)
+
+    # Call the function with the arguments
+    schedule(**args_dict)
