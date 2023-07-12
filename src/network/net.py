@@ -234,7 +234,10 @@ def transform_line_graph(graph) -> (nx.Graph, typing.Dict):
     return line_graph, links_dict
 
 
-def generate_flows(graph, num_flows: int = 50) -> list[Flow]:
+def generate_flows(graph, num_flows: int = 50, seed: int = None) -> list[Flow]:
+    if seed is not None:
+        random.seed(seed)
+
     # get the nodes whose node_type is 'ES'
     es_nodes = [n for n, d in graph.nodes(data=True) if d['node_type'] == 'ES']
 
@@ -250,6 +253,9 @@ def generate_flows(graph, num_flows: int = 50) -> list[Flow]:
         path = nx.shortest_path(graph, src_id, dst_id)
         path = [(path[i], path[i + 1]) for i in range(len(path) - 1)]
 
-        res.append(Flow(f"F{i}", src_id, dst_id, path, payload=random.randint(64, 1518), period=random.choice(period_set)))
+        res.append(
+            Flow(f"F{i}", src_id, dst_id,
+                 path, payload=random.randint(64, 1518), period=random.choice(period_set))
+        )
 
     return res

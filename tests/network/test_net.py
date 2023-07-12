@@ -100,6 +100,21 @@ class TestFlow(unittest.TestCase):
 
         self.import_flows = jsons.load(flows_list, list[Flow])
         print([str(flow) for flow in self.import_flows])
+        
+
+class TestFlowGenerator(unittest.TestCase):
+    def test_random_seed(self):
+        graph = generate_linear_5()
+        num_flows = 10
+        flows1 = generate_flows(graph, num_flows, 1)
+
+        # same seed, should be all the same
+        flows2 = generate_flows(graph, num_flows, 1)
+        self.assertTrue(all([str(flows1[i] == str(flows2[i]) for i in range(num_flows))]))
+
+        # different seed, there must be at least a difference.
+        flows3 = generate_flows(graph, num_flows, 2)
+        self.assertTrue(any([str(flows1[i] != str(flows3[i]) for i in range(num_flows))]))
 
 
 if __name__ == '__main__':
