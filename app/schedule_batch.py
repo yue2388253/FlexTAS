@@ -11,14 +11,16 @@ from definitions import OUT_DIR
 def schedule_batch(files: list[str]):
     times = []
     scheduled = []
-    for file in files:
+    for i, file in enumerate(files):
         start_time = time.time()
         scheduled.append(schedule(file))
         end_time = time.time()
         times.append(end_time - start_time)
 
-    df = pd.DataFrame({"file": files, "time": times, "is_scheduled": scheduled})
-    df.to_csv(os.path.join(OUT_DIR, 'schedule_batch.csv'))
+        if i % 10 == 0:
+            # output csv every 10 files, to avoid data missing.
+            df = pd.DataFrame({"file": files, "time": times, "is_scheduled": scheduled})
+            df.to_csv(os.path.join(OUT_DIR, 'schedule_batch.csv'))
 
 
 if __name__ == '__main__':
