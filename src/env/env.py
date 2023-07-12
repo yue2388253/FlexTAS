@@ -290,9 +290,8 @@ class NetEnv(gym.Env):
             self.reward += 0.1
 
         except SchedulingError as e:
-            logging.debug(e)
-            logging.debug(f"Scheduled flows num: {sum(self.flows_scheduled)},\t"
-                          f"Operations num: {sum([len(value) for value in self.flows_operations.values()])}")
+            logging.info(f"{e}\nScheduled flows num: {sum(self.flows_scheduled)},\t"
+                         f"Operations num: {sum([len(value) for value in self.flows_operations.values()])}")
             if e.error_type == ErrorType.AlreadyScheduled:
                 done = False
             elif e.error_type == ErrorType.JitterExceed:
