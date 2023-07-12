@@ -2,7 +2,7 @@ import logging
 import os
 from sb3_contrib import MaskablePPO
 from stable_baselines3.common.callbacks import BaseCallback
-from stable_baselines3.common.vec_env import DummyVecEnv
+from stable_baselines3.common.vec_env import DummyVecEnv, SubprocVecEnv
 
 from src.agent.encoder import FeaturesExtractor
 from src.env.env_helper import from_file
@@ -33,7 +33,7 @@ class SuccessCallback(BaseCallback):
 def schedule(filename: os.PathLike | str, num_envs: int = 1, time_steps: int = 10000):
     assert os.path.isfile(filename), f"No such file {filename}"
 
-    env = DummyVecEnv([lambda: from_file(filename) for _ in range(num_envs)])
+    env = SubprocVecEnv([lambda: from_file(filename) for _ in range(num_envs)])
 
     policy_kwargs = dict(
         features_extractor_class=FeaturesExtractor,
