@@ -234,7 +234,6 @@ class NetEnv(gym.Env):
 
                 if (not gating) and (hop_index == len(flow.path) - 1):
                     # reach the dst, check jitter constraint.
-                    # force gating enable if jitter constraint is not satisfied.
                     accumulated_jitter = latest_time - earliest_time
                     if accumulated_jitter > flow.jitter:
                         raise SchedulingError(ErrorType.JitterExceed,
