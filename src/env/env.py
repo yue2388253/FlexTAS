@@ -252,11 +252,10 @@ class NetEnv(gym.Env):
             self.flows_operations[flow].append((link, operation))
             self.links_operations[link].append((flow, operation))
 
-            scheduled = False
             while True:
                 offset = self.check_valid_flow(flow)
                 if offset is None:
-                    scheduled = True
+                    # find a valid solution that satisfies timing constraint
                     break
 
                 assert isinstance(offset, int)
@@ -265,12 +264,10 @@ class NetEnv(gym.Env):
                     operation.add(offset)
                     if operation.end_time > flow.period:
                         # cannot be scheduled
-                        break
-
-            if not scheduled:
-                raise SchedulingError(ErrorType.PeriodExceed, "Fail to find a valid solution.")
+                        raise SchedulingError(ErrorType.PeriodExceed, "Fail to find a valid solution.")
 
             if gating:
+                # check gating constraint
                 try:
                     link.add_gating(flow.period)
                 except RuntimeError:
