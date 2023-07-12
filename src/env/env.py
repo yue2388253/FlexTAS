@@ -205,6 +205,20 @@ class NetEnv(gym.Env):
     def step(
             self, action: ActType
     ) -> tuple[ObsType, SupportsFloat, bool, bool, dict[str, Any]]:
+        """
+
+        :param action:
+        :return:
+        tuple: A tuple containing the following elements:
+            - observation (object): The new state of the environment after the action.
+            - reward (float): The reward for the action.
+            - done (bool): A flag indicating whether the game has ended. True means the game has ended.
+            - truncated (bool): always False.
+            - info (dict): A dictionary with extra diagnostic information.
+                'success' key indicates whether the game has been successfully completed.
+                True means success, False means failure.
+                'msg' key contains information for debug
+        """
         flow_index, gating = action
 
         flow = self.flows[flow_index]
@@ -292,7 +306,7 @@ class NetEnv(gym.Env):
                 done = True
             else:
                 assert False, "Unknown error type."
-            return self._generate_state(), self.reward, done, False, {}
+            return self._generate_state(), self.reward, done, False, {'success': False, 'msg': e.__str__()}
 
         done = False
         # successfully scheduling
@@ -307,7 +321,7 @@ class NetEnv(gym.Env):
                 self.reward += 100
 
         self.render()
-        return self._generate_state(), self.reward, done, False, {}
+        return self._generate_state(), self.reward, done, False, {'success': done}
 
     def render(self) -> RenderFrame | list[RenderFrame] | None:
         flow_index, gating = self.last_action

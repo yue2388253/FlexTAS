@@ -8,12 +8,14 @@ import unittest
 from definitions import ROOT_DIR
 from src.env.env import NetEnv
 from src.network.from_json import generate_net_flows_from_json
+from src.network.net import generate_linear_5, Flow
 
 
 class TestEnvState(unittest.TestCase):
     def setUp(self) -> None:
         logging.basicConfig(level=logging.DEBUG)
-        graph, flows = generate_net_flows_from_json(os.path.join(ROOT_DIR, 'data/input/smt_output/FlexTAS_50_1204.json'))
+        graph, flows = generate_net_flows_from_json(
+            os.path.join(ROOT_DIR, 'data/input/smt_output/FlexTAS_50_1204.json'))
         self.env = NetEnv(graph, flows)
         self.state_encoder = self.env.state_encoder
 
@@ -38,7 +40,8 @@ class TestEnvState(unittest.TestCase):
 class TestEnv(unittest.TestCase):
     def setUp(self) -> None:
         logging.basicConfig(level=logging.DEBUG)
-        graph, flows = generate_net_flows_from_json(os.path.join(ROOT_DIR, 'data/input/smt_output/FlexTAS_50_1204.json'))
+        graph, flows = generate_net_flows_from_json(
+            os.path.join(ROOT_DIR, 'data/input/smt_output/FlexTAS_50_1204.json'))
         self.env = NetEnv(graph, flows)
 
     def test_check_env(self):
@@ -65,3 +68,19 @@ class TestEnv(unittest.TestCase):
         model = MaskablePPO("MultiInputPolicy", self.env, verbose=1)
         model.learn(500)
 
+
+class TestEnvInfo(unittest.TestCase):
+    def test_success(self):
+        graph = generate_linear_5()
+        path = [("E1", "S1"), ("S1", "S2"), ("S2", "E2")]
+        flow = Flow(f"F0", "E1", "E2", path, payload=64, period=2000)
+        flows = [flow]
+        env = NetEnv(graph, flows)
+        for i in range(5):
+            _, _, done, _, info = env.step([0, 0])
+            if i == 2:
+                self.assertTrue(done)
+                self.assertTrue(info['success'])
+            else:
+                self.assertFalse(done)
+                self.assertFalse(info['success'])
