@@ -4,6 +4,7 @@ import matplotlib.pyplot as plt
 import numpy as np
 import os
 from sb3_contrib import MaskablePPO
+import sys
 
 from definitions import OUT_DIR
 from src.agent.encoder import GNNModel, FeaturesExtractor
@@ -15,7 +16,6 @@ from stable_baselines3.common.callbacks import BaseCallback
 from stable_baselines3.common.results_plotter import load_results, ts2xy
 from stable_baselines3.common.monitor import Monitor
 from stable_baselines3.common.vec_env import DummyVecEnv, SubprocVecEnv
-
 
 NUM_TIME_STEPS = 10000_00
 NUM_ENVS = 1
@@ -30,6 +30,7 @@ def make_env(num_flows, rank: int):
         env = linear_5(num_flows, rank)
         env = Monitor(env, log_subdir)  # Wrap the environment with Monitor
         return env
+
     return _init
 
 
@@ -148,7 +149,7 @@ def plot_results(log_folder, title="Learning Curve"):
     x, y = ts2xy(load_results(log_folder), "timesteps")
     y = moving_average(y, window=50)
     # Truncate x
-    x = x[len(x) - len(y) :]
+    x = x[len(x) - len(y):]
 
     fig = plt.figure(title)
     plt.plot(x, y)
@@ -165,10 +166,11 @@ if __name__ == "__main__":
     parser.add_argument('--debug', action='store_true')
     args = parser.parse_args()
 
-    if args.debug:
-        logging.basicConfig(level=logging.DEBUG)
-    else:
-        logging.basicConfig(level=logging.INFO)
+    logging.basicConfig(
+        stream=sys.stdout,
+        level=logging.DEBUG if args.debug else logging.INFO,
+        format='%(asctime)s - %(levelname)s - %(message)s',
+    )
 
     train(args.time_steps, num_flows=args.num_flows)
     for i in range(NUM_ENVS):
