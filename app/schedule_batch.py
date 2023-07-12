@@ -19,7 +19,7 @@ def schedule_batch(files: list[str]):
 
         if i % 10 == 0:
             # output csv every 10 files, to avoid data missing.
-            df = pd.DataFrame({"file": files, "time": times, "is_scheduled": scheduled})
+            df = pd.DataFrame({"file": files[:i], "time": times, "is_scheduled": scheduled})
             df.to_csv(os.path.join(OUT_DIR, 'schedule_batch.csv'))
 
 
