@@ -86,8 +86,6 @@ class SaveOnBestTrainingRewardCallback(BaseCallback):
 
 @timing_decorator(logging.info)
 def train(num_time_steps=NUM_TIME_STEPS, num_flows=NUM_FLOWS):
-    logging.basicConfig(level=logging.INFO)
-
     os.makedirs(OUT_DIR, exist_ok=True)
 
     n_envs = NUM_ENVS  # Number of environments to create
@@ -164,7 +162,13 @@ if __name__ == "__main__":
     parser = argparse.ArgumentParser()
     parser.add_argument('--time_steps', type=int, default=NUM_TIME_STEPS)
     parser.add_argument('--num_flows', type=int, nargs='?', default=NUM_FLOWS)
+    parser.add_argument('--debug', action='store_true')
     args = parser.parse_args()
+
+    if args.debug:
+        logging.basicConfig(level=logging.DEBUG)
+    else:
+        logging.basicConfig(level=logging.INFO)
 
     train(args.time_steps, num_flows=args.num_flows)
     for i in range(NUM_ENVS):
