@@ -77,7 +77,7 @@ class TestEnvInfo(unittest.TestCase):
         flows = [flow]
         env = NetEnv(graph, flows)
         for i in range(5):
-            _, _, done, _, info = env.step([0, 0])
+            _, _, done, _, info = env.step([0, 1])
             if i == 2:
                 self.assertTrue(done)
                 self.assertTrue(info['success'])

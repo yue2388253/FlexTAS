@@ -7,14 +7,14 @@ from typing import Optional
 import z3
 
 from definitions import OUT_DIR
+from src.lib.timing_decorator import timing_decorator
 from src.network.net import Flow, Link, Net
+from src.app.scheduler import BaseScheduler
 
 
-class SmtScheduler:
-    def __init__(self, graph: nx.Graph, flows: list[Flow]):
-        self.graph: nx.Graph = graph
-        self.flows: list[Flow] = flows
-        self.links_dict: dict[str, Link] = {link_id: Link(link_id) for link_id in nx.line_graph(self.graph).nodes}
+class SmtScheduler(BaseScheduler):
+    def __init__(self, graph: nx.Graph, flows: list[Flow], timeout_s: int = None):
+        super().__init__(graph, flows, timeout_s)
 
         self.num_queues = 1
 
@@ -28,7 +28,12 @@ class SmtScheduler:
         self.constraints_set = []
         self.model: Optional[z3.ModelRef] = None
 
-    def schedule(self):
+        if timeout_s is not None:
+            assert isinstance(timeout_s, int)
+            z3.set_param("timeout", timeout_s * 1000)
+
+    @timing_decorator(logging.info)
+    def schedule(self) -> bool:
         self._init_z3_variables()
         self._construct_constraints()
         is_scheduled = self._solve_constraints()
@@ -36,6 +41,7 @@ class SmtScheduler:
             filename = os.path.join(OUT_DIR, f'smt_schedule_{id(self)}.log')
             self.save_results(filename)
             logging.info(f"The scheduling result is save at {filename}")
+        return is_scheduled
 
     def _init_z3_variables(self):
         flow_variables = ['jitter', 'queue_index']

@@ -3,12 +3,12 @@ import os
 import unittest
 from definitions import ROOT_DIR
 from src.network.from_json import generate_net_flows_from_json
-from src.smt_scheduler.smt_schedule import SmtScheduler
+from src.app.drl_scheduler import DrlScheduler
 
 
-class TestSmt(unittest.TestCase):
-    def test_schedule(self):
+class TestDrl(unittest.TestCase):
+    def test_drl(self):
         logging.basicConfig(level=logging.DEBUG)
         graph, flows = generate_net_flows_from_json(os.path.join(ROOT_DIR, 'data/input/smt_output.json'))
-        scheduler = SmtScheduler(graph, flows)
+        scheduler = DrlScheduler(graph, flows, num_envs=4)
         scheduler.schedule()
