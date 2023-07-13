@@ -39,7 +39,7 @@ def main(num_flows: int, num_tests: int, seed: int = None, time_limit: int = 300
         results.append([is_scheduled_smt, smt_time, is_scheduled_drl, drl_time])
 
     df = pd.DataFrame(results, columns=['smt_scheduled', 'smt_time', 'drl_scheduled', 'drl_time'])
-    filename = os.path.join(OUT_DIR, 'schedule_stat.csv')
+    filename = os.path.join(OUT_DIR, f'schedule_stat_{num_flows}_{num_tests}_{seed}_{time_limit}.csv')
     df.to_csv(filename)
     logging.info(f"scheduling statistics is saved to {filename}")
     return

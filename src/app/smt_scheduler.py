@@ -30,7 +30,7 @@ class SmtScheduler(BaseScheduler):
 
         if timeout_s is not None:
             assert isinstance(timeout_s, int)
-            z3.set_param("timeout", timeout_s * 1000)
+            z3.set_param("timeout", timeout_s)
 
     @timing_decorator(logging.info)
     def schedule(self) -> bool:
