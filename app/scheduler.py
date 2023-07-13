@@ -11,6 +11,7 @@ import time
 from src.agent.encoder import FeaturesExtractor
 from src.env.env_helper import from_file
 from src.lib.timing_decorator import timing_decorator
+from src.lib.execute import execute_from_command_line
 
 
 class SuccessCallback(BaseCallback):
@@ -86,23 +87,4 @@ def schedule(
 
 
 if __name__ == '__main__':
-    # Get the signature of the function
-    sig = inspect.signature(schedule)
-
-    # Create the argument parser
-    parser = argparse.ArgumentParser()
-
-    # Add arguments to the parser
-    for name, param in sig.parameters.items():
-        if param.default is param.empty:  # it's a required argument
-            parser.add_argument('--' + name, required=True)
-        else:  # it's an optional argument, use default value from function definition
-            parser.add_argument('--' + name, default=param.default)
-
-    args = parser.parse_args()
-
-    # Convert args to a dictionary
-    args_dict = vars(args)
-
-    # Call the function with the arguments
-    schedule(**args_dict)
+    execute_from_command_line(schedule)

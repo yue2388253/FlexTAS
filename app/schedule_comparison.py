@@ -5,9 +5,10 @@ import random
 import time
 
 from definitions import OUT_DIR
-from src.network.net import generate_linear_5, generate_flows
 from src.app.smt_scheduler import SmtScheduler
 from src.app.drl_scheduler import DrlScheduler
+from src.lib.execute import execute_from_command_line
+from src.network.net import generate_linear_5, generate_flows
 
 
 def main(num_flows: int, num_tests: int, seed: int = None):
@@ -46,4 +47,4 @@ def main(num_flows: int, num_tests: int, seed: int = None):
 
 if __name__ == '__main__':
     logging.basicConfig(level=logging.INFO)
-    main(10, 10, 0)
+    execute_from_command_line(main)
