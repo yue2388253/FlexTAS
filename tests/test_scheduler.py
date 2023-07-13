@@ -8,7 +8,7 @@ from definitions import ROOT_DIR
 class TestSchedule(unittest.TestCase):
     def setUp(self) -> None:
         logging.basicConfig(level=logging.DEBUG)
-        self.filename = os.path.join(ROOT_DIR, 'data/input/FlexTAS_50_100.json')
+        self.filename = os.path.join(ROOT_DIR, 'data/input/FlexTAS_CEV_100_100.json')
 
     def test_schedule(self):
         schedule(self.filename)
