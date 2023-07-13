@@ -11,7 +11,7 @@ from src.lib.execute import execute_from_command_line
 from src.network.net import generate_linear_5, generate_flows
 
 
-def main(num_flows: int, num_tests: int, seed: int = None):
+def main(num_flows: int, num_tests: int, seed: int = None, time_limit: int = 300):
     seed = seed if seed is not None else random.randint(0, 10000)
     results = []
 
@@ -22,7 +22,7 @@ def main(num_flows: int, num_tests: int, seed: int = None):
 
         # use smt to schedule
         logging.debug("using smt to schedule...")
-        smt_scheduler = SmtScheduler(graph, flows)
+        smt_scheduler = SmtScheduler(graph, flows, timeout_s=time_limit)
         start_time = time.time()
         is_scheduled_smt = smt_scheduler.schedule()
         smt_time = time.time() - start_time
@@ -30,7 +30,7 @@ def main(num_flows: int, num_tests: int, seed: int = None):
 
         # use drl to schedule
         logging.debug("using drl to schedule...")
-        drl_scheduler = DrlScheduler(graph, flows)
+        drl_scheduler = DrlScheduler(graph, flows, timeout_s=time_limit)
         start_time = time.time()
         is_scheduled_drl = drl_scheduler.schedule()
         drl_time = time.time() - start_time
