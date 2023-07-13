@@ -245,6 +245,8 @@ class NetEnv(gym.Env):
                     flow.payload) + Net.DELAY_PROP + Net.DELAY_PROC_MIN
                 latest_time = last_link_latest + last_link.transmission_time(
                     flow.payload) + Net.SYNC_PRECISION + Net.DELAY_PROP + Net.DELAY_PROC_MAX
+                if not gating:
+                    latest_time += Net.DELAY_INTERFERENCE
 
                 if (not gating) and (hop_index == len(flow.path) - 1):
                     # reach the dst, check jitter constraint.

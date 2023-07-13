@@ -117,7 +117,7 @@ class SmtScheduler:
                     self.z3_variables_flow_link[flow][link_xb]['t3_min']
                 )
                 self.constraints_set.append(
-                    self.z3_variables_flow_link[flow][link_ax]['t5_max'] + Net.DELAY_PROP + Net.DELAY_PROC_MIN ==
+                    self.z3_variables_flow_link[flow][link_ax]['t5_max'] + Net.DELAY_PROP + Net.DELAY_PROC_MAX ==
                     self.z3_variables_flow_link[flow][link_xb]['t3_max']
                 )
 
@@ -200,7 +200,7 @@ class SmtScheduler:
                         ),
                         z3.And(
                             self.z3_variables_flow_link[flow][link]['t4_min'] ==
-                            self.z3_variables_flow_link[flow][link]['t4_max'],
+                            self.z3_variables_flow_link[flow][link]['t3_min'],
                             self.z3_variables_flow_link[flow][link]['t4_max'] ==
                             self.z3_variables_flow_link[flow][link]['t3_max'] + hold_time
                         )
