@@ -5,7 +5,7 @@ from stable_baselines3.common.env_checker import check_env
 from sb3_contrib import MaskablePPO
 import unittest
 
-from definitions import ROOT_DIR
+from definitions import ROOT_DIR, OUT_DIR
 from src.env.env import NetEnv
 from src.network.from_json import generate_net_flows_from_json
 from src.network.net import generate_linear_5, Flow
@@ -81,6 +81,7 @@ class TestEnvInfo(unittest.TestCase):
             if i == 2:
                 self.assertTrue(done)
                 self.assertTrue(info['success'])
+                env.save_results(os.path.join(OUT_DIR, "schedule.txt"))
             else:
                 self.assertFalse(done)
                 self.assertFalse(info['success'])

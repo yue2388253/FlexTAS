@@ -10,7 +10,7 @@ import os
 import pandas as pd
 from typing import SupportsFloat, Any, Optional
 
-from definitions import ROOT_DIR
+from definitions import ROOT_DIR, OUT_DIR
 from src.network.net import Duration, Flow, Link, transform_line_graph, Net
 from src.network.from_json import generate_net_flows_from_json
 from src.lib.operation import Operation, check_operation_isolation
@@ -316,7 +316,9 @@ class NetEnv(gym.Env):
             if all(self.flows_scheduled):
                 # all flows are scheduled.
                 done = True
-                logging.info("Good job! Finish scheduling!")
+                filename = os.path.join(OUT_DIR, f'schedule-{id(self)}.txt')
+                self.save_results(filename)
+                logging.info(f"Good job! Finish scheduling! Scheduling result is saved at {filename}.")
                 self.reward += 100
 
         self.render()
@@ -327,6 +329,25 @@ class NetEnv(gym.Env):
         flow_id = self.flows[flow_index]
         logging.debug(f"Action: ({flow_id}, {gating}), {self.flows_operations[self.flows[flow_index]][-1]}")
         return
+
+    def save_results(self, filename: str | os.PathLike):
+        """
+        Save the scheduling result to the dir, should only be called after all flows are scheduling.
+        :return:
+        """
+        assert all(self.flows_scheduled), "Flows are not yet scheduled, cannot save results."
+
+        res = []
+        for flow, link_operations in self.flows_operations.items():
+            res.append(
+                str(len(res)) + '. ' + str(flow) + '\n'
+                + '\n'.join([f"\t{link.link_id}, {operation}" for link, operation in link_operations])
+                + '\n'
+            )
+
+        os.makedirs(os.path.dirname(filename), exist_ok=True)
+        with open(filename, 'w') as f:
+            f.writelines(res)
 
     def close(self):
         return

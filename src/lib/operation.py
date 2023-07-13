@@ -30,7 +30,7 @@ class Operation:
         return self
 
     def __repr__(self):
-        return f"Operation({self.start_time, self.gating_time, self.end_time})"
+        return f"Operation{self.start_time, self.gating_time, self.end_time}{self.earliest_time, self.latest_time}"
 
 
 # add tests
