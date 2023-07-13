@@ -3,6 +3,7 @@ import logging
 import math
 import networkx as nx
 import os.path
+from typing import Optional
 import z3
 
 from definitions import OUT_DIR
@@ -25,15 +26,16 @@ class SmtScheduler:
             defaultdict(dict)
 
         self.constraints_set = []
-        self.solution: list[tuple] = []
+        self.model: Optional[z3.ModelRef] = None
 
     def schedule(self):
         self._init_z3_variables()
         self._construct_constraints()
         is_scheduled = self._solve_constraints()
         if is_scheduled:
-            filename = os.path.join(OUT_DIR, 'smt_schedule.log')
+            filename = os.path.join(OUT_DIR, f'smt_schedule_{id(self)}.log')
             self.save_results(filename)
+            logging.info(f"The scheduling result is save at {filename}")
 
     def _init_z3_variables(self):
         flow_variables = ['jitter', 'queue_index']
@@ -186,7 +188,7 @@ class SmtScheduler:
             path = flow.path
             for link_id in path:
                 link = self.links_dict[link_id]
-                hold_time = link.transmission_time(12+1522+8) # inter-frame gap + mtu + preamble
+                hold_time = link.transmission_time(12 + 1522 + 8)  # inter-frame gap + mtu + preamble
                 self.constraints_set.append(
                     z3.If(
                         self.z3_variables_flow_link[flow][link]['gc'],
@@ -195,7 +197,7 @@ class SmtScheduler:
                             self.z3_variables_flow_link[flow][link]['t4_max'],
                             self.z3_variables_flow_link[flow][link]['t4_min'] >=
                             self.z3_variables_flow_link[flow][link]['t3_max']
-                            ),
+                        ),
                         z3.And(
                             self.z3_variables_flow_link[flow][link]['t4_min'] ==
                             self.z3_variables_flow_link[flow][link]['t4_max'],
@@ -250,8 +252,7 @@ class SmtScheduler:
         is_sat = solver.check()
 
         if is_sat == z3.sat:
-            model = solver.model()
-            self.solution = [(declare.name(), model[declare]) for declare in model.decls()]
+            self.model = solver.model()
             logging.info(f"Successfully scheduled.")
             return True
         elif is_sat == z3.unsat:
@@ -263,7 +264,20 @@ class SmtScheduler:
         return False
 
     def save_results(self, filename):
-        assert len(self.solution) > 0, "Not yet scheduled."
-        res = [f"{k}: {v}\n" for k, v in self.solution]
+        assert self.model is not None, "Not yet scheduled."
+        res = []
+        for i, flow in enumerate(self.flows):
+            path = flow.path
+            res += [f"{i}. {str(flow)}\n"]
+            for link_id in path:
+                link = self.links_dict[link_id]
+                variables = self.z3_variables_flow_link[flow][link]
+                res += [f"\t{link_id}, Operation({self.model[variables['t3_min']]}, "
+                        f"{self.model[variables['t4_min']] if self.model[variables['gc']] else None}, "
+                        f"{self.model[variables['t5_max']]})("
+                        f"{self.model[variables['t4_min']]}, {self.model[variables['t4_max']]})\n"]
+
+        res += ["\nSMT variables: \n"] + \
+               [f"\t{declare.name()}: {self.model[declare]}\n" for declare in self.model.decls()]
         with open(filename, 'w') as f:
             f.writelines(res)
