@@ -40,7 +40,7 @@ def main(num_flows: str, num_tests: int, seed: int = None, time_limit: int = 300
             logging.debug("using drl to schedule...")
             is_scheduled_drl, drl_time = schedule(graph, flows, DrlScheduler, time_limit)
 
-            results.append([num_flows, i, seed, is_scheduled_smt, smt_time, is_scheduled_drl, drl_time])
+            results.append([num_flow, i, seed + i, is_scheduled_smt, smt_time, is_scheduled_drl, drl_time])
 
         df = pd.DataFrame(results,
                           columns=['num_flows', 'index', 'seed',
