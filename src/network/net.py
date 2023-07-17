@@ -226,6 +226,77 @@ def generate_linear_5() -> nx.Graph:
     return graph
 
 
+def generate_cev() -> nx.Graph:
+    edges = [
+        ("DU1", "SW11"),
+        ("DU2", "SW11"),
+        ("DU3", "SW11"),
+        ("CMRIU1", "SW21"),
+        ("FCM1", "SW31"),
+        ("LCM1", "SW31"),
+        ("RCM1", "SW31"),
+        ("CM1CA", "SW41"),
+        ("CM1CB", "SW41"),
+        ("SM1CA", "SW51"),
+        ("SM1CB", "SW51"),
+        ("SMRIU1", "SW6"),
+        ("SMRIU2", "SW6"),
+        ("SM2CB", "SW52"),
+        ("SM2CA", "SW52"),
+        ("CM2CB", "SW42"),
+        ("CM2CA", "SW42"),
+        ("RCM2", "SW32"),
+        ("LCM2", "SW32"),
+        ("FCM2", "SW32"),
+        ("CMRIU2", "SW22"),
+        ("BFCU", "SW22"),
+        ("DU5", "SW14"),
+        ("DU4", "SW14"),
+        ("StarTr2", "SW13"),
+        ("StarTr1", "SW13"),
+        ("MIMU3", "SW13"),
+        ("MIMU2", "SW13"),
+        ("MIMU1", "SW13"),
+        ("SBAND2", "SW12"),
+        ("SBAND1", "SW12"),
+
+        # links between switches
+        ("SW11", "SW21"),
+        ("SW11", "SW22"),
+        ("SW12", "SW21"),
+        ("SW12", "SW22"),
+        ("SW13", "SW21"),
+        ("SW13", "SW22"),
+        ("SW14", "SW21"),
+        ("SW14", "SW22"),
+        ("SW21", "SW31"),
+        ("SW21", "SW31"),
+        ("SW22", "SW32"),
+        ("SW21", "SW7"),
+        ("SW22", "SW7"),
+        ("SW31", "SW7"),
+        ("SW32", "SW7"),
+        ("SW31", "SW41"),
+        ("SW31", "SW8"),
+        ("SW31", "SW6"),
+        ("SW32", "SW8"),
+        ("SW32", "SW6"),
+        ("SW32", "SW42"),
+        ("SW41", "SW51"),
+        ("SW42", "SW52"),
+        ("SW8", "SW51"),
+        ("SW8", "SW52"),
+    ]
+
+    graph = nx.from_edgelist(edges)
+    leaf_dict = {node: 'ES' if degree == 1 else 'SW' for node, degree in graph.degree()}
+    nx.set_node_attributes(graph, leaf_dict, 'node_type')
+
+    graph = nx.DiGraph(graph)
+
+    return graph
+
+
 def transform_line_graph(graph) -> (nx.Graph, typing.Dict):
     line_graph = nx.line_graph(graph)
     links_dict = {}

@@ -7,6 +7,20 @@ from src.network.from_json import generate_net_flows_from_json
 from src.network.net import *
 
 
+class TestCEV(unittest.TestCase):
+    def test_cev(self):
+        cev = generate_cev()
+
+        # # user should check the graph manually.
+        # from pyvis.network import Network
+        # net = Network(notebook=True)
+        # net.from_nx(cev)
+        # net.show(os.path.join(OUT_DIR, 'cev.html'))
+
+        self.assertEqual(len(cev.nodes), 46)
+        self.assertEqual(len(cev.edges), 31 + 24)
+
+
 class TestDuration(unittest.TestCase):
     def test_conflict(self):
         d1 = Duration(0, 0, 4)
@@ -100,7 +114,7 @@ class TestFlow(unittest.TestCase):
 
         self.import_flows = jsons.load(flows_list, list[Flow])
         print([str(flow) for flow in self.import_flows])
-        
+
 
 class TestFlowGenerator(unittest.TestCase):
     def test_random_seed(self):

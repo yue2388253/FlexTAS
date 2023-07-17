@@ -9,7 +9,7 @@ from definitions import OUT_DIR
 from src.app.smt_scheduler import SmtScheduler
 from src.app.drl_scheduler import DrlScheduler
 from src.lib.execute import execute_from_command_line
-from src.network.net import generate_linear_5, generate_flows
+from src.network.net import generate_linear_5, generate_cev, generate_flows
 
 
 def schedule(graph, flows, scheduler_class, time_limit):
@@ -21,15 +21,23 @@ def schedule(graph, flows, scheduler_class, time_limit):
     return is_scheduled, elapsed_time
 
 
-def main(num_flows: str, num_tests: int, seed: int = None, time_limit: int = 300):
+def main(num_flows: str, num_tests: int, seed: int = None, time_limit: int = 300, topo: str = 'L5'):
     seed = seed if seed is not None else random.randint(0, 10000)
     if isinstance(num_flows, str):
         num_flows = list(map(int, num_flows.split(',')))
 
+    topos = list(topo.split(','))
+
     results = []
-    for num_flow, i in itertools.product(num_flows, range(num_tests)):
+    for topo, num_flow, i in itertools.product(topos, num_flows, range(num_tests)):
         # generate graph and flows.
-        graph = generate_linear_5()
+        if topo == 'L5':
+            graph = generate_linear_5()
+        elif topo == 'CEV':
+            graph = generate_cev()
+        else:
+            raise ValueError(f"Unknown graph type {topo}")
+
         flows = generate_flows(graph, num_flow, seed=seed + i)
 
         # use smt to schedule
