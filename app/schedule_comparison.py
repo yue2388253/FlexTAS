@@ -25,8 +25,8 @@ def main(num_flows: str, num_tests: int, seed: int = None, time_limit: int = 300
     if isinstance(num_flows, str):
         num_flows = list(map(int, num_flows.split(',')))
 
+    results = []
     for num_flow in num_flows:
-        results = []
         for i in range(num_tests):
             # generate graph and flows.
             graph = generate_linear_5()
@@ -40,12 +40,16 @@ def main(num_flows: str, num_tests: int, seed: int = None, time_limit: int = 300
             logging.debug("using drl to schedule...")
             is_scheduled_drl, drl_time = schedule(graph, flows, DrlScheduler, time_limit)
 
-            results.append([num_flow, i, seed + i, is_scheduled_smt, smt_time, is_scheduled_drl, drl_time])
+            ratio_drl2smt = drl_time / smt_time
+
+            results.append([num_flow, i, seed + i,
+                            is_scheduled_smt, smt_time, is_scheduled_drl, drl_time,
+                            ratio_drl2smt])
 
         df = pd.DataFrame(results,
                           columns=['num_flows', 'index', 'seed',
-                                   'smt_scheduled', 'smt_time', 'drl_scheduled', 'drl_time'])
-        filename = os.path.join(OUT_DIR, f'schedule_stat_{num_flow}_{num_tests}_{seed}_{time_limit}.csv')
+                                   'smt_scheduled', 'smt_time', 'drl_scheduled', 'drl_time', 'ratio_drl2smt'])
+        filename = os.path.join(OUT_DIR, f'schedule_stat_{num_tests}_{seed}_{time_limit}.csv')
         df.to_csv(filename)
         logging.info(f"scheduling statistics is saved to {filename}")
 

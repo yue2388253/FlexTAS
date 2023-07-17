@@ -7,7 +7,7 @@ import time
 
 from src.agent.encoder import FeaturesExtractor
 from src.env.env import NetEnv
-from src.lib import timing_decorator
+from src.lib.timing_decorator import timing_decorator
 from src.network.net import Flow
 from src.app.scheduler import BaseScheduler
 
