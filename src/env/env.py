@@ -35,15 +35,22 @@ class _StateEncoder:
 
         flows = self.env.flows
         edges = []
-        nodes = ["S", "T"]
+        nodes = [0, 1]
+        self.node_index_dict = {}
         for flow_index, flow in enumerate(flows):
             path = flow.path
-            nodes.append((flow_index, path[0]))
-            edges.append(("S", (flow_index, path[0])))
-            for i in range(len(path) - 1):
-                nodes.append((flow_index, path[i+1]))
-                edges.append(((flow_index, path[i]), (flow_index, path[i+1])))
-            edges.append(((flow_index, path[len(path)-1]), "T"))
+            num_hops = len(path)
+            injection_node_index = len(nodes)
+
+            for i in range(num_hops):
+                node_index = injection_node_index + i
+                nodes.append(node_index)
+                self.node_index_dict[node_index] = (flow, path[i])
+
+            edges.append((0, injection_node_index))
+            for i in range(num_hops - 1):
+                edges.append((injection_node_index + i, injection_node_index + i + 1))
+            edges.append((injection_node_index + num_hops - 1, 1))
 
         graph = nx.DiGraph()
         graph.add_nodes_from(nodes)
@@ -51,12 +58,13 @@ class _StateEncoder:
         self.graph = graph
 
         # the shape would be (num_operations+2, num_operations+2)
-        self.adjacency_matrix = np.array(nx.to_scipy_sparse_array(self.graph).todense(), dtype=np.float32)
+        # self.adjacency_matrix = np.array(nx.to_scipy_sparse_array(self.graph).todense(), dtype=np.float32)
+        self.adjacency_matrix = np.array(self.graph.edges, dtype=np.int64).T
 
         self.num_operations = sum([len(flow.path) for flow in self.env.flows])
         state = self.state()
         self.observation_space = spaces.Dict({
-            "adjacency_matrix": spaces.Box(low=0, high=1, shape=(self.num_operations+2, self.num_operations+2), dtype=np.float32),
+            "adjacency_matrix": spaces.Box(low=0, high=len(nodes)-1, shape=(2, len(self.graph.edges)), dtype=np.int64),
             "features_matrix": spaces.Box(low=0, high=1, shape=state['features_matrix'].shape, dtype=np.float32)
         })
 
@@ -71,12 +79,11 @@ class _StateEncoder:
 
         num_links = len(self.env.link_dict)
         for node in self.graph.nodes:
-            if node == "S" or node == "T":
+            if node <= 1:
                 feature_matrix.append(np.zeros(num_links+2+7,))
                 continue
 
-            flow_index, link_id = node
-            flow = flows[flow_index]
+            flow, link_id = self.node_index_dict[node]
             link = link_dict[link_id]
 
             link_one_hot_feature = one_hot_dict[link_id].values

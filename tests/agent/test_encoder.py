@@ -6,34 +6,36 @@ from sb3_contrib import MaskablePPO
 from stable_baselines3 import PPO
 import torch
 from torchviz import make_dot
+from torch_geometric.data import Data, Batch
 import unittest
 
 from definitions import OUT_DIR
-from src.agent.encoder import GNNModel, FeaturesExtractor
+from src.agent.encoder import GinModel, FeaturesExtractor
 from src.env.env import NetEnv
 
 
-class TestGNNModel(unittest.TestCase):
-    def test_gnn_model(self):
-        num_batch = 5
-        num_nodes = 200
-        num_features = 30
+class TestGinModel(unittest.TestCase):
+    def setUp(self):
+        self.num_features = 27
+        self.model = GinModel(self.num_features)
 
-        graph = np.stack([nx.to_numpy_array(nx.fast_gnp_random_graph(num_nodes, 0.5)) for _ in range(num_batch)])
-        features = np.random.normal(size=(num_batch, num_nodes, num_features))
+    def test_forward(self):
+        # Create a batch of 5 graphs with 80 nodes each and 27-dimensional node features
+        data_list = []
+        num_nodes = 80
+        num_edges = 200
+        for _ in range(5):
+            x = torch.randn(num_nodes, self.num_features)
+            edge_index = torch.randint(num_nodes, (2, num_edges))  # Randomly connect the nodes
+            data = Data(x=x, edge_index=edge_index)
+            data_list.append(data)
+        batch = Batch.from_data_list(data_list)
 
-        graph_conv_units = 32
-        embedding_dim = 16
-        gnn_model = GNNModel(num_features, graph_conv_units, embedding_dim)
+        # Pass the batch through the model
+        out = self.model(batch)
 
-        output = gnn_model(torch.from_numpy(graph).float(), torch.tensor(features).float())
-
-        self.assertEqual(output.shape, (num_batch, num_nodes * embedding_dim))
-
-        # Plot the model
-        make_dot(output,
-                 params=dict(list(gnn_model.named_parameters()))).render(os.path.join(OUT_DIR, 'model_GNN'),
-                                                                         format="png")
+        # Check that the output has the correct shape
+        self.assertEqual(out.shape, (5, 64))
 
 
 class TestFeaturesEncoder(unittest.TestCase):
@@ -48,7 +50,7 @@ class TestFeaturesEncoder(unittest.TestCase):
         # convert to tensor
         obs = {k: torch.from_numpy(v).unsqueeze(0) for k, v in obs.items()}
         out = self.features_extractor(obs)
-        self.assertEqual(out.shape, (1, (self.env.state_encoder.num_operations + 2) * 64))
+        self.assertEqual(out.shape, (1, 64))
 
     def test_integration(self):
         policy_kwargs = dict(
@@ -56,4 +58,3 @@ class TestFeaturesEncoder(unittest.TestCase):
         )
         model = MaskablePPO("MultiInputPolicy", self.env, policy_kwargs=policy_kwargs, verbose=1)
         model.learn(500)
-
