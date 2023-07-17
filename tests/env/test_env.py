@@ -66,7 +66,7 @@ class TestEnv(unittest.TestCase):
 
     def test_action_masks(self):
         model = MaskablePPO("MultiInputPolicy", self.env, verbose=1)
-        model.learn(500)
+        model.learn(5000)
 
 
 class TestEnvInfo(unittest.TestCase):

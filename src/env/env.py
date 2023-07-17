@@ -119,6 +119,9 @@ class _StateEncoder:
 
 
 class NetEnv(gym.Env):
+    alpha: float = 0.1
+    beta: float = 0.1
+
     def __init__(self, graph: nx.Graph = None, flows: list[Flow] = None):
         super().__init__()
 
@@ -242,6 +245,7 @@ class NetEnv(gym.Env):
 
             link = self.link_dict[flow.path[hop_index]]
 
+            wait_time = 0
             if hop_index == 0:
                 operation = Operation(0, 0 if gating else None, 0, link.transmission_time(flow.payload))
             else:
@@ -252,8 +256,10 @@ class NetEnv(gym.Env):
                     flow.payload) + Net.DELAY_PROP + Net.DELAY_PROC_MIN
                 latest_time = last_link_latest + last_link.transmission_time(
                     flow.payload) + Net.SYNC_PRECISION + Net.DELAY_PROP + Net.DELAY_PROC_MAX
+
                 if not gating:
-                    latest_time += Net.DELAY_INTERFERENCE
+                    wait_time = Net.DELAY_INTERFERENCE
+                    latest_time += wait_time
 
                 if (not gating) and (hop_index == len(flow.path) - 1):
                     # reach the dst, check jitter constraint.
@@ -288,15 +294,21 @@ class NetEnv(gym.Env):
                         # cannot be scheduled
                         raise SchedulingError(ErrorType.PeriodExceed, "Fail to find a valid solution.")
 
+            gcl_added = 0
             if gating:
                 # check gating constraint
                 try:
+                    old_gcl = link.gcl_length
                     link.add_gating(flow.period)
+                    new_gcl = link.gcl_length
+                    gcl_added = new_gcl - old_gcl
                 except RuntimeError:
                     raise SchedulingError(ErrorType.GatingExceed,
                                           "Invalid due to gating constraint.")
 
-            self.reward += 0.1
+            # todo: re-design the reward function, refer to the paper for more info.
+            # self.reward += 0.1
+            self.reward += 1 - self.alpha * gcl_added - self.beta * wait_time / flow.e2e_delay
 
         except SchedulingError as e:
             logging.info(f"{e}\nScheduled flows num: {sum(self.flows_scheduled)},\t"
@@ -304,13 +316,13 @@ class NetEnv(gym.Env):
             if e.error_type == ErrorType.AlreadyScheduled:
                 done = False
             elif e.error_type == ErrorType.JitterExceed:
-                self.reward -= 100
+                # self.reward -= 100
                 done = True
             elif e.error_type == ErrorType.GatingExceed:
-                self.reward -= 100
+                # self.reward -= 100
                 done = True
             elif e.error_type == ErrorType.PeriodExceed:
-                self.reward -= 100
+                # self.reward -= 100
                 done = True
             else:
                 assert False, "Unknown error type."
@@ -328,7 +340,7 @@ class NetEnv(gym.Env):
                 filename = os.path.join(OUT_DIR, f'schedule_rl_{id(self)}.log')
                 self.save_results(filename)
                 logging.info(f"Good job! Finish scheduling! Scheduling result is saved at {filename}.")
-                self.reward += 100
+                # self.reward += 100
 
         self.render()
         return self._generate_state(), self.reward, done, False, {'success': done}
