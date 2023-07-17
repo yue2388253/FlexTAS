@@ -139,7 +139,7 @@ class Link:
     def add_gating(self, period: int, attempt=False) -> bool:
         new_cycle = math.lcm(self.gcl_cycle, period)
         new_length = self.gcl_length * (new_cycle // self.gcl_cycle)
-        new_length += ((self.gcl_cycle // period) * 2)
+        new_length += ((new_cycle // period) * 2)
         if new_length > self.max_gcl_length:
             if attempt:
                 return False
