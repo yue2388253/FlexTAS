@@ -7,6 +7,7 @@ import time
 
 from src.agent.encoder import FeaturesExtractor
 from src.env.env import NetEnv
+from src.lib import timing_decorator
 from src.network.net import Flow
 from src.app.scheduler import BaseScheduler
 
@@ -57,6 +58,7 @@ class DrlScheduler(BaseScheduler):
         self.num_envs = num_envs
         self.time_steps = time_steps
 
+    @timing_decorator(logging.info)
     def schedule(self):
         env = SubprocVecEnv([lambda: NetEnv(self.graph, self.flows) for _ in range(self.num_envs)])
         policy_kwargs = dict(
