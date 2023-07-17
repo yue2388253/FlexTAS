@@ -7,15 +7,15 @@ from sb3_contrib import MaskablePPO
 import sys
 
 from definitions import OUT_DIR
-from src.agent.encoder import GNNModel, FeaturesExtractor
-from src.env.env_helper import linear_5, from_file
+from src.agent.encoder import FeaturesExtractor
+from src.env.env_helper import generate_env
 from src.lib.timing_decorator import timing_decorator
 
 from stable_baselines3.common import results_plotter
 from stable_baselines3.common.callbacks import BaseCallback
 from stable_baselines3.common.results_plotter import load_results, ts2xy
 from stable_baselines3.common.monitor import Monitor
-from stable_baselines3.common.vec_env import DummyVecEnv, SubprocVecEnv
+from stable_baselines3.common.vec_env import SubprocVecEnv
 
 NUM_TIME_STEPS = 10000_00
 NUM_ENVS = 1
@@ -27,7 +27,7 @@ def make_env(num_flows, rank: int):
     def _init():
         log_subdir = os.path.join(OUT_DIR, str(rank))
         os.makedirs(log_subdir, exist_ok=True)
-        env = linear_5(num_flows, rank)
+        env = generate_env("CEV", num_flows, rank)
         env = Monitor(env, log_subdir)  # Wrap the environment with Monitor
         return env
 
@@ -90,7 +90,7 @@ def train(num_time_steps=NUM_TIME_STEPS, num_flows=NUM_FLOWS):
     os.makedirs(OUT_DIR, exist_ok=True)
 
     n_envs = NUM_ENVS  # Number of environments to create
-    env = DummyVecEnv([make_env(num_flows, i) for i in range(n_envs)])  # or SubprocVecEnv
+    env = SubprocVecEnv([make_env(num_flows, i) for i in range(n_envs)])  # or SubprocVecEnv
 
     policy_kwargs = dict(
         features_extractor_class=FeaturesExtractor,
@@ -113,7 +113,7 @@ def test(num_flows=NUM_FLOWS):
     # Load the weights from the trained model
     model = MaskablePPO.load(BEST_MODEL_PATH)
 
-    env = DummyVecEnv([make_env(num_flows, NUM_ENVS)])  # or SubprocVecEnv
+    env = SubprocVecEnv([make_env(num_flows, NUM_ENVS)])  # or SubprocVecEnv
     obs = env.reset()
     dones = [False]
     time_steps = 0
