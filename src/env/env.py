@@ -80,7 +80,7 @@ class _StateEncoder:
         num_links = len(self.env.link_dict)
         for node in self.graph.nodes:
             if node <= 1:
-                feature_matrix.append(np.zeros(num_links+2+7,))
+                feature_matrix.append(np.zeros(num_links+2+7+3,))
                 continue
 
             flow, link_id = self.node_index_dict[node]
@@ -88,7 +88,10 @@ class _StateEncoder:
 
             link_one_hot_feature = one_hot_dict[link_id].values
 
-            link_gcl_feature = np.array([link.gcl_cycle / Net.GCL_CYCLE_MAX, link.gcl_length / Net.GCL_LENGTH_MAX])
+            link_gcl_feature = np.array([
+                link.gcl_cycle / Net.GCL_CYCLE_MAX,
+                link.gcl_length / Net.GCL_LENGTH_MAX
+            ])
 
             operation_feature = None
             operations = self.env.flows_operations[flow]
@@ -103,11 +106,18 @@ class _StateEncoder:
                         operation.end_time / flow.period,
                         max((operation.latest_time - operation.earliest_time) / flow.jitter, 1)
                     ])
+                    break
             if operation_feature is None:
                 operation_feature = np.zeros(7, )
 
+            flow_feature = np.array([
+                flow.period / Net.GCL_CYCLE_MAX,
+                flow.payload / Net.PAYLOAD_MAX,
+                flow.jitter / flow.period
+            ])
+
             feature = np.concatenate((
-                link_one_hot_feature, link_gcl_feature, operation_feature
+                link_one_hot_feature, link_gcl_feature, operation_feature, flow_feature
             ))
 
             feature_matrix.append(feature)

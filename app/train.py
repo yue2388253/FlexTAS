@@ -7,11 +7,11 @@ from sb3_contrib import MaskablePPO
 import sys
 
 from definitions import OUT_DIR
+from src.app.drl_scheduler import SuccessCallback
 from src.agent.encoder import FeaturesExtractor
 from src.env.env_helper import generate_env
 from src.lib.timing_decorator import timing_decorator
 
-from stable_baselines3.common import results_plotter
 from stable_baselines3.common.callbacks import BaseCallback
 from stable_baselines3.common.results_plotter import load_results, ts2xy
 from stable_baselines3.common.monitor import Monitor
@@ -110,22 +110,14 @@ def train(num_time_steps=NUM_TIME_STEPS, num_flows=NUM_FLOWS):
 
 def test(num_flows=NUM_FLOWS):
     logging.basicConfig(level=logging.DEBUG)
+    env = SubprocVecEnv([make_env(num_flows, NUM_ENVS)])
+    callback = SuccessCallback(time_limit=300)
+
     # Load the weights from the trained model
     model = MaskablePPO.load(BEST_MODEL_PATH)
+    model.set_env(env)
 
-    env = SubprocVecEnv([make_env(num_flows, NUM_ENVS)])  # or SubprocVecEnv
-    obs = env.reset()
-    dones = [False]
-    time_steps = 0
-    while not dones[0]:
-        action, _state = model.predict(obs, deterministic=True)
-        logging.info(f"take action {action}")
-        obs, rewards, dones, info = env.step(action)
-        env.render("human")
-        logging.info(f"get reward {rewards}")
-        time_steps += 1
-
-    logging.info(f"Finished testing, time steps {time_steps}")
+    model.learn(total_timesteps=10000, callback=callback)
 
 
 def moving_average(values, window):
