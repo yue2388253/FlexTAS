@@ -18,7 +18,7 @@ from stable_baselines3.common.monitor import Monitor
 from stable_baselines3.common.vec_env import SubprocVecEnv
 
 NUM_TIME_STEPS = 10000_00
-NUM_ENVS = 1
+NUM_ENVS = 2
 BEST_MODEL_PATH = os.path.join(OUT_DIR, 'best_model')
 NUM_FLOWS = 50
 
@@ -111,7 +111,7 @@ def train(num_time_steps=NUM_TIME_STEPS, num_flows=NUM_FLOWS):
 @timing_decorator(logging.info)
 def test(num_flows=NUM_FLOWS):
     logging.basicConfig(level=logging.DEBUG)
-    env = SubprocVecEnv([make_env(num_flows, NUM_ENVS)])
+    env = SubprocVecEnv([make_env(num_flows, i) for i in range(NUM_ENVS)])
     callback = SuccessCallback(time_limit=300)
 
     # Load the weights from the trained model
