@@ -13,6 +13,7 @@ from src.lib.timing_decorator import timing_decorator
 from src.network.net import generate_cev, generate_flows
 from src.app.drl_scheduler import DrlScheduler
 
+from stable_baselines3 import A2C
 from stable_baselines3.common.callbacks import BaseCallback
 from stable_baselines3.common.results_plotter import load_results, ts2xy
 from stable_baselines3.common.monitor import Monitor
@@ -22,6 +23,9 @@ NUM_TIME_STEPS = 10000_00
 NUM_ENVS = 2
 BEST_MODEL_PATH = os.path.join(OUT_DIR, 'best_model')
 NUM_FLOWS = 50
+
+
+DRL_ALG = A2C
 
 
 def make_env(num_flows, rank: int):
@@ -97,7 +101,7 @@ def train(num_time_steps=NUM_TIME_STEPS, num_flows=NUM_FLOWS):
         features_extractor_class=FeaturesExtractor,
     )
 
-    model = MaskablePPO("MultiInputPolicy", env, policy_kwargs=policy_kwargs, verbose=1)
+    model = DRL_ALG("MultiInputPolicy", env, policy_kwargs=policy_kwargs, verbose=1)
 
     callback = SaveOnBestTrainingRewardCallback(n_envs, check_freq=1000)
 
@@ -116,7 +120,7 @@ def test(num_flows=NUM_FLOWS):
     graph = generate_cev()
     flows = generate_flows(graph, num_flows)
     scheduler = DrlScheduler(graph, flows, num_envs=NUM_ENVS)
-    scheduler.load_model(BEST_MODEL_PATH)
+    scheduler.load_model(BEST_MODEL_PATH, alg=DRL_ALG)
 
     is_scheduled = scheduler.schedule()
     if is_scheduled:
@@ -165,7 +169,16 @@ if __name__ == "__main__":
     parser.add_argument('--num_flows', type=int, nargs='?', default=NUM_FLOWS)
     parser.add_argument('--debug', action='store_true')
     parser.add_argument('--num_envs', type=int, default=NUM_ENVS)
+    parser.add_argument('--alg', type=str, default=None)
     args = parser.parse_args()
+
+    if args.alg is not None:
+        if args.alg == 'A2C':
+            DRL_ALG = A2C
+        elif args.alg == 'PPO':
+            DRL_ALG = MaskablePPO
+        else:
+            raise ValueError(f"Unknown alg {args.alg}")
 
     NUM_ENVS = args.num_envs
     logging.basicConfig(

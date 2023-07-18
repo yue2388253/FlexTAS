@@ -65,10 +65,10 @@ class DrlScheduler(BaseScheduler):
         )
         self.model = MaskablePPO("MultiInputPolicy", self.env, policy_kwargs=policy_kwargs, verbose=1)
 
-    def load_model(self, filepath):
+    def load_model(self, filepath, alg=MaskablePPO):
         del self.model
         assert os.path.isfile(f"{filepath}.zip"), f"No such file {filepath}"
-        self.model = MaskablePPO.load(filepath)
+        self.model = alg.load(filepath)
         self.model.set_env(self.env)
 
     @timing_decorator(logging.info)
