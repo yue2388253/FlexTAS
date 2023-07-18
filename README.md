@@ -34,3 +34,7 @@ Python-related packages are managed by `conda`.
 ```shell
 conda env create -f conda_env.yml
 ```
+
+# TODO
+
+* format logging

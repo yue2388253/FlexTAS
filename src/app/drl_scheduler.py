@@ -2,6 +2,7 @@ import logging
 import networkx as nx
 import os
 from sb3_contrib import MaskablePPO
+from stable_baselines3 import A2C, DQN, PPO
 from stable_baselines3.common.callbacks import BaseCallback
 from stable_baselines3.common.vec_env import SubprocVecEnv
 import time
@@ -53,6 +54,12 @@ class SuccessCallback(BaseCallback):
 
 
 class DrlScheduler(BaseScheduler):
+    SUPPORTING_ALG = {
+        'A2C': A2C,
+        'DQN': DQN,
+        'PPO': PPO
+    }
+
     def __init__(self, graph: nx.DiGraph, flows: list[Flow], timeout_s: int = 3600,
                  num_envs: int = 1, time_steps=100000):
         super().__init__(graph, flows, timeout_s)
@@ -63,12 +70,13 @@ class DrlScheduler(BaseScheduler):
         policy_kwargs = dict(
             features_extractor_class=FeaturesExtractor,
         )
-        self.model = MaskablePPO("MultiInputPolicy", self.env, policy_kwargs=policy_kwargs, verbose=1)
+        self.model = PPO("MultiInputPolicy", self.env, policy_kwargs=policy_kwargs, verbose=1)
 
-    def load_model(self, filepath, alg=MaskablePPO):
+    def load_model(self, filepath, alg: str = 'PPO'):
         del self.model
         assert os.path.isfile(f"{filepath}.zip"), f"No such file {filepath}"
-        self.model = alg.load(filepath)
+        logging.info(f"loading model at {filepath}.zip")
+        self.model = self.SUPPORTING_ALG[alg].load(filepath)
         self.model.set_env(self.env)
 
     @timing_decorator(logging.info)

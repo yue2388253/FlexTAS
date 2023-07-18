@@ -7,7 +7,7 @@ from src.app.drl_scheduler import DrlScheduler
 
 
 @timing_decorator(logging.info)
-def test(topo: str, num_flows: int, num_envs: int, best_model_path: str = None):
+def test(topo: str, num_flows: int, num_envs: int, best_model_path: str = None, alg: str = 'PPO'):
     logging.basicConfig(level=logging.DEBUG)
 
     if topo == "L5":
@@ -21,8 +21,7 @@ def test(topo: str, num_flows: int, num_envs: int, best_model_path: str = None):
     scheduler = DrlScheduler(graph, flows, num_envs=num_envs)
 
     if best_model_path is not None:
-        logging.info(f"Loading the best model at {best_model_path}.")
-        scheduler.load_model(best_model_path)
+        scheduler.load_model(best_model_path, alg=alg)
 
     logging.info("Start scheduling...")
     is_scheduled = scheduler.schedule()
