@@ -11,7 +11,7 @@ import pandas as pd
 from typing import SupportsFloat, Any, Optional
 
 from definitions import ROOT_DIR, OUT_DIR
-from src.network.net import Duration, Flow, Link, transform_line_graph, Net
+from src.network.net import Duration, Flow, Link, transform_line_graph, Net, PERIOD_SET
 from src.network.from_json import generate_net_flows_from_json
 from src.lib.operation import Operation, check_operation_isolation
 
@@ -36,7 +36,7 @@ class _StateEncoder:
         self.graph = nx.convert_node_labels_to_integers(self.env.line_graph, label_attribute='link_id')
 
         flows = self.env.flows
-        self.periods_list = list(set(flow.period for flow in flows))
+        self.periods_list = PERIOD_SET
         self.periods_list.sort()
         self.periods_one_hot_dict = pd.get_dummies(self.periods_list)
         self.periods_dict = {period: 0 for period in self.periods_list}

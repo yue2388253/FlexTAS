@@ -7,6 +7,9 @@ import math
 import numpy as np
 
 
+PERIOD_SET = [2000, 4000, 8000, 16000, 32000, 64000, 128000]
+
+
 class Net:
     PAYLOAD_MAX = 1522
     JITTER_MAX = 1.0
@@ -157,6 +160,8 @@ class Flow:
         self.src_id = src_id
         self.dst_id = dst_id
         self.path = path
+
+        assert period in PERIOD_SET, f"Invalid period {period}"
         self.period = period
         self.payload = payload
         self.e2e_delay = period if e2e_delay is None else e2e_delay
