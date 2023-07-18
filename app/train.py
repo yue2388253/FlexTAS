@@ -108,6 +108,7 @@ def train(num_time_steps=NUM_TIME_STEPS, num_flows=NUM_FLOWS):
     logging.info("------Finish learning------")
 
 
+@timing_decorator(logging.info)
 def test(num_flows=NUM_FLOWS):
     logging.basicConfig(level=logging.DEBUG)
     env = SubprocVecEnv([make_env(num_flows, NUM_ENVS)])
@@ -118,6 +119,14 @@ def test(num_flows=NUM_FLOWS):
     model.set_env(env)
 
     model.learn(total_timesteps=10000, callback=callback)
+
+    is_scheduled = callback.get_result()
+    if is_scheduled:
+        logging.info("Successfully scheduling the flows.")
+    else:
+        logging.error("Fail to find a valid solution.")
+
+    return is_scheduled
 
 
 def moving_average(values, window):

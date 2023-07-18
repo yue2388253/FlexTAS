@@ -52,7 +52,7 @@ class SuccessCallback(BaseCallback):
 
 
 class DrlScheduler(BaseScheduler):
-    def __init__(self, graph: nx.Graph, flows: list[Flow], timeout_s: int = 3600,
+    def __init__(self, graph: nx.DiGraph, flows: list[Flow], timeout_s: int = 3600,
                  num_envs: int = 1, time_steps=100000):
         super().__init__(graph, flows, timeout_s)
         self.num_envs = num_envs

@@ -3,7 +3,7 @@ from src.network.net import Flow, Link
 
 
 class BaseScheduler:
-    def __init__(self, graph: nx.Graph, flows: list[Flow], timeout_s: int = None):
+    def __init__(self, graph: nx.DiGraph, flows: list[Flow], timeout_s: int = None):
         """TODO: replace the arguments of graph and flows with a function that construct a env"""
         self.graph = graph
         self.flows = flows
