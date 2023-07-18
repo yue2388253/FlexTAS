@@ -155,6 +155,7 @@ def plot_results(log_folder, title="Learning Curve"):
     plt.xlabel("Number of Timesteps")
     plt.ylabel("Rewards")
     plt.title(title + " Smoothed")
+    plt.savefig(os.path.join(log_folder, "reward.png"))
     plt.show()
 
 
