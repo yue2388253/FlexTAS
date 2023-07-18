@@ -1,4 +1,3 @@
-import json
 import typing
 
 import networkx as nx
@@ -197,7 +196,7 @@ class Flow:
             num_switches * Net.DELAY_PROC_MAX
 
 
-def generate_linear_5() -> nx.Graph:
+def generate_linear_5() -> nx.DiGraph:
     graph = nx.DiGraph()
 
     # The id of nodes should be unique.

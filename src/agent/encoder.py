@@ -1,5 +1,6 @@
 import gymnasium as gym
 import torch
+import torch.nn as nn
 from torch.nn import Sequential, Linear, ReLU
 import torch.nn.functional as F
 from torch_geometric.nn import GINConv, global_mean_pool
@@ -53,13 +54,30 @@ def dict_to_batch(obs):
 
 class FeaturesExtractor(BaseFeaturesExtractor):
     def __init__(self, observation_space: gym.spaces.Dict):
-        embedding_dim = 64
+        embedding_dim = 128
+        array_embedding = 64
+        graph_embedding = embedding_dim - array_embedding
         super().__init__(observation_space, features_dim=embedding_dim)
 
-        state = observation_space.sample()
-        _, num_features = state['features_matrix'].shape
-        self.graph_encoder = GinModel(num_features, embed_dim=embedding_dim)
+        self.array_encoder = nn.Sequential(
+            nn.Linear(
+                observation_space['flow_feature'].shape[0] + observation_space['link_feature'].shape[0],
+                array_embedding),
+            nn.ReLU()
+        )
+
+        _, num_features = observation_space['features_matrix'].shape
+        self.graph_encoder = GinModel(num_features, embed_dim=graph_embedding)
 
     def forward(self, observations) -> torch.Tensor:
+        array_encoded = self.array_encoder(
+            torch.cat([
+                observations['flow_feature'],
+                observations['link_feature']
+            ], dim=1)
+        )
+
         batch = dict_to_batch(observations)
-        return self.graph_encoder(batch)
+        graph_encoded = self.graph_encoder(batch)
+
+        return torch.cat([array_encoded, graph_encoded], dim=1)

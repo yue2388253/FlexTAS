@@ -1,15 +1,9 @@
 import logging
-import networkx as nx
-import numpy as np
-import os
 from sb3_contrib import MaskablePPO
-from stable_baselines3 import PPO
 import torch
-from torchviz import make_dot
 from torch_geometric.data import Data, Batch
 import unittest
 
-from definitions import OUT_DIR
 from src.agent.encoder import GinModel, FeaturesExtractor
 from src.env.env import NetEnv
 
@@ -50,7 +44,8 @@ class TestFeaturesEncoder(unittest.TestCase):
         # convert to tensor
         obs = {k: torch.from_numpy(v).unsqueeze(0) for k, v in obs.items()}
         out = self.features_extractor(obs)
-        self.assertEqual(out.shape, (1, 64))
+        # todo
+        self.assertEqual(out.shape, (1, 128))
 
     def test_integration(self):
         policy_kwargs = dict(

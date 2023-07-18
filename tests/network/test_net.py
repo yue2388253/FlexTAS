@@ -1,3 +1,4 @@
+import json
 import jsons
 import os.path
 import unittest
@@ -18,7 +19,7 @@ class TestCEV(unittest.TestCase):
         # net.show(os.path.join(OUT_DIR, 'cev.html'))
 
         self.assertEqual(len(cev.nodes), 46)
-        self.assertEqual(len(cev.edges), 31 + 24)
+        self.assertEqual(len(cev.edges), 2 * (31 + 24))
 
 
 class TestDuration(unittest.TestCase):

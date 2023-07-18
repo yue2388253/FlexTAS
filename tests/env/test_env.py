@@ -19,21 +19,16 @@ class TestEnvState(unittest.TestCase):
         self.env = NetEnv(graph, flows)
         self.state_encoder = self.env.state_encoder
 
-    def test_graph(self):
-        graph = self.state_encoder.graph
-
-        adjacency_matrix = self.state_encoder.adjacency_matrix
-        logging.debug(adjacency_matrix)
+    def test_edge_lists(self):
+        edge_lists = self.state_encoder.edge_lists
+        self.assertEqual(edge_lists.shape, (2, len(self.env.line_graph.edges)))
 
     def test_state(self):
         state = self.state_encoder.state()
         logging.debug(state)
-        logging.debug(type(state))
         for key, value in state.items():
             logging.debug((key, value.shape))
 
-        features_matrix = state['features_matrix']
-        logging.debug(features_matrix)
         self.assertTrue(self.state_encoder.observation_space.contains(state))
 
 
@@ -53,15 +48,12 @@ class TestEnv(unittest.TestCase):
 
         gating_list = [0, 1, 0]
         for gating in gating_list:
-            obs, reward, done, _, info = self.env.step([0, gating])
+            obs, reward, done, _, info = self.env.step(gating)
             self.assertTrue(self.env.observation_space.contains(obs))
             self.assertFalse(done)
 
-        obs, reward, done, _, info = self.env.step([1, 1])
+        obs, reward, done, _, info = self.env.step(1)
         self.assertTrue(self.env.observation_space.contains(obs))
-        self.assertFalse(done)
-
-        obs, reward, done, _, info = self.env.step([0, 1])
         self.assertFalse(done)
 
     def test_action_masks(self):
@@ -76,8 +68,8 @@ class TestEnvInfo(unittest.TestCase):
         flow = Flow(f"F0", "E1", "E2", path, payload=64, period=2000)
         flows = [flow]
         env = NetEnv(graph, flows)
-        for i in range(5):
-            _, _, done, _, info = env.step([0, 1])
+        for i in range(3):
+            _, _, done, _, info = env.step(1)
             if i == 2:
                 self.assertTrue(done)
                 self.assertTrue(info['success'])
