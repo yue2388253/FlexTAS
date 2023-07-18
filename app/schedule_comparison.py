@@ -6,7 +6,7 @@ import random
 import time
 
 from definitions import OUT_DIR
-from src.app.smt_scheduler import SmtScheduler
+from src.app.smt_scheduler import SmtScheduler, NoWaitSmtScheduler
 from src.app.drl_scheduler import DrlScheduler
 from src.lib.execute import execute_from_command_line
 from src.network.net import generate_linear_5, generate_cev, generate_flows
@@ -47,8 +47,8 @@ def main(num_flows: str, num_tests: int, seed: int = None, time_limit: int = 300
         is_scheduled_smt, smt_time = schedule(graph, flows, SmtScheduler, time_limit)
 
         # use drl to schedule
-        logging.info("using drl to schedule...")
-        is_scheduled_drl, drl_time = schedule(graph, flows, DrlScheduler, time_limit)
+        logging.info("using no-wait smt to schedule...")
+        is_scheduled_drl, drl_time = schedule(graph, flows, NoWaitSmtScheduler, time_limit)
 
         ratio_drl2smt = drl_time / smt_time
 

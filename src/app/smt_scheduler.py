@@ -288,3 +288,35 @@ class SmtScheduler(BaseScheduler):
                [f"\t{declare.name()}: {self.model[declare]}\n" for declare in self.model.decls()]
         with open(filename, 'w') as f:
             f.writelines(res)
+
+
+class NoWaitSmtScheduler(SmtScheduler):
+    def __init__(self, *args, **kwargs):
+        super().__init__(*args, **kwargs)
+
+    def _construct_constraints(self):
+        super()._construct_constraints()
+
+        for flow in self.flows:
+            path = flow.path
+            for link_id in path:
+                link = self.links_dict[link_id]
+                hold_time = link.transmission_time(12 + 1522 + 8)  # inter-frame gap + mtu + preamble
+                self.constraints_set.append(
+                    z3.If(
+                        self.z3_variables_flow_link[flow][link]['gc'],
+                        # no-wait, although enable gating, t4_min should equal to t3_max
+                        z3.And(
+                            self.z3_variables_flow_link[flow][link]['t4_min'] ==
+                            self.z3_variables_flow_link[flow][link]['t4_max'],
+                            self.z3_variables_flow_link[flow][link]['t4_min'] ==
+                            self.z3_variables_flow_link[flow][link]['t3_max']
+                        ),
+                        z3.And(
+                            self.z3_variables_flow_link[flow][link]['t4_min'] ==
+                            self.z3_variables_flow_link[flow][link]['t3_min'],
+                            self.z3_variables_flow_link[flow][link]['t4_max'] ==
+                            self.z3_variables_flow_link[flow][link]['t3_max'] + hold_time
+                        )
+                    )
+                )
