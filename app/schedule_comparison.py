@@ -38,14 +38,16 @@ def main(num_flows: str, num_tests: int, seed: int = None, time_limit: int = 300
         else:
             raise ValueError(f"Unknown graph type {topo}")
 
+        logging.info(f"scheduling instance: {topo}, {num_flow} flows, {i}-th")
+
         flows = generate_flows(graph, num_flow, seed=seed + i)
 
         # use smt to schedule
-        logging.debug("using smt to schedule...")
+        logging.info("using smt to schedule...")
         is_scheduled_smt, smt_time = schedule(graph, flows, SmtScheduler, time_limit)
 
         # use drl to schedule
-        logging.debug("using drl to schedule...")
+        logging.info("using drl to schedule...")
         is_scheduled_drl, drl_time = schedule(graph, flows, DrlScheduler, time_limit)
 
         ratio_drl2smt = drl_time / smt_time
