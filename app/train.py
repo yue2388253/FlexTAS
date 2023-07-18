@@ -7,7 +7,6 @@ from sb3_contrib import MaskablePPO
 import sys
 
 from definitions import OUT_DIR
-from src.app.drl_scheduler import SuccessCallback
 from src.agent.encoder import FeaturesExtractor
 from src.env.env_helper import generate_env
 from src.lib.timing_decorator import timing_decorator
