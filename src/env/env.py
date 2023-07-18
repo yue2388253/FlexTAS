@@ -114,7 +114,7 @@ class _StateEncoder:
 
 
 class NetEnv(gym.Env):
-    alpha: float = 50
+    alpha: float = 1
     beta: float = 10
 
     def __init__(self, graph: nx.DiGraph = None, flows: list[Flow] = None):
