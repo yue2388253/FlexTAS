@@ -1,5 +1,6 @@
 import logging
 import networkx as nx
+import os
 from sb3_contrib import MaskablePPO
 from stable_baselines3.common.callbacks import BaseCallback
 from stable_baselines3.common.vec_env import SubprocVecEnv
@@ -58,19 +59,24 @@ class DrlScheduler(BaseScheduler):
         self.num_envs = num_envs
         self.time_steps = time_steps
 
-    @timing_decorator(logging.info)
-    def schedule(self):
-        env = SubprocVecEnv([lambda: NetEnv(self.graph, self.flows) for _ in range(self.num_envs)])
+        self.env = SubprocVecEnv([lambda: NetEnv(self.graph, self.flows) for _ in range(self.num_envs)])
         policy_kwargs = dict(
             features_extractor_class=FeaturesExtractor,
         )
+        self.model = MaskablePPO("MultiInputPolicy", self.env, policy_kwargs=policy_kwargs, verbose=1)
 
-        model = MaskablePPO("MultiInputPolicy", env, policy_kwargs=policy_kwargs, verbose=1)
+    def load_model(self, filepath):
+        del self.model
+        assert os.path.isfile(f"{filepath}.zip"), f"No such file {filepath}"
+        self.model = MaskablePPO.load(filepath)
+        self.model.set_env(self.env)
 
+    @timing_decorator(logging.info)
+    def schedule(self):
         callback = SuccessCallback(time_limit=self.timeout)
 
         # Train the agent
-        model.learn(total_timesteps=self.time_steps, callback=callback)
+        self.model.learn(total_timesteps=self.time_steps, callback=callback)
 
         is_scheduled = callback.get_result()
         if is_scheduled:

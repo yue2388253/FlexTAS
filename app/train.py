@@ -11,6 +11,8 @@ from src.app.drl_scheduler import SuccessCallback
 from src.agent.encoder import FeaturesExtractor
 from src.env.env_helper import generate_env
 from src.lib.timing_decorator import timing_decorator
+from src.network.net import generate_cev, generate_flows
+from src.app.drl_scheduler import DrlScheduler
 
 from stable_baselines3.common.callbacks import BaseCallback
 from stable_baselines3.common.results_plotter import load_results, ts2xy
@@ -111,16 +113,13 @@ def train(num_time_steps=NUM_TIME_STEPS, num_flows=NUM_FLOWS):
 @timing_decorator(logging.info)
 def test(num_flows=NUM_FLOWS):
     logging.basicConfig(level=logging.DEBUG)
-    env = SubprocVecEnv([make_env(num_flows, i) for i in range(NUM_ENVS)])
-    callback = SuccessCallback(time_limit=300)
 
-    # Load the weights from the trained model
-    model = MaskablePPO.load(BEST_MODEL_PATH)
-    model.set_env(env)
+    graph = generate_cev()
+    flows = generate_flows(graph, num_flows)
+    scheduler = DrlScheduler(graph, flows, num_envs=NUM_ENVS)
+    scheduler.load_model(BEST_MODEL_PATH)
 
-    model.learn(total_timesteps=10000, callback=callback)
-
-    is_scheduled = callback.get_result()
+    is_scheduled = scheduler.schedule()
     if is_scheduled:
         logging.info("Successfully scheduling the flows.")
     else:

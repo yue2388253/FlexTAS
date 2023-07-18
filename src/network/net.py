@@ -225,7 +225,7 @@ def generate_linear_5() -> nx.DiGraph:
     return graph
 
 
-def generate_cev() -> nx.Graph:
+def generate_cev() -> nx.DiGraph:
     edges = [
         ("DU1", "SW11"),
         ("DU2", "SW11"),
