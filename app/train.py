@@ -164,8 +164,10 @@ if __name__ == "__main__":
     parser.add_argument('--time_steps', type=int, default=NUM_TIME_STEPS)
     parser.add_argument('--num_flows', type=int, nargs='?', default=NUM_FLOWS)
     parser.add_argument('--debug', action='store_true')
+    parser.add_argument('--num_envs', type=int, default=NUM_ENVS)
     args = parser.parse_args()
 
+    NUM_ENVS = args.num_envs
     logging.basicConfig(
         stream=sys.stdout,
         level=logging.DEBUG if args.debug else logging.INFO,
