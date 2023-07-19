@@ -307,7 +307,7 @@ class NetEnv(gym.Env):
 
             # todo: re-design the reward function, refer to the paper for more info.
             # self.reward += 0.1
-            self.reward += 1 - self.alpha * gcl_added / link.max_gcl_length - self.beta * wait_time / flow.e2e_delay
+            self.reward = 0 - self.alpha * gcl_added / link.max_gcl_length - self.beta * wait_time / flow.e2e_delay
 
         except SchedulingError as e:
             logging.info(f"{e}\nScheduled flows num: {sum(self.flows_scheduled)},\t"
@@ -339,6 +339,7 @@ class NetEnv(gym.Env):
                 filename = os.path.join(OUT_DIR, f'schedule_rl_{id(self)}.log')
                 self.save_results(filename)
                 logging.info(f"Good job! Finish scheduling! Scheduling result is saved at {filename}.")
+                self.reward = 0
                 # self.reward += 100
                 return self.observation_space.sample(), self.reward, True, False, {'success': True}
 
