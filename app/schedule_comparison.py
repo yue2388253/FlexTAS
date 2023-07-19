@@ -49,9 +49,13 @@ def main(num_flows: str, num_tests: int, best_model: str,
         scheduler = SmtScheduler(graph, flows, timeout_s=time_limit)
         is_scheduled_smt, smt_time = schedule(scheduler)
 
+        # use no-wait smt to schedule
+        logging.info("using no-wait smt to schedule...")
+        scheduler = NoWaitSmtScheduler(graph, flows, timeout_s=time_limit)
+        is_scheduled_smt_no_wait, smt_no_wait_time = schedule(scheduler)
+
         # use drl to schedule
         logging.info("using drl to schedule...")
-
         alg, num_envs = re.search(r"_([^_]+)_(\d+)(\.zip)?$", os.path.basename(best_model)).group(1, 2)
         scheduler = DrlScheduler(graph, flows, time_limit, num_envs=int(num_envs))
         scheduler.load_model(best_model, alg=alg)
@@ -61,12 +65,17 @@ def main(num_flows: str, num_tests: int, best_model: str,
         ratio_drl2smt = drl_time / smt_time
 
         results.append([num_flow, i, seed + i,
-                        is_scheduled_smt, smt_time, is_scheduled_drl, drl_time,
+                        is_scheduled_smt, smt_time,
+                        is_scheduled_smt_no_wait, smt_no_wait_time,
+                        is_scheduled_drl, drl_time,
                         ratio_drl2smt])
 
     df = pd.DataFrame(results,
                       columns=['num_flows', 'index', 'seed',
-                               'smt_scheduled', 'smt_time', 'drl_scheduled', 'drl_time', 'ratio_drl2smt'])
+                               'smt_scheduled', 'smt_time',
+                               'smt_scheduled_no_wait', 'smt_time_no_wait',
+                               'drl_scheduled', 'drl_time',
+                               'ratio_drl2smt'])
     filename = os.path.join(OUT_DIR, f'schedule_stat_{num_tests}_{seed}_{time_limit}.csv')
     df.to_csv(filename)
     logging.info(f"scheduling statistics is saved to {filename}")
