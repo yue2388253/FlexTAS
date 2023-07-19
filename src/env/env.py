@@ -372,3 +372,30 @@ class NetEnv(gym.Env):
 
     def close(self):
         return
+
+
+class TrainingNetEnv(NetEnv):
+    def __init__(self, graph, flow_generator, num_flows, changing_freq=10):
+
+        self.flow_generator = flow_generator
+        flows = flow_generator(graph, num_flows)
+        super().__init__(graph, flows)
+        self.num_passed = 0
+        self.changing_freq = changing_freq
+
+    def step(
+            self, action: ActType
+    ) -> tuple[ObsType, SupportsFloat, bool, bool, dict[str, Any]]:
+
+        res = super().step(action)
+
+        done, info = res[2], res[-1]
+        if done and info['success']:
+            self.num_passed += 1
+            print(f"passed the job! ({self.num_passed})")
+            if self.num_passed == self.changing_freq:
+                print(f"The agent has already learn how to solve the problem. Change it to another one.")
+                self.flows = self.flow_generator(self.graph, len(self.flows))
+                self.num_passed = 0
+
+        return res

@@ -9,8 +9,10 @@ from app.test import test
 from definitions import OUT_DIR
 from src.agent.encoder import FeaturesExtractor
 from src.env.env_helper import generate_env
+from src.env.env import TrainingNetEnv
 from src.lib.timing_decorator import timing_decorator
 from src.app.drl_scheduler import DrlScheduler
+from src.network.net import generate_linear_5, generate_cev, generate_flows
 
 from stable_baselines3.common.callbacks import EvalCallback
 from stable_baselines3.common.results_plotter import load_results, ts2xy
@@ -32,7 +34,10 @@ def make_env(num_flows, rank: int):
     def _init():
         log_subdir = os.path.join(OUT_DIR, str(rank))
         os.makedirs(log_subdir, exist_ok=True)
-        env = generate_env("CEV", num_flows, rank)
+
+        graph = generate_cev()
+        env = TrainingNetEnv(graph, generate_flows, num_flows)
+        # env = generate_env("CEV", num_flows, rank)
         env = Monitor(env, log_subdir)  # Wrap the environment with Monitor
         return env
 
