@@ -55,7 +55,11 @@ def train(num_time_steps=NUM_TIME_STEPS, num_flows=NUM_FLOWS):
         features_extractor_class=FeaturesExtractor,
     )
 
-    model = DrlScheduler.SUPPORTING_ALG[DRL_ALG]("MultiInputPolicy", env, policy_kwargs=policy_kwargs, verbose=1)
+    if DRL_ALG == 'DQN':
+        model = DrlScheduler.SUPPORTING_ALG[DRL_ALG]("MultiInputPolicy", env, policy_kwargs=policy_kwargs, verbose=1,
+                                                     buffer_size=5e5)
+    else:
+        model = DrlScheduler.SUPPORTING_ALG[DRL_ALG]("MultiInputPolicy", env, policy_kwargs=policy_kwargs, verbose=1)
 
     eval_env = SubprocVecEnv([make_env(num_flows, i) for i in range(n_envs, 2 * n_envs)])
     callback = EvalCallback(eval_env, best_model_save_path=get_best_model_path(),
