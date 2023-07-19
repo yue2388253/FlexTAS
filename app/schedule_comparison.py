@@ -3,6 +3,7 @@ import logging
 import os
 import pandas as pd
 import random
+import re
 import time
 
 from definitions import OUT_DIR
@@ -12,8 +13,7 @@ from src.lib.execute import execute_from_command_line
 from src.network.net import generate_linear_5, generate_cev, generate_flows
 
 
-def schedule(graph, flows, scheduler_class, time_limit):
-    scheduler = scheduler_class(graph, flows, timeout_s=time_limit)
+def schedule(scheduler):
     start_time = time.time()
     is_scheduled = scheduler.schedule()
     elapsed_time = time.time() - start_time
@@ -21,7 +21,9 @@ def schedule(graph, flows, scheduler_class, time_limit):
     return is_scheduled, elapsed_time
 
 
-def main(num_flows: str, num_tests: int, seed: int = None, time_limit: int = 300, topo: str = 'L5'):
+def main(num_flows: str, num_tests: int, best_model: str,
+         seed: int = None, time_limit: int = 300, topo: str = 'L5',
+         ):
     seed = seed if seed is not None else random.randint(0, 10000)
     if isinstance(num_flows, str):
         num_flows = list(map(int, num_flows.split(',')))
@@ -44,11 +46,17 @@ def main(num_flows: str, num_tests: int, seed: int = None, time_limit: int = 300
 
         # use smt to schedule
         logging.info("using smt to schedule...")
-        is_scheduled_smt, smt_time = schedule(graph, flows, SmtScheduler, time_limit)
+        scheduler = SmtScheduler(graph, flows, timeout_s=time_limit)
+        is_scheduled_smt, smt_time = schedule(scheduler)
 
         # use drl to schedule
-        logging.info("using no-wait smt to schedule...")
-        is_scheduled_drl, drl_time = schedule(graph, flows, NoWaitSmtScheduler, time_limit)
+        logging.info("using drl to schedule...")
+
+        alg, num_envs = re.search(r"_([^_]+)_(\d+)(\.zip)?$", os.path.basename(best_model)).group(1, 2)
+        scheduler = DrlScheduler(graph, flows, time_limit, num_envs=int(num_envs))
+        scheduler.load_model(best_model, alg=alg)
+
+        is_scheduled_drl, drl_time = schedule(scheduler)
 
         ratio_drl2smt = drl_time / smt_time
 
