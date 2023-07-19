@@ -97,7 +97,7 @@ def train(num_time_steps=NUM_TIME_STEPS, num_flows=NUM_FLOWS):
     os.makedirs(OUT_DIR, exist_ok=True)
 
     n_envs = NUM_ENVS  # Number of environments to create
-    env = SubprocVecEnv([make_env(num_flows, i) for i in range(n_envs)])  # or SubprocVecEnv
+    env = SubprocVecEnv([make_env(num_flows, i) for i in range(n_envs)])
 
     policy_kwargs = dict(
         features_extractor_class=FeaturesExtractor,

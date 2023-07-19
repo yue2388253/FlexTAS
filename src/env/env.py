@@ -74,11 +74,12 @@ class _StateEncoder:
             ]
         ], dtype=np.float32)
 
-        link = flow.path[len(self.env.flows_operations[flow])]
-        link_feature = np.array(self.links_one_hot_dict[link], dtype=np.float32)
+        current_link = flow.path[len(self.env.flows_operations[flow])]
 
         # the shape would be (num_operations+2, num_links) after encoding
         feature_matrix = []
+
+        link_feature = None
 
         for node in self.graph.nodes:
             link_id = self.graph.nodes[node]['link_id']
@@ -99,11 +100,16 @@ class _StateEncoder:
 
             feature = np.concatenate((
                 link_flow_periods_feature, link_gcl_feature
-            ))
+            ), dtype=np.float32)
+
+            if link_id == current_link:
+                link_feature = feature
 
             feature_matrix.append(feature)
 
         feature_matrix = np.array(feature_matrix, dtype=np.float32)
+
+        assert link_feature is not None, "Link feature is not represented."
 
         return {
             "flow_feature": flow_feature,
