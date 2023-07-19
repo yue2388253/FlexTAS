@@ -375,7 +375,7 @@ class NetEnv(gym.Env):
 
 
 class TrainingNetEnv(NetEnv):
-    def __init__(self, graph, flow_generator, num_flows, changing_freq=10):
+    def __init__(self, graph, flow_generator, num_flows, changing_freq=100):
 
         self.flow_generator = flow_generator
         flows = flow_generator(graph, num_flows)
