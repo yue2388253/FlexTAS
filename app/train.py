@@ -66,7 +66,7 @@ def train(num_time_steps=NUM_TIME_STEPS, num_flows=NUM_FLOWS, pre_trained_model=
             model = DrlScheduler.SUPPORTING_ALG[DRL_ALG]("MultiInputPolicy", env, policy_kwargs=policy_kwargs, verbose=1)
 
     eval_env = SubprocVecEnv([
-        lambda: Monitor(generate_env("CEV", num_flows), os.path.join(MONITOR_DIR, 'eval'))
+        lambda: Monitor(generate_env("CEV", num_flows), os.path.join(MONITOR_DIR, f'eval{j}')) for j in range(n_envs)
     ])
     callback = EvalCallback(eval_env, best_model_save_path=get_best_model_path(),
                             log_path=OUT_DIR, eval_freq=1000 * n_envs)
