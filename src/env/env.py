@@ -66,18 +66,25 @@ class _StateEncoder:
     def state(self):
         flow = self.env.flows[self.env.flow_index]
 
+        accum_jitter = 0
+        if len(self.env.flows_operations[flow]) != 0:
+            operation = self.env.flows_operations[flow][-1][1]
+            accum_jitter = operation.latest_time - operation.start_time
+
+        hop_index = len(self.env.flows_operations[flow])
         flow_feature = np.concatenate([
             self.periods_one_hot_dict[flow.period],
             [
                 flow.period / Net.GCL_CYCLE_MAX,
                 flow.payload / Net.PAYLOAD_MAX,
-                flow.jitter / flow.period
+                flow.jitter / flow.period,
+                min(1, accum_jitter / flow.jitter),
+                (hop_index + 1) / len(flow.path)
             ]
         ], dtype=np.float32)
 
-        current_link = flow.path[len(self.env.flows_operations[flow])]
+        current_link = flow.path[hop_index]
 
-        # the shape would be (num_operations+2, num_links) after encoding
         feature_matrix = []
 
         link_feature = None
