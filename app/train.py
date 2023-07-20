@@ -1,6 +1,7 @@
 import argparse
 import logging
 import matplotlib.pyplot as plt
+import multiprocessing
 import numpy as np
 import os
 import sys
@@ -20,7 +21,7 @@ from stable_baselines3.common.monitor import Monitor
 from stable_baselines3.common.vec_env import SubprocVecEnv
 
 NUM_TIME_STEPS = 10000_00
-NUM_ENVS = 2
+NUM_ENVS = multiprocessing.cpu_count()
 NUM_FLOWS = 50
 
 DRL_ALG = 'A2C'
