@@ -130,7 +130,7 @@ class NetEnv(gym.Env):
         if graph is None and flows is None:
             self.graph, self.flows = generate_net_flows_from_json(os.path.join(ROOT_DIR, 'data/input/smt_output.json'))
         elif graph is not None and flows is not None:
-            self.graph: nx.Graph = graph
+            self.graph: nx.DiGraph = graph
             self.flows: list[Flow] = flows
 
         assert self.graph is not None and self.flows is not None, "fail to init env, invalid graph or flows"
