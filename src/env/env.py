@@ -10,7 +10,7 @@ import os
 import pandas as pd
 from typing import SupportsFloat, Any, Optional
 
-from definitions import ROOT_DIR, OUT_DIR
+from definitions import ROOT_DIR, OUT_DIR, LOG_DIR
 from src.network.net import Duration, Flow, Link, transform_line_graph, Net, PERIOD_SET
 from src.network.from_json import generate_net_flows_from_json
 from src.lib.operation import Operation, check_operation_isolation
@@ -58,7 +58,8 @@ class _StateEncoder:
         self.observation_space = spaces.Dict({
             "flow_feature": spaces.Box(low=0, high=1, shape=state['flow_feature'].shape, dtype=np.float32),
             "link_feature": spaces.Box(low=0, high=1, shape=state['link_feature'].shape, dtype=np.float32),
-            "adjacency_matrix": spaces.Box(low=0, high=len(self.graph.nodes)-1, shape=(2, len(self.graph.edges)), dtype=np.int64),
+            "adjacency_matrix": spaces.Box(low=0, high=len(self.graph.nodes) - 1, shape=(2, len(self.graph.edges)),
+                                           dtype=np.int64),
             "features_matrix": spaces.Box(low=0, high=1, shape=state['features_matrix'].shape, dtype=np.float32)
         })
 
@@ -156,6 +157,10 @@ class NetEnv(gym.Env):
 
         # action space: enable gating or not for current operation
         self.action_space = spaces.Discrete(2)
+
+        logger = logging.getLogger(f"{__name__}.{os.getpid()}")
+        logger.setLevel(logging.INFO)
+        self.logger = logger
 
         self.reset()
 
@@ -310,8 +315,8 @@ class NetEnv(gym.Env):
             self.reward = 1 - self.alpha * gcl_added / link.max_gcl_length - self.beta * wait_time / flow.e2e_delay
 
         except SchedulingError as e:
-            logging.info(f"{e}\nScheduled flows num: {sum(self.flows_scheduled)},\t"
-                         f"Operations num: {sum([len(value) for value in self.flows_operations.values()])}")
+            self.logger.info(f"{e}\nScheduled flows num: {sum(self.flows_scheduled)},\t"
+                             f"Operations num: {sum([len(value) for value in self.flows_operations.values()])}")
             if e.error_type == ErrorType.AlreadyScheduled:
                 done = False
             elif e.error_type == ErrorType.JitterExceed:
@@ -338,7 +343,8 @@ class NetEnv(gym.Env):
                 # all flows are scheduled.
                 filename = os.path.join(OUT_DIR, f'schedule_rl_{id(self)}.log')
                 self.save_results(filename)
-                logging.info(f"Good job! Finish scheduling! Scheduling result is saved at {filename}.")
+                self.logger.info(f"Good job! Finish scheduling! Scheduling result is saved at {filename}.")
+                # todo: reconsider the reward at the final stage
                 self.reward = 0
                 # self.reward += 100
                 return self.observation_space.sample(), self.reward, True, False, {'success': True}
@@ -348,7 +354,7 @@ class NetEnv(gym.Env):
 
     def render(self) -> RenderFrame | list[RenderFrame] | None:
         gating = self.last_action
-        logging.debug(f"Action: {gating}, Reward: {self.reward}")
+        self.logger.debug(f"Action: {gating}, Reward: {self.reward}")
         return
 
     def save_results(self, filename: str | os.PathLike):
@@ -383,6 +389,11 @@ class TrainingNetEnv(NetEnv):
         self.num_passed = 0
         self.changing_freq = changing_freq
 
+        log_file = os.path.join(LOG_DIR, f"training_env_{os.getpid()}.txt")
+        fh = logging.FileHandler(filename=log_file)
+        fh.setLevel(logging.DEBUG)
+        self.logger.addHandler(fh)
+
     def step(
             self, action: ActType
     ) -> tuple[ObsType, SupportsFloat, bool, bool, dict[str, Any]]:
@@ -392,9 +403,10 @@ class TrainingNetEnv(NetEnv):
         done, info = res[2], res[-1]
         if done and info['success']:
             self.num_passed += 1
-            print(f"passed the job! ({self.num_passed})")
+            self.logger.info(f"passed the job! ({self.num_passed})")
             if self.num_passed == self.changing_freq:
-                print(f"The agent has already learn how to solve the problem. Change it to another one.")
+                self.logger.info(f"Great! The agent has already learn how to solve the problem. "
+                                 f"Change the flows to train the agent.")
                 self.flows = self.flow_generator(self.graph, len(self.flows))
                 self.num_passed = 0
 
