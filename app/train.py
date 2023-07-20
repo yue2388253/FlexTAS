@@ -25,6 +25,9 @@ NUM_FLOWS = 50
 
 DRL_ALG = 'A2C'
 
+MONITOR_DIR = os.path.join(OUT_DIR, "monitor")
+os.makedirs(MONITOR_DIR, exist_ok=True)
+
 
 def get_best_model_path():
     return os.path.join(OUT_DIR, f"best_model_{DRL_ALG}_{NUM_ENVS}")
@@ -32,13 +35,10 @@ def get_best_model_path():
 
 def make_env(num_flows, rank: int):
     def _init():
-        log_subdir = os.path.join(OUT_DIR, str(rank))
-        os.makedirs(log_subdir, exist_ok=True)
-
         graph = generate_cev()
         env = TrainingNetEnv(graph, generate_flows, num_flows)
         # env = generate_env("CEV", num_flows, rank)
-        env = Monitor(env, log_subdir)  # Wrap the environment with Monitor
+        env = Monitor(env, os.path.join(MONITOR_DIR, f'train_{rank}'))  # Wrap the environment with Monitor
         return env
 
     return _init
@@ -61,7 +61,9 @@ def train(num_time_steps=NUM_TIME_STEPS, num_flows=NUM_FLOWS):
     else:
         model = DrlScheduler.SUPPORTING_ALG[DRL_ALG]("MultiInputPolicy", env, policy_kwargs=policy_kwargs, verbose=1)
 
-    eval_env = SubprocVecEnv([lambda: generate_env("CEV", num_flows)])
+    eval_env = SubprocVecEnv([
+        lambda: Monitor(generate_env("CEV", num_flows), os.path.join(MONITOR_DIR, 'eval'))
+    ])
     callback = EvalCallback(eval_env, best_model_save_path=get_best_model_path(),
                             log_path=OUT_DIR, eval_freq=1000 * n_envs)
 
