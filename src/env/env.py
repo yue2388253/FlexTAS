@@ -277,14 +277,14 @@ class NetEnv(gym.Env):
                     accumulated_jitter = latest_time - earliest_time
                     if accumulated_jitter > flow.jitter:
                         raise SchedulingError(ErrorType.JitterExceed,
-                                              "Invalid due to jitter constraint.")
+                                              "jitter constraint unsatisfied.")
 
                 gating_time = latest_time if gating else None
                 end_time = latest_time + link.transmission_time(flow.payload)
 
                 if end_time > flow.period:
                     raise SchedulingError(ErrorType.PeriodExceed,
-                                          "Fail to find a valid solution.")
+                                          "injection time is too late")
 
                 operation = Operation(earliest_time, gating_time, latest_time, end_time)
 
@@ -303,7 +303,7 @@ class NetEnv(gym.Env):
                     operation.add(offset)
                     if operation.end_time > flow.period:
                         # cannot be scheduled
-                        raise SchedulingError(ErrorType.PeriodExceed, "Fail to find a valid solution.")
+                        raise SchedulingError(ErrorType.PeriodExceed, "timing isolation constraint unsatisfied.")
 
             gcl_added = 0
             if gating:
@@ -315,7 +315,7 @@ class NetEnv(gym.Env):
                     gcl_added = new_gcl - old_gcl
                 except RuntimeError:
                     raise SchedulingError(ErrorType.GatingExceed,
-                                          "Invalid due to gating constraint.")
+                                          "gating constraint unsatisfied.")
 
             # self.reward += 0.1
             self.reward = 1 - self.alpha * gcl_added / link.max_gcl_length - self.beta * wait_time / flow.e2e_delay
