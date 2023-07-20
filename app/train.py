@@ -9,7 +9,7 @@ from app.test import test
 from definitions import OUT_DIR
 from src.agent.encoder import FeaturesExtractor
 from src.env.env_helper import generate_env
-from src.env.env import TrainingNetEnv
+from src.env.env import NetEnv, TrainingNetEnv
 from src.lib.timing_decorator import timing_decorator
 from src.app.drl_scheduler import DrlScheduler
 from src.network.net import generate_linear_5, generate_cev, generate_flows
@@ -61,7 +61,7 @@ def train(num_time_steps=NUM_TIME_STEPS, num_flows=NUM_FLOWS):
     else:
         model = DrlScheduler.SUPPORTING_ALG[DRL_ALG]("MultiInputPolicy", env, policy_kwargs=policy_kwargs, verbose=1)
 
-    eval_env = SubprocVecEnv([make_env(num_flows, i) for i in range(n_envs, 2 * n_envs)])
+    eval_env = SubprocVecEnv([lambda: generate_env("CEV", num_flows)])
     callback = EvalCallback(eval_env, best_model_save_path=get_best_model_path(),
                             log_path=OUT_DIR, eval_freq=1000 * n_envs)
 

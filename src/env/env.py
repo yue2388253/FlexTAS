@@ -310,7 +310,6 @@ class NetEnv(gym.Env):
                     raise SchedulingError(ErrorType.GatingExceed,
                                           "Invalid due to gating constraint.")
 
-            # todo: re-design the reward function, refer to the paper for more info.
             # self.reward += 0.1
             self.reward = 1 - self.alpha * gcl_added / link.max_gcl_length - self.beta * wait_time / flow.e2e_delay
 
@@ -344,7 +343,9 @@ class NetEnv(gym.Env):
                 filename = os.path.join(OUT_DIR, f'schedule_rl_{id(self)}.log')
                 self.save_results(filename)
                 self.logger.info(f"Good job! Finish scheduling! Scheduling result is saved at {filename}.")
+
                 self.reward = len(self.flows)
+
                 return self.observation_space.sample(), self.reward, True, False, {'success': True}
 
         self.render()
@@ -379,18 +380,37 @@ class NetEnv(gym.Env):
 
 
 class TrainingNetEnv(NetEnv):
-    def __init__(self, graph, flow_generator, num_flows, changing_freq=100):
+    start_ratio = 0.5
+    step_ratio = 0.05
+
+    def __init__(self, graph, flow_generator, num_flows, changing_freq=20):
 
         self.flow_generator = flow_generator
+
+        self.num_flows_target = num_flows
+
+        # the number of flows newly added each time changing the env.
+        self.num_flows_step = int(num_flows * self.step_ratio)
+
+        # start with half of the target num_flows and incrementally add flows if agent has learnt to schedule.
+        num_flows = int(num_flows * self.start_ratio)
         flows = flow_generator(graph, num_flows)
+
         super().__init__(graph, flows)
+
         self.num_passed = 0
         self.changing_freq = changing_freq
 
         log_file = os.path.join(LOG_DIR, f"training_env_{os.getpid()}.txt")
         fh = logging.FileHandler(filename=log_file)
         fh.setLevel(logging.DEBUG)
+        # Create a formatter
+        formatter = logging.Formatter('%(asctime)s - %(levelname)s - %(message)s')
+        # Add the formatter to the handler
+        fh.setFormatter(formatter)
         self.logger.addHandler(fh)
+
+        self.logger.info(f"Start training with {num_flows} flows.")
 
     def step(
             self, action: ActType
@@ -402,10 +422,14 @@ class TrainingNetEnv(NetEnv):
         if done and info['success']:
             self.num_passed += 1
             self.logger.info(f"passed the job! ({self.num_passed})")
+
             if self.num_passed == self.changing_freq:
-                self.logger.info(f"Great! The agent has already learn how to solve the problem. "
-                                 f"Change the flows to train the agent.")
-                self.flows = self.flow_generator(self.graph, len(self.flows))
+                num_flows = min(self.num_flows_target, self.num_flows + self.num_flows_step)
+                flows = self.flow_generator(self.graph, num_flows)
+                super().__init__(self.graph, flows)
+                self.logger.info(f"Great! The agent has already learnt how to solve the problem. "
+                                 f"Change the flows to train the agent. num_flows: {num_flows}")
+
                 self.num_passed = 0
 
         return res
