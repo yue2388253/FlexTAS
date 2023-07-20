@@ -45,21 +45,25 @@ def make_env(num_flows, rank: int):
 
 
 @timing_decorator(logging.info)
-def train(num_time_steps=NUM_TIME_STEPS, num_flows=NUM_FLOWS):
+def train(num_time_steps=NUM_TIME_STEPS, num_flows=NUM_FLOWS, pre_trained_model=None):
     os.makedirs(OUT_DIR, exist_ok=True)
 
     n_envs = NUM_ENVS  # Number of environments to create
     env = SubprocVecEnv([make_env(num_flows, i) for i in range(n_envs)])
 
-    policy_kwargs = dict(
-        features_extractor_class=FeaturesExtractor,
-    )
-
-    if DRL_ALG == 'DQN':
-        model = DrlScheduler.SUPPORTING_ALG[DRL_ALG]("MultiInputPolicy", env, policy_kwargs=policy_kwargs, verbose=1,
-                                                     buffer_size=500_000)
+    if pre_trained_model is not None:
+        model = DrlScheduler.SUPPORTING_ALG[DRL_ALG].load(pre_trained_model)
+        model.set_env(env)
     else:
-        model = DrlScheduler.SUPPORTING_ALG[DRL_ALG]("MultiInputPolicy", env, policy_kwargs=policy_kwargs, verbose=1)
+        policy_kwargs = dict(
+            features_extractor_class=FeaturesExtractor,
+        )
+
+        if DRL_ALG == 'DQN':
+            model = DrlScheduler.SUPPORTING_ALG[DRL_ALG]("MultiInputPolicy", env, policy_kwargs=policy_kwargs, verbose=1,
+                                                         buffer_size=500_000)
+        else:
+            model = DrlScheduler.SUPPORTING_ALG[DRL_ALG]("MultiInputPolicy", env, policy_kwargs=policy_kwargs, verbose=1)
 
     eval_env = SubprocVecEnv([
         lambda: Monitor(generate_env("CEV", num_flows), os.path.join(MONITOR_DIR, 'eval'))
@@ -108,12 +112,14 @@ def plot_results(log_folder, title="Learning Curve"):
 
 
 if __name__ == "__main__":
+    # specify a existing model to train.
     parser = argparse.ArgumentParser()
     parser.add_argument('--time_steps', type=int, default=NUM_TIME_STEPS)
     parser.add_argument('--num_flows', type=int, nargs='?', default=NUM_FLOWS)
     parser.add_argument('--debug', action='store_true')
     parser.add_argument('--num_envs', type=int, default=NUM_ENVS)
     parser.add_argument('--alg', type=str, default=None)
+    parser.add_argument('--model', type=str, default=None)
     args = parser.parse_args()
 
     if args.alg is not None:
@@ -140,7 +146,7 @@ if __name__ == "__main__":
             continue
     assert MONITOR_DIR is not None
 
-    train(args.time_steps, num_flows=args.num_flows)
+    train(args.time_steps, num_flows=args.num_flows, pre_trained_model=args.model)
     plot_results(MONITOR_DIR)
 
     test('CEV', args.num_flows, NUM_ENVS, os.path.join(get_best_model_path(), "best_model"), DRL_ALG)
