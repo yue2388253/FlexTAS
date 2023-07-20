@@ -386,10 +386,16 @@ class NetEnv(gym.Env):
 
 
 class TrainingNetEnv(NetEnv):
-    start_ratio = 0.5
+    """
+    Use curriculum learning to help training.
+    Begin with an easy environment that contains a small set of flows for agent to learn,
+    increase the number of flows gradually to make the env harder if the agent can easily
+    pass the current env.
+    """
+    initial_ratio = 0.2
     step_ratio = 0.05
 
-    def __init__(self, graph, flow_generator, num_flows, changing_freq=20):
+    def __init__(self, graph, flow_generator, num_flows, changing_freq=10):
 
         self.flow_generator = flow_generator
 
@@ -399,8 +405,8 @@ class TrainingNetEnv(NetEnv):
         self.num_flows_step = int(num_flows * self.step_ratio)
 
         # start with half of the target num_flows and incrementally add flows if agent has learnt to schedule.
-        num_flows = int(num_flows * self.start_ratio)
-        flows = flow_generator(graph, num_flows)
+        num_flows_initial = int(num_flows * self.initial_ratio)
+        flows = flow_generator(graph, num_flows_initial)
 
         super().__init__(graph, flows)
 
@@ -416,7 +422,7 @@ class TrainingNetEnv(NetEnv):
         fh.setFormatter(formatter)
         self.logger.addHandler(fh)
 
-        self.logger.info(f"Start training with {num_flows} flows.")
+        self.logger.info(f"Start training with {num_flows_initial} flows.")
 
     def step(
             self, action: ActType
