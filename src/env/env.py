@@ -93,9 +93,16 @@ class _StateEncoder:
             link_id = self.graph.nodes[node]['link_id']
             link = self.env.link_dict[link_id]
 
+            link_utilization = 0
+            if len(self.env.links_operations[link]) != 0:
+                for flow, operation in self.env.links_operations[link]:
+                    link_utilization += (operation.end_time - operation.start_time) / flow.period
+            assert link_utilization <= 1
+
             link_gcl_feature = np.concatenate([
                 self.links_one_hot_dict[link_id],
                 [
+                    link_utilization,
                     link.gcl_cycle / Net.GCL_CYCLE_MAX,
                     link.gcl_length / Net.GCL_LENGTH_MAX
                 ]
