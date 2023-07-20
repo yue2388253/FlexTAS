@@ -344,9 +344,7 @@ class NetEnv(gym.Env):
                 filename = os.path.join(OUT_DIR, f'schedule_rl_{id(self)}.log')
                 self.save_results(filename)
                 self.logger.info(f"Good job! Finish scheduling! Scheduling result is saved at {filename}.")
-                # todo: reconsider the reward at the final stage
-                self.reward = 0
-                # self.reward += 100
+                self.reward = len(self.flows)
                 return self.observation_space.sample(), self.reward, True, False, {'success': True}
 
         self.render()
