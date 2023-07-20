@@ -25,8 +25,7 @@ NUM_FLOWS = 50
 
 DRL_ALG = 'A2C'
 
-MONITOR_DIR = os.path.join(OUT_DIR, "monitor")
-os.makedirs(MONITOR_DIR, exist_ok=True)
+MONITOR_ROOT_DIR = os.path.join(OUT_DIR, "monitor")
 
 
 def get_best_model_path():
@@ -127,8 +126,20 @@ if __name__ == "__main__":
         format='%(asctime)s - %(levelname)s - %(message)s',
     )
 
+    done = False
+    i = 0
+    MONITOR_DIR = None
+    while not done:
+        try:
+            MONITOR_DIR = os.path.join(MONITOR_ROOT_DIR, str(i))
+            os.makedirs(MONITOR_DIR, exist_ok=False)
+            done = True
+        except OSError:
+            i += 1
+            continue
+    assert MONITOR_DIR is not None
+
     train(args.time_steps, num_flows=args.num_flows)
-    for i in range(NUM_ENVS):
-        plot_results(os.path.join(OUT_DIR, str(i)))
+    plot_results(MONITOR_DIR)
 
     test('CEV', args.num_flows, NUM_ENVS, os.path.join(get_best_model_path(), "best_model"), DRL_ALG)
