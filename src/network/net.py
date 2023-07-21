@@ -1,10 +1,10 @@
+import math
+import networkx as nx
+import numpy as np
+import random
 import typing
 
-import networkx as nx
-import random
-import math
-
-import numpy as np
+from src.lib.config import ConfigManager
 
 
 PERIOD_SET = [2000, 4000, 8000, 16000, 32000, 64000, 128000]
@@ -23,9 +23,6 @@ class Net:
 
     # propagation delay
     DELAY_PROP = 1
-
-    LINK_RATE = 1e2
-    DELAY_INTERFERENCE = math.ceil((PAYLOAD_MAX * 8 + 96 + 8 * 8) / LINK_RATE)  # IFG + preamble + interference packet
 
     # This value should be set carefully. A large value like 128,000 would make the program slow.
     GCL_CYCLE_MAX = 128000
@@ -92,6 +89,8 @@ class Link:
         self.gcl_cycle = 1
         self.gcl_length = 0
         self.max_gcl_length = Net.GCL_LENGTH_MAX
+        self.link_rate = ConfigManager().config.getint('Net', 'link_speed')
+
         self.reserved_durations: list[Duration] = []
         self.reserved_binaries = Duration(None, None, Net.GCL_CYCLE_MAX)
 
@@ -112,8 +111,11 @@ class Link:
         self.reserved_durations = []
         self.reserved_binaries = Duration(None, None, Net.GCL_CYCLE_MAX)
 
+    def interference_time(self) -> int:
+        return math.ceil((Net.PAYLOAD_MAX * 8 + 96 + 8 * 8) / self.link_rate)  # IFG + preamble + interference packet
+
     def transmission_time(self, payload: int) -> int:
-        return math.ceil(payload * 8 / Net.LINK_RATE)
+        return math.ceil(payload * 8 / self.link_rate)
 
     def safe_distance(self) -> int:
         # inter-frame gap
@@ -196,9 +198,9 @@ class Flow:
     def _wait_time_allowed(self) -> int:
         num_hops = len(self.path)
         num_switches = num_hops - 1
-        return self.e2e_delay - \
-            num_hops * (math.ceil(self.payload * 8 / Net.LINK_RATE) + Net.SYNC_PRECISION + Net.DELAY_PROP) - \
-            num_switches * Net.DELAY_PROC_MAX
+        transmission_time = num_hops * math.ceil(self.payload * 8 / ConfigManager().config.getint('Net', 'link_speed'))
+        return self.e2e_delay - transmission_time - num_hops * (Net.SYNC_PRECISION + Net.DELAY_PROP) \
+            - num_switches * Net.DELAY_PROC_MAX
 
 
 def generate_linear_5() -> nx.DiGraph:

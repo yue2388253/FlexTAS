@@ -11,6 +11,7 @@ from definitions import OUT_DIR
 from src.agent.encoder import FeaturesExtractor
 from src.env.env_helper import generate_env
 from src.env.env import NetEnv, TrainingNetEnv
+from src.lib.config import ConfigManager
 from src.lib.timing_decorator import timing_decorator
 from src.app.drl_scheduler import DrlScheduler
 from src.network.net import generate_linear_5, generate_cev, generate_flows, Net
@@ -129,7 +130,6 @@ if __name__ == "__main__":
     parser.add_argument('--num_envs', type=int, default=NUM_ENVS)
     parser.add_argument('--alg', type=str, default=None)
     parser.add_argument('--model', type=str, default=None)
-    parser.add_argument('--link_speed', type=int, default=100)
     parser.add_argument('--topo', type=str, default="CEV")
     args = parser.parse_args()
 
@@ -138,7 +138,6 @@ if __name__ == "__main__":
         DRL_ALG = args.alg
 
     TOPO = args.topo
-    Net.LINK_RATE = args.link_speed
 
     NUM_ENVS = args.num_envs
     logging.basicConfig(

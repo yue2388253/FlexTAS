@@ -278,7 +278,7 @@ class NetEnv(gym.Env):
                     flow.payload) + Net.SYNC_PRECISION + Net.DELAY_PROP + Net.DELAY_PROC_MAX
 
                 if not gating:
-                    wait_time = Net.DELAY_INTERFERENCE
+                    wait_time = link.interference_time()
                     latest_time += wait_time
 
                 if (not gating) and (hop_index == len(flow.path) - 1):
