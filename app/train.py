@@ -34,16 +34,23 @@ def get_best_model_path():
     return os.path.join(OUT_DIR, f"best_model_{TOPO}_{DRL_ALG}")
 
 
-def make_env(num_flows, rank: int, topo: str):
+def make_env(num_flows, rank: int, topo: str, training: bool = True):
     def _init():
-        if topo == "CEV":
-            graph = generate_cev()
-        elif topo == "L5":
-            graph = generate_linear_5()
+        if training:
+            if topo == "CEV":
+                graph = generate_cev()
+            elif topo == "L5":
+                graph = generate_linear_5()
+            else:
+                raise ValueError(f"Unknown topo {topo}")
+
+            env = TrainingNetEnv(graph, generate_flows, num_flows)
         else:
-            raise ValueError(f"Unknown topo {topo}")
-        env = TrainingNetEnv(graph, generate_flows, num_flows)
-        env = Monitor(env, os.path.join(MONITOR_DIR, f'train_{rank}'))  # Wrap the environment with Monitor
+            env = generate_env(topo, num_flows)
+
+        # Wrap the environment with Monitor
+        env = Monitor(env, os.path.join(MONITOR_DIR, f'{"train" if training else "eval"}_{rank}'))
+
         return env
 
     return _init
@@ -75,9 +82,7 @@ def train(topo: str, num_time_steps, num_flows=NUM_FLOWS, pre_trained_model=None
         else:
             model = DrlScheduler.SUPPORTING_ALG[DRL_ALG]("MultiInputPolicy", env, policy_kwargs=policy_kwargs, verbose=1)
 
-    eval_env = SubprocVecEnv([
-        lambda: Monitor(generate_env("CEV", num_flows), os.path.join(MONITOR_DIR, f'eval{j}')) for j in range(n_envs)
-    ])
+    eval_env = SubprocVecEnv([make_env(num_flows, i, topo, training=False) for i in range(n_envs)])
     callback = EvalCallback(eval_env, best_model_save_path=get_best_model_path(),
                             log_path=OUT_DIR, eval_freq=1000 * n_envs)
 
