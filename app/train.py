@@ -48,6 +48,11 @@ def make_env(num_flows, rank: int):
 def train(num_time_steps=NUM_TIME_STEPS, num_flows=NUM_FLOWS, pre_trained_model=None):
     os.makedirs(OUT_DIR, exist_ok=True)
 
+    if pre_trained_model is not None:
+        # has already a pre-trained model, no need to use curriculum learning.
+        TrainingNetEnv.initial_ratio = 1.0
+        TrainingNetEnv.step_ratio = 0
+
     n_envs = NUM_ENVS  # Number of environments to create
     env = SubprocVecEnv([make_env(num_flows, i) for i in range(n_envs)])
 
