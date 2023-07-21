@@ -13,14 +13,14 @@ from src.env.env_helper import generate_env
 from src.env.env import NetEnv, TrainingNetEnv
 from src.lib.timing_decorator import timing_decorator
 from src.app.drl_scheduler import DrlScheduler
-from src.network.net import generate_linear_5, generate_cev, generate_flows
+from src.network.net import generate_linear_5, generate_cev, generate_flows, Net
 
 from stable_baselines3.common.callbacks import EvalCallback
 from stable_baselines3.common.results_plotter import load_results, ts2xy
 from stable_baselines3.common.monitor import Monitor
 from stable_baselines3.common.vec_env import SubprocVecEnv
 
-NUM_TIME_STEPS = 10000_00
+TOPO = 'CEV'
 NUM_ENVS = multiprocessing.cpu_count()
 NUM_FLOWS = 50
 
@@ -30,14 +30,18 @@ MONITOR_ROOT_DIR = os.path.join(OUT_DIR, "monitor")
 
 
 def get_best_model_path():
-    return os.path.join(OUT_DIR, f"best_model_{DRL_ALG}_{NUM_ENVS}")
+    return os.path.join(OUT_DIR, f"best_model_{TOPO}_{DRL_ALG}")
 
 
-def make_env(num_flows, rank: int):
+def make_env(num_flows, rank: int, topo: str):
     def _init():
-        graph = generate_cev()
+        if topo == "CEV":
+            graph = generate_cev()
+        elif topo == "L5":
+            graph = generate_linear_5()
+        else:
+            raise ValueError(f"Unknown topo {topo}")
         env = TrainingNetEnv(graph, generate_flows, num_flows)
-        # env = generate_env("CEV", num_flows, rank)
         env = Monitor(env, os.path.join(MONITOR_DIR, f'train_{rank}'))  # Wrap the environment with Monitor
         return env
 
@@ -45,7 +49,7 @@ def make_env(num_flows, rank: int):
 
 
 @timing_decorator(logging.info)
-def train(num_time_steps=NUM_TIME_STEPS, num_flows=NUM_FLOWS, pre_trained_model=None):
+def train(topo: str, num_time_steps, num_flows=NUM_FLOWS, pre_trained_model=None):
     os.makedirs(OUT_DIR, exist_ok=True)
 
     if pre_trained_model is not None:
@@ -54,7 +58,7 @@ def train(num_time_steps=NUM_TIME_STEPS, num_flows=NUM_FLOWS, pre_trained_model=
         TrainingNetEnv.step_ratio = 0
 
     n_envs = NUM_ENVS  # Number of environments to create
-    env = SubprocVecEnv([make_env(num_flows, i) for i in range(n_envs)])
+    env = SubprocVecEnv([make_env(num_flows, i, topo) for i in range(n_envs)])
 
     if pre_trained_model is not None:
         model = DrlScheduler.SUPPORTING_ALG[DRL_ALG].load(pre_trained_model, env)
@@ -64,6 +68,7 @@ def train(num_time_steps=NUM_TIME_STEPS, num_flows=NUM_FLOWS, pre_trained_model=
         )
 
         if DRL_ALG == 'DQN':
+            # limit the buffer size.
             model = DrlScheduler.SUPPORTING_ALG[DRL_ALG]("MultiInputPolicy", env, policy_kwargs=policy_kwargs, verbose=1,
                                                          buffer_size=500_000)
         else:
@@ -116,19 +121,24 @@ def plot_results(log_folder, title="Learning Curve"):
 
 
 if __name__ == "__main__":
-    # specify a existing model to train.
+    # specify an existing model to train.
     parser = argparse.ArgumentParser()
-    parser.add_argument('--time_steps', type=int, default=NUM_TIME_STEPS)
+    parser.add_argument('--time_steps', type=int, required=True)
     parser.add_argument('--num_flows', type=int, nargs='?', default=NUM_FLOWS)
     parser.add_argument('--debug', action='store_true')
     parser.add_argument('--num_envs', type=int, default=NUM_ENVS)
     parser.add_argument('--alg', type=str, default=None)
     parser.add_argument('--model', type=str, default=None)
+    parser.add_argument('--link_speed', type=int, default=100)
+    parser.add_argument('--topo', type=str, default="CEV")
     args = parser.parse_args()
 
     if args.alg is not None:
         assert args.alg in DrlScheduler.SUPPORTING_ALG, ValueError(f"Unknown alg {args.alg}")
         DRL_ALG = args.alg
+
+    TOPO = args.topo
+    Net.LINK_RATE = args.link_speed
 
     NUM_ENVS = args.num_envs
     logging.basicConfig(
@@ -150,9 +160,9 @@ if __name__ == "__main__":
             continue
     assert MONITOR_DIR is not None
 
-    train(args.time_steps, num_flows=args.num_flows, pre_trained_model=args.model)
+    train(args.topo, args.time_steps, num_flows=args.num_flows, pre_trained_model=args.model)
 
     # MONITOR_DIR = os.path.join(MONITOR_ROOT_DIR, str(1))
     plot_results(MONITOR_DIR)
 
-    test('CEV', args.num_flows, NUM_ENVS, os.path.join(get_best_model_path(), "best_model"), DRL_ALG)
+    test(args.topo, args.num_flows, NUM_ENVS, os.path.join(get_best_model_path(), "best_model"), DRL_ALG)

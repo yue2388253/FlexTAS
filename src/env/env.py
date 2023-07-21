@@ -4,6 +4,7 @@ import gymnasium as gym
 from gymnasium import spaces
 from gymnasium.core import ActType, ObsType, RenderFrame
 import logging
+import math
 import numpy as np
 import networkx as nx
 import os
@@ -352,7 +353,7 @@ class NetEnv(gym.Env):
             self.flows_scheduled[self.flow_index] = 1
             self.flow_index += 1
 
-            if self.flow_index % int(self.num_flows * 0.1) == 0:
+            if self.flow_index % math.ceil(self.num_flows * 0.1) == 0:
                 # give an extra reward when the agent schedule another set of flows.
                 self.reward += self.gamma * ((self.flow_index / self.num_flows) ** 2)
 
@@ -412,10 +413,10 @@ class TrainingNetEnv(NetEnv):
         self.num_flows_target = num_flows
 
         # the number of flows newly added each time changing the env.
-        self.num_flows_step = int(num_flows * self.step_ratio)
+        self.num_flows_step = math.ceil(num_flows * self.step_ratio)
 
         # start with half of the target num_flows and incrementally add flows if agent has learnt to schedule.
-        num_flows_initial = int(num_flows * self.initial_ratio)
+        num_flows_initial = math.ceil(num_flows * self.initial_ratio)
         flows = flow_generator(graph, num_flows_initial)
 
         super().__init__(graph, flows)
