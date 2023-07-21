@@ -137,7 +137,7 @@ class _StateEncoder:
 class NetEnv(gym.Env):
     alpha: float = 1
     beta: float = 10
-    gamma: float = 0.01
+    gamma: float = 0.1
 
     def __init__(self, graph: nx.DiGraph = None, flows: list[Flow] = None):
         super().__init__()
@@ -354,7 +354,7 @@ class NetEnv(gym.Env):
 
             if self.flow_index % int(self.num_flows * 0.1) == 0:
                 # give an extra reward when the agent schedule another set of flows.
-                self.reward += self.gamma * (self.flow_index ** 2)
+                self.reward += self.gamma * ((self.flow_index / self.num_flows) ** 2)
 
             if all(self.flows_scheduled):
                 # all flows are scheduled.
