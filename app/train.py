@@ -146,6 +146,8 @@ if __name__ == "__main__":
     assert MONITOR_DIR is not None
 
     train(args.time_steps, num_flows=args.num_flows, pre_trained_model=args.model)
+
+    # MONITOR_DIR = os.path.join(MONITOR_ROOT_DIR, str(1))
     plot_results(MONITOR_DIR)
 
     test('CEV', args.num_flows, NUM_ENVS, os.path.join(get_best_model_path(), "best_model"), DRL_ALG)
