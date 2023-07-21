@@ -61,7 +61,7 @@ def run_tests(topo, num_flow, i, best_model, time_limit, seed):
     schedulers = [
         ('smt', SmtScheduler(graph, flows, timeout_s=time_limit)),
         ('no_wait_smt', NoWaitSmtScheduler(graph, flows, timeout_s=time_limit)),
-        ('drl', DrlScheduler(graph, flows, time_limit, num_envs=get_num_envs(best_model)))
+        ('drl', DrlScheduler(graph, flows, time_limit, num_envs=1))
     ]
     schedulers[-1][1].load_model(best_model, alg=get_alg(best_model))
 
@@ -75,12 +75,8 @@ def run_tests(topo, num_flow, i, best_model, time_limit, seed):
     return results
 
 
-def get_num_envs(best_model):
-    return int(re.search(r"_([^_]+)_(\d+)(\.zip)?$", os.path.basename(best_model)).group(2))
-
-
 def get_alg(best_model):
-    return re.search(r"_([^_]+)_(\d+)(\.zip)?$", os.path.basename(best_model)).group(1)
+    return re.search(r"best_model_([^_\.]+)", os.path.basename(best_model)).group(1)
 
 
 if __name__ == '__main__':
