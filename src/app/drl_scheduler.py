@@ -76,8 +76,7 @@ class DrlScheduler(BaseScheduler):
         del self.model
         assert os.path.isfile(f"{filepath}.zip"), f"No such file {filepath}"
         logging.info(f"loading model at {filepath}.zip")
-        self.model = self.SUPPORTING_ALG[alg].load(filepath)
-        self.model.set_env(self.env)
+        self.model = self.SUPPORTING_ALG[alg].load(filepath, self.env)
 
     @timing_decorator(logging.info)
     def schedule(self):

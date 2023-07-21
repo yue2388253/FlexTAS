@@ -52,8 +52,7 @@ def train(num_time_steps=NUM_TIME_STEPS, num_flows=NUM_FLOWS, pre_trained_model=
     env = SubprocVecEnv([make_env(num_flows, i) for i in range(n_envs)])
 
     if pre_trained_model is not None:
-        model = DrlScheduler.SUPPORTING_ALG[DRL_ALG].load(pre_trained_model)
-        model.set_env(env)
+        model = DrlScheduler.SUPPORTING_ALG[DRL_ALG].load(pre_trained_model, env)
     else:
         policy_kwargs = dict(
             features_extractor_class=FeaturesExtractor,
