@@ -72,8 +72,10 @@ class DrlScheduler(BaseScheduler):
         )
         self.model = PPO("MultiInputPolicy", self.env, policy_kwargs=policy_kwargs, verbose=1)
 
-    def load_model(self, filepath, alg: str = 'PPO'):
+    def load_model(self, filepath: str, alg: str = 'PPO'):
         del self.model
+        if filepath.endswith(r".zip"):
+            filepath = filepath[:-4]
         assert os.path.isfile(f"{filepath}.zip"), f"No such file {filepath}"
         logging.info(f"loading model at {filepath}.zip")
         self.model = self.SUPPORTING_ALG[alg].load(filepath, self.env)
