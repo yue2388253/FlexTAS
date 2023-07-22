@@ -4,8 +4,6 @@ import numpy as np
 import random
 import typing
 
-from src.lib.config import ConfigManager
-
 
 PERIOD_SET = [2000, 4000, 8000, 16000, 32000, 64000, 128000]
 
@@ -84,12 +82,12 @@ class Duration:
 class Link:
     embedding_length = 3
 
-    def __init__(self, link_id):
+    def __init__(self, link_id, link_rate):
         self.link_id = link_id
         self.gcl_cycle = 1
         self.gcl_length = 0
         self.max_gcl_length = Net.GCL_LENGTH_MAX
-        self.link_rate = ConfigManager().config.getint('Net', 'link_speed')
+        self.link_rate = link_rate
 
         self.reserved_durations: list[Duration] = []
         self.reserved_binaries = Duration(None, None, Net.GCL_CYCLE_MAX)
@@ -175,8 +173,6 @@ class Flow:
         assert type(self.jitter) is int, f"jitter ({self.jitter}) must be an integer."
         assert self.jitter <= self.period, f"jitter ({self.jitter}) must be not greater than period ({self.period})."
 
-        self.wait_time_allowed = self._wait_time_allowed()
-
     def __hash__(self):
         return hash(self.flow_id)
 
@@ -195,10 +191,11 @@ class Flow:
                          self.e2e_delay / self.period,
                          self.jitter / self.period])
 
-    def _wait_time_allowed(self) -> int:
+    def _wait_time_allowed(self, link_rate: int) -> int:
+        assert isinstance(link_rate, int) and link_rate > 0
         num_hops = len(self.path)
         num_switches = num_hops - 1
-        transmission_time = num_hops * math.ceil(self.payload * 8 / ConfigManager().config.getint('Net', 'link_speed'))
+        transmission_time = num_hops * math.ceil(self.payload * 8 / link_rate)
         return self.e2e_delay - transmission_time - num_hops * (Net.SYNC_PRECISION + Net.DELAY_PROP) \
             - num_switches * Net.DELAY_PROC_MAX
 
@@ -303,11 +300,11 @@ def generate_cev() -> nx.DiGraph:
     return graph
 
 
-def transform_line_graph(graph) -> (nx.Graph, typing.Dict):
+def transform_line_graph(graph, link_rate) -> (nx.Graph, typing.Dict):
     line_graph = nx.line_graph(graph)
     links_dict = {}
     for node in line_graph.nodes:
-        links_dict[node] = Link(node)
+        links_dict[node] = Link(node, link_rate)
     return line_graph, links_dict
 
 

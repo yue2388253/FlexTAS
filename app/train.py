@@ -35,6 +35,9 @@ def get_best_model_path():
 
 
 def make_env(num_flows, rank: int, topo: str, training: bool = True):
+    initial_ratio = ConfigManager().config.getfloat('Training', 'cl_initial_ratio')
+    step_ratio = ConfigManager().config.getfloat('Training', 'cl_step_ratio')
+
     def _init():
         if training:
             if topo == "CEV":
@@ -44,7 +47,10 @@ def make_env(num_flows, rank: int, topo: str, training: bool = True):
             else:
                 raise ValueError(f"Unknown topo {topo}")
 
-            env = TrainingNetEnv(graph, generate_flows, num_flows)
+            env = TrainingNetEnv(graph, generate_flows, num_flows,
+                                 initial_ratio=initial_ratio,
+                                 step_ratio=step_ratio
+                                 )
         else:
             env = generate_env(topo, num_flows)
 
@@ -62,8 +68,8 @@ def train(topo: str, num_time_steps, num_flows=NUM_FLOWS, pre_trained_model=None
 
     if pre_trained_model is not None:
         # has already a pre-trained model, no need to use curriculum learning.
-        TrainingNetEnv.initial_ratio = 1.0
-        TrainingNetEnv.step_ratio = 0
+        ConfigManager().config.set('Training', 'cl_initial_ratio', '1.0')
+        ConfigManager().config.set('Training', 'cl_step_ratio', '0')
 
     n_envs = NUM_ENVS  # Number of environments to create
     env = SubprocVecEnv([make_env(num_flows, i, topo) for i in range(n_envs)])
@@ -136,11 +142,19 @@ if __name__ == "__main__":
     parser.add_argument('--alg', type=str, default=None)
     parser.add_argument('--model', type=str, default=None)
     parser.add_argument('--topo', type=str, default="CEV")
+    parser.add_argument('--link_rate', default=None)
     args = parser.parse_args()
 
     if args.alg is not None:
         assert args.alg in DrlScheduler.SUPPORTING_ALG, ValueError(f"Unknown alg {args.alg}")
         DRL_ALG = args.alg
+
+    if args.link_rate is not None:
+        link_rate = args.link_rate
+        support_link_rates = [100, 1000]
+        assert int(link_rate) in support_link_rates, \
+            f"Unknown link rate {link_rate}, which is not in supported link rates {support_link_rates}"
+        ConfigManager().config.set('Net', 'link_rate', str(link_rate))
 
     TOPO = args.topo
 

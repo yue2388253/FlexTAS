@@ -7,6 +7,8 @@ from definitions import CONFIG_DIR
 class ConfigManager:
     """
     A singleton class that read the config file only once at the first time of initialization.
+
+    Note that it might not work as expected in a multiprocessing env (e.g. `SubprocVec` in `stable baselines3`).
     """
     _instance = None
     _is_initialized = False

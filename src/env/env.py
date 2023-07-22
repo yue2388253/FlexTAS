@@ -140,7 +140,8 @@ class NetEnv(gym.Env):
     beta: float = 10
     gamma: float = 0.1
 
-    def __init__(self, graph: nx.DiGraph = None, flows: list[Flow] = None):
+    def __init__(self, graph: nx.DiGraph = None, flows: list[Flow] = None,
+                 link_rate=100):
         super().__init__()
 
         if graph is None and flows is None:
@@ -154,7 +155,7 @@ class NetEnv(gym.Env):
         self.num_flows: int = len(self.flows)
         self.line_graph: nx.Graph
         self.link_dict: dict[str, Link]
-        self.line_graph, self.link_dict = transform_line_graph(self.graph)
+        self.line_graph, self.link_dict = transform_line_graph(self.graph, link_rate)
 
         self.flows_operations: dict[Flow, list[tuple[Link, Operation]]] = defaultdict(list)
         self.links_operations: dict[Link, list[tuple[Flow, Operation]]] = defaultdict(list)
@@ -403,20 +404,18 @@ class TrainingNetEnv(NetEnv):
     increase the number of flows gradually to make the env harder if the agent can easily
     pass the current env.
     """
-    initial_ratio = 0.2
-    step_ratio = 0.05
-
-    def __init__(self, graph, flow_generator, num_flows, changing_freq=10):
+    def __init__(self, graph, flow_generator, num_flows,
+                 initial_ratio=0.2, step_ratio=0.05, changing_freq=10):
 
         self.flow_generator = flow_generator
 
         self.num_flows_target = num_flows
 
         # the number of flows newly added each time changing the env.
-        self.num_flows_step = math.ceil(num_flows * self.step_ratio)
+        self.num_flows_step = math.ceil(num_flows * step_ratio)
 
         # start with half of the target num_flows and incrementally add flows if agent has learnt to schedule.
-        num_flows_initial = math.ceil(num_flows * self.initial_ratio)
+        num_flows_initial = math.ceil(num_flows * initial_ratio)
         flows = flow_generator(graph, num_flows_initial)
 
         super().__init__(graph, flows)

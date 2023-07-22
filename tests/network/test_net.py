@@ -97,7 +97,7 @@ class TestFlow(unittest.TestCase):
 
     def test_flow_wait_time_budget(self):
         flow = self.flows[0]
-        self.assertEqual(flow.wait_time_allowed, 1643)
+        self.assertEqual(flow._wait_time_allowed(100), 1643)
 
     def test_path(self):
         print(self.flows[0].path)
