@@ -1,3 +1,4 @@
+from collections import defaultdict
 import itertools
 import logging
 import os
@@ -12,6 +13,95 @@ from src.app.drl_scheduler import DrlScheduler
 from src.lib.config import ConfigManager
 from src.lib.execute import execute_from_command_line
 from src.network.net import generate_linear_5, generate_cev, generate_flows
+
+
+class SchedulerManager:
+    def __init__(self, topo, best_model, time_limit, num_flows, seed, num_tests):
+        # [scheduler, [seed, # of flows]]
+        self.scheduler_capacity = defaultdict(lambda: defaultdict(None))
+
+        self.topo = topo
+        self.best_model = best_model
+        self.time_limit = time_limit
+        self.num_flows = sorted(num_flows)
+        self.seed = seed
+        self.num_tests = num_tests
+
+    def can_schedule(self, scheduler_str, num_flows, seed):
+        max_flows = self.scheduler_capacity[scheduler_str][seed]
+        return max_flows is None or num_flows <= max_flows
+
+    def update_capacity(self, scheduler_str, num_flows, seed, success):
+        max_flows = self.scheduler_capacity[scheduler_str][seed]
+        if success:
+            if max_flows is None or num_flows > max_flows:
+                self.scheduler_capacity[scheduler_str][seed] = num_flows
+        elif max_flows is None or num_flows < max_flows:
+            self.scheduler_capacity[scheduler_str][seed] = num_flows - 1
+
+    def run_dichotomy(self) -> pd.DataFrame:
+        schedulers = [
+            ('smt', SmtScheduler),
+            ('smt_no_wait', NoWaitSmtScheduler),
+            ('drl', DrlScheduler)
+        ]
+        # [scheduler, [seed, [num_flows, (is_scheduled, time)]]]
+        res_dict = defaultdict(
+            lambda: defaultdict(
+                lambda: defaultdict(lambda: None)
+            )
+        )
+
+        for scheduler_str, scheduler_cls in schedulers:
+            for seed in range(self.seed, self.seed+self.num_tests):
+                low = 0
+                high = len(self.num_flows) - 1
+                while low <= high:
+                    mid = (low + high) // 2
+
+                    num_flows = self.num_flows[mid]
+                    graph = get_graph(self.topo)
+                    flows = generate_flows(graph, num_flows, seed=seed)
+
+                    scheduler = scheduler_cls(graph, flows, timeout_s=self.time_limit)
+                    if isinstance(scheduler, DrlScheduler):
+                        scheduler.load_model(self.best_model)
+
+                    start_time = time.time()
+                    logging.info(f"Use [{scheduler_str}] Scheduling {num_flows} flows, seed {seed}")
+                    is_scheduled = scheduler.schedule()
+
+                    elapsed_time = time.time() - start_time
+
+                    res_dict[scheduler_str][seed][num_flows] = is_scheduled, elapsed_time
+
+                    if is_scheduled:
+                        for i in range(low, mid):
+                            res_dict[scheduler_str][seed][self.num_flows[i]] = (True, 0)
+                        low = mid + 1
+                    else:
+                        for i in range(mid+1, high+1):
+                            res_dict[scheduler_str][seed][self.num_flows[i]] = (False, self.time_limit)
+                        high = mid - 1
+
+        # convert res_dict to df
+        column_names = ['topo', 'num_flows', 'seed',
+                        'smt_scheduled', 'smt_time',
+                        'smt_scheduled_no_wait', 'smt_time_no_wait',
+                        'drl_scheduled', 'drl_time'
+                        ]
+
+        res = []
+        for num_flows, seed in itertools.product(self.num_flows, range(self.seed, self.seed+self.num_tests)):
+            res.append(
+                [self.topo, num_flows, seed,
+                 *res_dict['smt'][seed][num_flows],
+                 *res_dict['smt_no_wait'][seed][num_flows],
+                 *res_dict['drl'][seed][num_flows],
+                 ]
+            )
+
+        return pd.DataFrame(columns=column_names, data=res)
 
 
 def schedule(scheduler):
@@ -38,22 +128,11 @@ def main(num_flows: str, num_tests: int, best_model: str, seed: int = None,
     seed = seed or random.randint(0, 10000)
     num_flows = map(int, num_flows.split(',')) if isinstance(num_flows, str) else num_flows
 
+    scheduler_manager = SchedulerManager(topo, best_model, time_limit, num_flows, seed, num_tests)
+    df = scheduler_manager.run_dichotomy()
+
     filename = os.path.join(OUT_DIR, f'schedule_stat_{topo}_{num_tests}_{seed}_{time_limit}.csv')
-    column_names = ['topo', 'num_flows', 'index', 'seed',
-                    'smt_scheduled', 'smt_time',
-                    'smt_scheduled_no_wait', 'smt_time_no_wait',
-                    'drl_scheduled', 'drl_time',
-                    'ratio_drl2smt']
-    df = pd.DataFrame(columns=column_names)
-
-    for num_flow, i in itertools.product(num_flows, range(num_tests)):
-        result = run_tests(topo, num_flow, i, best_model, time_limit, seed)
-
-        # continuously write the results to avoid losing the results in case the process gets terminated unexpectedly.
-        df_temp = pd.DataFrame([result], columns=column_names)
-        df = pd.concat([df, df_temp], ignore_index=True)
-        df.to_csv(filename, index=False)
-
+    df.to_csv(filename, index=False)
     logging.info(f"scheduling statistics is saved to {filename}")
 
 
