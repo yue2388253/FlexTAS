@@ -37,9 +37,8 @@ def main(num_flows: str, num_tests: int, best_model: str, seed: int = None,
 
     seed = seed or random.randint(0, 10000)
     num_flows = map(int, num_flows.split(',')) if isinstance(num_flows, str) else num_flows
-    topos = topo.split(',')
 
-    filename = os.path.join(OUT_DIR, f'schedule_stat_{topos}_{num_tests}_{seed}_{time_limit}.csv')
+    filename = os.path.join(OUT_DIR, f'schedule_stat_{topo}_{num_tests}_{seed}_{time_limit}.csv')
     column_names = ['topo', 'num_flows', 'index', 'seed',
                     'smt_scheduled', 'smt_time',
                     'smt_scheduled_no_wait', 'smt_time_no_wait',
@@ -47,7 +46,7 @@ def main(num_flows: str, num_tests: int, best_model: str, seed: int = None,
                     'ratio_drl2smt']
     df = pd.DataFrame(columns=column_names)
 
-    for topo, num_flow, i in itertools.product(topos, num_flows, range(num_tests)):
+    for num_flow, i in itertools.product(num_flows, range(num_tests)):
         result = run_tests(topo, num_flow, i, best_model, time_limit, seed)
 
         # continuously write the results to avoid losing the results in case the process gets terminated unexpectedly.
