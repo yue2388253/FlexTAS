@@ -16,5 +16,5 @@ class TestSmt(unittest.TestCase):
     def test_time_limit(self):
         logging.basicConfig(level=logging.DEBUG)
         graph, flows = generate_net_flows_from_json(os.path.join(ROOT_DIR, 'data/input/FlexTAS_CEV_100_100.json'))
-        scheduler = SmtScheduler(graph, flows, 5)
+        scheduler = SmtScheduler(graph, flows, timeout_s=5)
         self.assertFalse(scheduler.schedule())

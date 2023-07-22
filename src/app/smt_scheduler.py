@@ -13,8 +13,12 @@ from src.app.scheduler import BaseScheduler
 
 
 class SmtScheduler(BaseScheduler):
-    def __init__(self, graph: nx.Graph, flows: list[Flow], timeout_s: int = None):
-        super().__init__(graph, flows, timeout_s)
+    def __init__(self, graph: nx.DiGraph, flows: list[Flow], **kwargs):
+        super().__init__(graph, flows, **kwargs)
+
+        self.links_dict: dict[str, Link] = {
+            link_id: Link(link_id, self.link_rate) for link_id in nx.line_graph(self.graph).nodes
+        }
 
         self.num_queues = 1
 
@@ -28,10 +32,9 @@ class SmtScheduler(BaseScheduler):
         self.constraints_set = []
         self.model: Optional[z3.ModelRef] = None
 
-        if timeout_s is not None:
-            assert isinstance(timeout_s, int)
-            # the `timeout` param of z3 is in millisecond unit.
-            z3.set_param("timeout", timeout_s * 1000)
+        assert isinstance(self.timeout_s, int)
+        # the `timeout` param of z3 is in millisecond unit.
+        z3.set_param("timeout", self.timeout_s * 1000)
 
     @timing_decorator(logging.info)
     def schedule(self) -> bool:

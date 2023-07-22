@@ -9,6 +9,7 @@ import time
 from definitions import OUT_DIR
 from src.app.smt_scheduler import SmtScheduler, NoWaitSmtScheduler
 from src.app.drl_scheduler import DrlScheduler
+from src.lib.config import ConfigManager
 from src.lib.execute import execute_from_command_line
 from src.network.net import generate_linear_5, generate_cev, generate_flows
 
@@ -29,7 +30,11 @@ def get_graph(topo):
     raise ValueError(f"Unknown graph type {topo}")
 
 
-def main(num_flows: str, num_tests: int, best_model: str, seed: int = None, time_limit: int = 300, topo: str = 'L5'):
+def main(num_flows: str, num_tests: int, best_model: str, seed: int = None,
+         link_rate: int = None, time_limit: int = 300, topo: str = 'L5'):
+    if link_rate is not None:
+        ConfigManager().config.set('Net', 'link_rate', str(link_rate))
+
     seed = seed or random.randint(0, 10000)
     num_flows = map(int, num_flows.split(',')) if isinstance(num_flows, str) else num_flows
     topos = topo.split(',')
@@ -61,7 +66,7 @@ def run_tests(topo, num_flow, i, best_model, time_limit, seed):
     schedulers = [
         ('smt', SmtScheduler(graph, flows, timeout_s=time_limit)),
         ('no_wait_smt', NoWaitSmtScheduler(graph, flows, timeout_s=time_limit)),
-        ('drl', DrlScheduler(graph, flows, time_limit, num_envs=1))
+        ('drl', DrlScheduler(graph, flows, timeout_s=time_limit, num_envs=1))
     ]
     schedulers[-1][1].load_model(best_model, alg=get_alg(best_model))
 

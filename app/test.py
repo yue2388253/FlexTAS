@@ -1,5 +1,6 @@
 import logging
 
+from src.lib.config import ConfigManager
 from src.lib.timing_decorator import timing_decorator
 from src.lib.execute import execute_from_command_line
 from src.network.net import generate_cev, generate_flows, generate_linear_5
@@ -7,7 +8,11 @@ from src.app.drl_scheduler import DrlScheduler
 
 
 @timing_decorator(logging.info)
-def test(topo: str, num_flows: int, num_envs: int, best_model_path: str = None, alg: str = 'PPO'):
+def test(topo: str, num_flows: int, num_envs: int,
+         best_model_path: str = None, alg: str = 'PPO', link_rate: int = None):
+    if link_rate is not None:
+        ConfigManager().config.set('Net', 'link_rate', str(link_rate))
+
     logging.basicConfig(level=logging.DEBUG)
 
     if topo == "L5":

@@ -60,9 +60,9 @@ class DrlScheduler(BaseScheduler):
         'PPO': PPO
     }
 
-    def __init__(self, graph: nx.DiGraph, flows: list[Flow], timeout_s: int = 3600,
-                 num_envs: int = 1, time_steps=100000):
-        super().__init__(graph, flows, timeout_s)
+    def __init__(self, graph: nx.DiGraph, flows: list[Flow],
+                 num_envs: int = 1, time_steps=100000, **kwargs):
+        super().__init__(graph, flows,  **kwargs)
         self.num_envs = num_envs
         self.time_steps = time_steps
 
@@ -82,7 +82,7 @@ class DrlScheduler(BaseScheduler):
 
     @timing_decorator(logging.info)
     def schedule(self):
-        callback = SuccessCallback(time_limit=self.timeout)
+        callback = SuccessCallback(time_limit=self.timeout_s)
 
         # Train the agent
         self.model.learn(total_timesteps=self.time_steps, callback=callback)
