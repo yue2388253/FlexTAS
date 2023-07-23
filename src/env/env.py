@@ -208,8 +208,10 @@ class NetEnv(gym.Env):
         return self.state_encoder.state()
 
     def action_masks(self) -> list[int]:
-        # todo: disable gating if it will make the GCL capacity exceeded.
-        return [True, True]
+        flow = self.flows[self.flow_index]
+        hop_index = len(self.flows_operations[flow])
+        link = self.link_dict[flow.path[hop_index]]
+        return [True, link.add_gating(flow.period, attempt=True)]
 
     def check_valid_flow(self, flow: Flow) -> Optional[int]:
         """

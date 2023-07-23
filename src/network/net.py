@@ -139,6 +139,11 @@ class Link:
         return not self.reserved_binaries.is_conflict(duration)
 
     def add_gating(self, period: int, attempt=False) -> bool:
+        """
+        :return: True if can enable gating, otherwise depend on the value of attempt
+            return False if attempt is True,
+            otherwise raise RuntimeError
+        """
         new_cycle = math.lcm(self.gcl_cycle, period)
         new_length = self.gcl_length * (new_cycle // self.gcl_cycle)
         new_length += ((new_cycle // period) * 2)

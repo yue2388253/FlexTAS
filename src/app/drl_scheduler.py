@@ -57,7 +57,8 @@ class DrlScheduler(BaseScheduler):
     SUPPORTING_ALG = {
         'A2C': A2C,
         'DQN': DQN,
-        'PPO': PPO
+        'PPO': PPO,
+        'MaskablePPO': MaskablePPO
     }
 
     def __init__(self, graph: nx.DiGraph, flows: list[Flow],
@@ -70,7 +71,7 @@ class DrlScheduler(BaseScheduler):
         policy_kwargs = dict(
             features_extractor_class=FeaturesExtractor,
         )
-        self.model = PPO("MultiInputPolicy", self.env, policy_kwargs=policy_kwargs, verbose=1)
+        self.model = MaskablePPO("MultiInputPolicy", self.env, policy_kwargs=policy_kwargs, verbose=1)
 
     def load_model(self, filepath: str, alg: str = 'PPO'):
         del self.model
