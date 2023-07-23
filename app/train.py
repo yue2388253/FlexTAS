@@ -90,7 +90,7 @@ def train(topo: str, num_time_steps, num_flows=NUM_FLOWS, pre_trained_model=None
 
     eval_env = SubprocVecEnv([make_env(num_flows, i, topo, training=False) for i in range(n_envs)])
     callback = EvalCallback(eval_env, best_model_save_path=get_best_model_path(),
-                            log_path=OUT_DIR, eval_freq=1000 * n_envs)
+                            log_path=OUT_DIR)
 
     # logging.debug(model.policy)
 
