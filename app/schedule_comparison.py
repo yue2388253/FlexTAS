@@ -16,7 +16,7 @@ from src.network.net import generate_linear_5, generate_cev, generate_flows
 
 
 class SchedulerManager:
-    def __init__(self, topo, best_model, time_limit, num_flows, seed, num_tests):
+    def __init__(self, topo, best_model, time_limit, num_flows, seed, num_tests, link_rate):
         # [scheduler, [seed, # of flows]]
         self.scheduler_capacity = defaultdict(lambda: defaultdict(None))
 
@@ -26,6 +26,7 @@ class SchedulerManager:
         self.num_flows = sorted(num_flows)
         self.seed = seed
         self.num_tests = num_tests
+        self.link_rate = link_rate
 
     def can_schedule(self, scheduler_str, num_flows, seed):
         max_flows = self.scheduler_capacity[scheduler_str][seed]
@@ -63,7 +64,7 @@ class SchedulerManager:
                     graph = get_graph(self.topo)
                     flows = generate_flows(graph, num_flows, seed=seed)
 
-                    scheduler = scheduler_cls(graph, flows, timeout_s=self.time_limit)
+                    scheduler = scheduler_cls(graph, flows, timeout_s=self.time_limit, link_rate=self.link_rate)
                     if isinstance(scheduler, DrlScheduler):
                         scheduler.load_model(self.best_model, 'MaskablePPO')
 
@@ -122,13 +123,10 @@ def get_graph(topo):
 
 def main(num_flows: str, num_tests: int, best_model: str, seed: int = None,
          link_rate: int = None, time_limit: int = 300, topo: str = 'L5'):
-    if link_rate is not None:
-        ConfigManager().config.set('Net', 'link_rate', str(link_rate))
-
     seed = seed or random.randint(0, 10000)
     num_flows = map(int, num_flows.split(',')) if isinstance(num_flows, str) else num_flows
 
-    scheduler_manager = SchedulerManager(topo, best_model, time_limit, num_flows, seed, num_tests)
+    scheduler_manager = SchedulerManager(topo, best_model, time_limit, num_flows, seed, num_tests, link_rate)
     df = scheduler_manager.run_dichotomy()
 
     filename = os.path.join(OUT_DIR, f'schedule_stat_{topo}_{num_tests}_{seed}_{time_limit}.csv')
