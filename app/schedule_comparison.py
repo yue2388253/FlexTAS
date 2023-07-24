@@ -41,8 +41,8 @@ class SchedulerManager:
 
     def run_dichotomy(self) -> pd.DataFrame:
         schedulers = [
-            # ('smt', SmtScheduler),
-            # ('smt_no_wait', NoWaitSmtScheduler),
+            ('smt', SmtScheduler),
+            ('smt_no_wait', NoWaitSmtScheduler),
             ('drl', DrlScheduler)
         ]
         # [scheduler, [seed, [num_flows, (is_scheduled, time)]]]
