@@ -41,8 +41,8 @@ class SchedulerManager:
 
     def run_dichotomy(self) -> pd.DataFrame:
         schedulers = [
-            ('smt', SmtScheduler),
-            ('smt_no_wait', NoWaitSmtScheduler),
+            # ('smt', SmtScheduler),
+            # ('smt_no_wait', NoWaitSmtScheduler),
             ('drl', DrlScheduler)
         ]
         # [scheduler, [seed, [num_flows, (is_scheduled, time)]]]
@@ -65,7 +65,7 @@ class SchedulerManager:
 
                     scheduler = scheduler_cls(graph, flows, timeout_s=self.time_limit)
                     if isinstance(scheduler, DrlScheduler):
-                        scheduler.load_model(self.best_model)
+                        scheduler.load_model(self.best_model, 'MaskablePPO')
 
                     start_time = time.time()
                     logging.info(f"Use [{scheduler_str}] Scheduling {num_flows} flows, seed {seed}")
@@ -163,5 +163,5 @@ def get_alg(best_model):
 
 
 if __name__ == '__main__':
-    logging.basicConfig(level=logging.INFO)
+    logging.basicConfig(level=logging.INFO, format='%(asctime)s - %(levelname)s - %(message)s')
     execute_from_command_line(main)
