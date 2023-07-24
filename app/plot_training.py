@@ -1,4 +1,5 @@
 import matplotlib.pyplot as plt
+import os.path
 from stable_baselines3.common.results_plotter import plot_results
 
 from src.lib.execute import execute_from_command_line
@@ -6,6 +7,9 @@ from src.lib.execute import execute_from_command_line
 
 def plot_training_rewards(dirname: str):
     plot_results([dirname], None, 'timesteps', 'training')
+    filename = os.path.join(os.path.dirname(dirname), f"training_reward.png")
+    print(f"saving the figure to {filename}")
+    plt.savefig(filename)
     plt.show()
 
 
