@@ -6,7 +6,7 @@ from src.lib.execute import execute_from_command_line
 
 
 def plot_training_rewards(dirname: str):
-    plot_results([dirname], None, 'timesteps', 'training')
+    plot_results([dirname], None, 'timesteps', next((s for s in dirname.split(r'/') if '100' in s), None))
     filename = os.path.join(os.path.dirname(dirname), f"training_reward.png")
     print(f"saving the figure to {filename}")
     plt.savefig(filename)
