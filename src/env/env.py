@@ -406,7 +406,7 @@ class TrainingNetEnv(NetEnv):
     increase the number of flows gradually to make the env harder if the agent can easily
     pass the current env.
     """
-    def __init__(self, graph, flow_generator, num_flows,
+    def __init__(self, graph, flow_generator, num_flows, link_rate,
                  initial_ratio=0.2, step_ratio=0.05, changing_freq=10):
 
         self.flow_generator = flow_generator
@@ -420,7 +420,7 @@ class TrainingNetEnv(NetEnv):
         num_flows_initial = math.ceil(num_flows * initial_ratio)
         flows = flow_generator(graph, num_flows_initial)
 
-        super().__init__(graph, flows)
+        super().__init__(graph, flows, link_rate)
 
         self.num_passed = 0
         self.changing_freq = changing_freq

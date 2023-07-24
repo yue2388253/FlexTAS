@@ -37,22 +37,25 @@ def get_best_model_path():
 def make_env(num_flows, rank: int, topo: str, training: bool = True):
     initial_ratio = ConfigManager().config.getfloat('Training', 'cl_initial_ratio')
     step_ratio = ConfigManager().config.getfloat('Training', 'cl_step_ratio')
+    link_rate = ConfigManager().config.getint('Net', 'link_rate')
 
     def _init():
-        if training:
-            if topo == "CEV":
-                graph = generate_cev()
-            elif topo == "L5":
-                graph = generate_linear_5()
-            else:
-                raise ValueError(f"Unknown topo {topo}")
+        if topo == "CEV":
+            graph = generate_cev()
+        elif topo == "L5":
+            graph = generate_linear_5()
+        else:
+            raise ValueError(f"Unknown topo {topo}")
 
+        if training:
             env = TrainingNetEnv(graph, generate_flows, num_flows,
                                  initial_ratio=initial_ratio,
-                                 step_ratio=step_ratio
+                                 step_ratio=step_ratio,
+                                 link_rate=link_rate
                                  )
         else:
-            env = generate_env(topo, num_flows)
+            flows = generate_flows(graph, num_flows)
+            env = NetEnv(graph, flows, link_rate=link_rate)
 
         # Wrap the environment with Monitor
         env = Monitor(env, os.path.join(MONITOR_DIR, f'{"train" if training else "eval"}_{rank}'))
