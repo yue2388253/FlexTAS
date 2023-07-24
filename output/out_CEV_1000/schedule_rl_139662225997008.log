@@ -1,0 +1,536 @@
+0. Flow F0 [SM2CB-->FCM1] with period 8000, payload 499B, e2e delay 8000us, jitter 800us
+	('SM2CB', 'SW52'), Operation(0, None, 40)(0, 0)
+	('SW52', 'SW8'), Operation(42, None, 211)(42, 171)
+	('SW8', 'SW31'), Operation(84, 218, 258)(218, 218)
+	('SW31', 'FCM1'), Operation(260, 265, 305)(265, 265)
+1. Flow F1 [StarTr1-->SBAND2] with period 32000, payload 885B, e2e delay 32000us, jitter 3200us
+	('StarTr1', 'SW13'), Operation(0, None, 71)(0, 0)
+	('SW13', 'SW21'), Operation(73, 78, 149)(78, 78)
+	('SW21', 'SW12'), Operation(151, 156, 227)(156, 156)
+	('SW12', 'SBAND2'), Operation(229, 234, 305)(234, 234)
+2. Flow F2 [SM2CB-->DU3] with period 16000, payload 468B, e2e delay 16000us, jitter 1600us
+	('SM2CB', 'SW52'), Operation(179, None, 217)(179, 179)
+	('SW52', 'SW8'), Operation(219, None, 386)(219, 348)
+	('SW8', 'SW31'), Operation(259, 393, 431)(393, 393)
+	('SW31', 'SW21'), Operation(433, 438, 476)(438, 438)
+	('SW21', 'SW11'), Operation(478, 483, 521)(483, 483)
+	('SW11', 'DU3'), Operation(523, None, 690)(523, 652)
+3. Flow F3 [CM1CB-->SM1CA] with period 2000, payload 376B, e2e delay 2000us, jitter 200us
+	('CM1CB', 'SW41'), Operation(0, 0, 31)(0, 0)
+	('SW41', 'SW51'), Operation(33, 38, 69)(38, 38)
+	('SW51', 'SM1CA'), Operation(71, 76, 107)(76, 76)
+4. Flow F4 [SBAND1-->DU5] with period 128000, payload 206B, e2e delay 128000us, jitter 12800us
+	('SBAND1', 'SW12'), Operation(0, None, 17)(0, 0)
+	('SW12', 'SW21'), Operation(19, None, 165)(19, 148)
+	('SW21', 'SW14'), Operation(38, None, 313)(38, 296)
+	('SW14', 'DU5'), Operation(57, None, 461)(57, 444)
+5. Flow F5 [DU5-->StarTr2] with period 32000, payload 216B, e2e delay 32000us, jitter 3200us
+	('DU5', 'SW14'), Operation(0, None, 18)(0, 0)
+	('SW14', 'SW21'), Operation(20, None, 167)(20, 149)
+	('SW21', 'SW13'), Operation(40, None, 316)(40, 298)
+	('SW13', 'StarTr2'), Operation(60, None, 465)(60, 447)
+6. Flow F6 [DU4-->SM1CA] with period 128000, payload 354B, e2e delay 128000us, jitter 12800us
+	('DU4', 'SW14'), Operation(137, None, 166)(137, 137)
+	('SW14', 'SW21'), Operation(168, None, 326)(168, 297)
+	('SW21', 'SW31'), Operation(199, None, 486)(199, 457)
+	('SW31', 'SW41'), Operation(230, None, 646)(230, 617)
+	('SW41', 'SW51'), Operation(261, None, 806)(261, 777)
+	('SW51', 'SM1CA'), Operation(292, None, 966)(292, 937)
+7. Flow F7 [CMRIU2-->SBAND2] with period 8000, payload 473B, e2e delay 8000us, jitter 800us
+	('CMRIU2', 'SW22'), Operation(0, 0, 38)(0, 0)
+	('SW22', 'SW12'), Operation(40, 45, 83)(45, 45)
+	('SW12', 'SBAND2'), Operation(85, 90, 128)(90, 90)
+8. Flow F8 [StarTr1-->DU5] with period 8000, payload 248B, e2e delay 8000us, jitter 800us
+	('StarTr1', 'SW13'), Operation(386, 386, 406)(386, 386)
+	('SW13', 'SW21'), Operation(408, 413, 433)(413, 413)
+	('SW21', 'SW14'), Operation(435, 440, 460)(440, 440)
+	('SW14', 'DU5'), Operation(462, 467, 487)(467, 467)
+9. Flow F9 [SM2CB-->DU3] with period 2000, payload 1259B, e2e delay 2000us, jitter 200us
+	('SM2CB', 'SW52'), Operation(284, 284, 385)(284, 284)
+	('SW52', 'SW8'), Operation(387, 392, 493)(392, 392)
+	('SW8', 'SW31'), Operation(495, 500, 601)(500, 500)
+	('SW31', 'SW21'), Operation(603, 608, 709)(608, 608)
+	('SW21', 'SW11'), Operation(711, 716, 817)(716, 716)
+	('SW11', 'DU3'), Operation(819, 824, 925)(824, 824)
+10. Flow F10 [DU1-->MIMU3] with period 64000, payload 1343B, e2e delay 64000us, jitter 6400us
+	('DU1', 'SW11'), Operation(97, None, 205)(97, 97)
+	('SW11', 'SW21'), Operation(207, None, 444)(207, 336)
+	('SW21', 'SW13'), Operation(317, None, 683)(317, 575)
+	('SW13', 'MIMU3'), Operation(427, None, 922)(427, 814)
+11. Flow F11 [SBAND2-->DU5] with period 32000, payload 687B, e2e delay 32000us, jitter 3200us
+	('SBAND2', 'SW12'), Operation(342, None, 397)(342, 342)
+	('SW12', 'SW21'), Operation(399, 404, 459)(404, 404)
+	('SW21', 'SW14'), Operation(461, 466, 521)(466, 466)
+	('SW14', 'DU5'), Operation(523, 528, 583)(528, 528)
+12. Flow F12 [CMRIU1-->MIMU1] with period 4000, payload 766B, e2e delay 4000us, jitter 400us
+	('CMRIU1', 'SW21'), Operation(620, 620, 682)(620, 620)
+	('SW21', 'SW13'), Operation(684, 689, 751)(689, 689)
+	('SW13', 'MIMU1'), Operation(753, 758, 820)(758, 758)
+13. Flow F13 [DU3-->CMRIU2] with period 32000, payload 737B, e2e delay 32000us, jitter 3200us
+	('DU3', 'SW11'), Operation(0, None, 59)(0, 0)
+	('SW11', 'SW22'), Operation(61, None, 249)(61, 190)
+	('SW22', 'CMRIU2'), Operation(122, None, 439)(122, 380)
+14. Flow F14 [StarTr1-->CM1CB] with period 128000, payload 820B, e2e delay 128000us, jitter 12800us
+	('StarTr1', 'SW13'), Operation(443, None, 509)(443, 443)
+	('SW13', 'SW21'), Operation(511, None, 706)(511, 640)
+	('SW21', 'SW31'), Operation(579, None, 903)(579, 837)
+	('SW31', 'SW41'), Operation(647, None, 1100)(647, 1034)
+	('SW41', 'CM1CB'), Operation(715, None, 1297)(715, 1231)
+15. Flow F15 [DU1-->SM2CB] with period 128000, payload 690B, e2e delay 128000us, jitter 12800us
+	('DU1', 'SW11'), Operation(788, None, 844)(788, 788)
+	('SW11', 'SW21'), Operation(846, None, 1031)(846, 975)
+	('SW21', 'SW31'), Operation(904, None, 1218)(904, 1162)
+	('SW31', 'SW8'), Operation(962, None, 1405)(962, 1349)
+	('SW8', 'SW52'), Operation(1020, None, 1592)(1020, 1536)
+	('SW52', 'SM2CB'), Operation(1078, None, 1779)(1078, 1723)
+16. Flow F16 [SM1CB-->LCM1] with period 4000, payload 1350B, e2e delay 4000us, jitter 400us
+	('SM1CB', 'SW51'), Operation(0, 0, 108)(0, 0)
+	('SW51', 'SW41'), Operation(110, 115, 223)(115, 115)
+	('SW41', 'SW31'), Operation(225, 230, 338)(230, 230)
+	('SW31', 'LCM1'), Operation(340, 345, 453)(345, 345)
+17. Flow F17 [LCM2-->SM1CB] with period 2000, payload 780B, e2e delay 2000us, jitter 200us
+	('LCM2', 'SW32'), Operation(0, 0, 63)(0, 0)
+	('SW32', 'SW8'), Operation(65, 70, 133)(70, 70)
+	('SW8', 'SW51'), Operation(135, 140, 203)(140, 140)
+	('SW51', 'SM1CB'), Operation(205, 210, 273)(210, 210)
+18. Flow F18 [DU2-->FCM1] with period 64000, payload 449B, e2e delay 64000us, jitter 6400us
+	('DU2', 'SW11'), Operation(1143, None, 1179)(1143, 1143)
+	('SW11', 'SW21'), Operation(1181, None, 1346)(1181, 1310)
+	('SW21', 'SW31'), Operation(1219, None, 1513)(1219, 1477)
+	('SW31', 'FCM1'), Operation(1257, None, 1680)(1257, 1644)
+19. Flow F19 [RCM2-->SMRIU2] with period 16000, payload 1312B, e2e delay 16000us, jitter 1600us
+	('RCM2', 'SW32'), Operation(0, None, 105)(0, 0)
+	('SW32', 'SW6'), Operation(107, 112, 217)(112, 112)
+	('SW6', 'SMRIU2'), Operation(219, 224, 329)(224, 224)
+20. Flow F20 [DU5-->BFCU] with period 128000, payload 364B, e2e delay 128000us, jitter 12800us
+	('DU5', 'SW14'), Operation(19, None, 49)(19, 19)
+	('SW14', 'SW22'), Operation(51, None, 210)(51, 180)
+	('SW22', 'BFCU'), Operation(83, 217, 247)(217, 217)
+21. Flow F21 [LCM2-->FCM1] with period 64000, payload 504B, e2e delay 64000us, jitter 6400us
+	('LCM2', 'SW32'), Operation(177, None, 218)(177, 177)
+	('SW32', 'SW6'), Operation(220, None, 390)(220, 349)
+	('SW6', 'SW31'), Operation(263, None, 562)(263, 521)
+	('SW31', 'FCM1'), Operation(306, None, 734)(306, 693)
+22. Flow F22 [LCM1-->RCM2] with period 128000, payload 991B, e2e delay 128000us, jitter 12800us
+	('LCM1', 'SW31'), Operation(0, None, 80)(0, 0)
+	('SW31', 'SW6'), Operation(82, None, 291)(82, 211)
+	('SW6', 'SW32'), Operation(164, None, 502)(164, 422)
+	('SW32', 'RCM2'), Operation(246, None, 713)(246, 633)
+23. Flow F23 [SMRIU1-->RCM2] with period 2000, payload 231B, e2e delay 2000us, jitter 200us
+	('SMRIU1', 'SW6'), Operation(0, 0, 19)(0, 0)
+	('SW6', 'SW32'), Operation(21, 26, 45)(26, 26)
+	('SW32', 'RCM2'), Operation(47, 52, 71)(52, 52)
+24. Flow F24 [LCM1-->CMRIU2] with period 16000, payload 1251B, e2e delay 16000us, jitter 1600us
+	('LCM1', 'SW31'), Operation(126, None, 227)(126, 126)
+	('SW31', 'SW7'), Operation(229, 234, 335)(234, 234)
+	('SW7', 'SW22'), Operation(337, None, 567)(337, 466)
+	('SW22', 'CMRIU2'), Operation(440, None, 799)(440, 698)
+25. Flow F25 [RCM2-->SBAND1] with period 64000, payload 488B, e2e delay 64000us, jitter 6400us
+	('RCM2', 'SW32'), Operation(106, None, 146)(106, 106)
+	('SW32', 'SW22'), Operation(148, None, 317)(148, 277)
+	('SW22', 'SW12'), Operation(190, None, 488)(190, 448)
+	('SW12', 'SBAND1'), Operation(232, None, 659)(232, 619)
+26. Flow F26 [CM1CB-->FCM1] with period 8000, payload 531B, e2e delay 8000us, jitter 800us
+	('CM1CB', 'SW41'), Operation(32, None, 75)(32, 32)
+	('SW41', 'SW31'), Operation(77, 82, 125)(82, 82)
+	('SW31', 'FCM1'), Operation(127, 132, 175)(132, 132)
+27. Flow F27 [SM1CA-->SMRIU1] with period 32000, payload 303B, e2e delay 32000us, jitter 3200us
+	('SM1CA', 'SW51'), Operation(285, None, 310)(285, 285)
+	('SW51', 'SW41'), Operation(312, None, 466)(312, 441)
+	('SW41', 'SW31'), Operation(339, None, 622)(339, 597)
+	('SW31', 'SW6'), Operation(366, None, 778)(366, 753)
+	('SW6', 'SMRIU1'), Operation(393, 785, 810)(785, 785)
+28. Flow F28 [CM1CB-->CM2CB] with period 64000, payload 527B, e2e delay 64000us, jitter 6400us
+	('CM1CB', 'SW41'), Operation(1458, None, 1501)(1458, 1458)
+	('SW41', 'SW31'), Operation(1503, None, 1675)(1503, 1632)
+	('SW31', 'SW8'), Operation(1548, None, 1849)(1548, 1806)
+	('SW8', 'SW52'), Operation(1593, 1856, 1899)(1856, 1856)
+	('SW52', 'SW42'), Operation(1901, None, 2073)(1901, 2030)
+	('SW42', 'CM2CB'), Operation(1946, None, 2247)(1946, 2204)
+29. Flow F29 [FCM1-->SMRIU1] with period 2000, payload 248B, e2e delay 2000us, jitter 200us
+	('FCM1', 'SW31'), Operation(0, 0, 20)(0, 0)
+	('SW31', 'SW6'), Operation(22, 27, 47)(27, 27)
+	('SW6', 'SMRIU1'), Operation(49, 54, 74)(54, 54)
+30. Flow F30 [MIMU2-->DU3] with period 128000, payload 457B, e2e delay 128000us, jitter 12800us
+	('MIMU2', 'SW13'), Operation(809, None, 846)(809, 809)
+	('SW13', 'SW21'), Operation(848, None, 1014)(848, 977)
+	('SW21', 'SW11'), Operation(887, None, 1182)(887, 1145)
+	('SW11', 'DU3'), Operation(926, None, 1350)(926, 1313)
+31. Flow F31 [LCM1-->RCM2] with period 64000, payload 914B, e2e delay 64000us, jitter 6400us
+	('LCM1', 'SW31'), Operation(703, None, 777)(703, 703)
+	('SW31', 'SW6'), Operation(779, None, 982)(779, 908)
+	('SW6', 'SW32'), Operation(855, None, 1187)(855, 1113)
+	('SW32', 'RCM2'), Operation(931, None, 1392)(931, 1318)
+32. Flow F32 [SBAND1-->CMRIU1] with period 16000, payload 218B, e2e delay 16000us, jitter 1600us
+	('SBAND1', 'SW12'), Operation(146, 146, 164)(146, 146)
+	('SW12', 'SW21'), Operation(166, None, 313)(166, 295)
+	('SW21', 'CMRIU1'), Operation(186, 320, 338)(320, 320)
+33. Flow F33 [LCM2-->SM1CA] with period 4000, payload 901B, e2e delay 4000us, jitter 400us
+	('LCM2', 'SW32'), Operation(732, 732, 805)(732, 732)
+	('SW32', 'SW8'), Operation(807, 812, 885)(812, 812)
+	('SW8', 'SW51'), Operation(887, 892, 965)(892, 892)
+	('SW51', 'SM1CA'), Operation(967, 972, 1045)(972, 972)
+34. Flow F34 [RCM1-->FCM1] with period 16000, payload 790B, e2e delay 16000us, jitter 1600us
+	('RCM1', 'SW31'), Operation(669, None, 733)(669, 669)
+	('SW31', 'FCM1'), Operation(735, None, 928)(735, 864)
+35. Flow F35 [SM2CA-->SMRIU1] with period 16000, payload 806B, e2e delay 16000us, jitter 1600us
+	('SM2CA', 'SW52'), Operation(404, None, 469)(404, 404)
+	('SW52', 'SW42'), Operation(471, 476, 541)(476, 476)
+	('SW42', 'SW32'), Operation(543, None, 737)(543, 672)
+	('SW32', 'SW6'), Operation(610, 744, 809)(744, 744)
+	('SW6', 'SMRIU1'), Operation(811, None, 1005)(811, 940)
+36. Flow F36 [MIMU2-->MIMU1] with period 16000, payload 823B, e2e delay 16000us, jitter 1600us
+	('MIMU2', 'SW13'), Operation(0, 0, 66)(0, 0)
+	('SW13', 'MIMU1'), Operation(68, 73, 139)(73, 73)
+37. Flow F37 [DU3-->SMRIU1] with period 4000, payload 473B, e2e delay 4000us, jitter 400us
+	('DU3', 'SW11'), Operation(1429, 1429, 1467)(1429, 1429)
+	('SW11', 'SW21'), Operation(1469, 1474, 1512)(1474, 1474)
+	('SW21', 'SW31'), Operation(1514, 1519, 1557)(1519, 1519)
+	('SW31', 'SW6'), Operation(1559, 1564, 1602)(1564, 1564)
+	('SW6', 'SMRIU1'), Operation(1604, 1609, 1647)(1609, 1609)
+38. Flow F38 [StarTr1-->CM1CB] with period 32000, payload 721B, e2e delay 32000us, jitter 3200us
+	('StarTr1', 'SW13'), Operation(1438, None, 1496)(1438, 1438)
+	('SW13', 'SW21'), Operation(1498, None, 1685)(1498, 1627)
+	('SW21', 'SW31'), Operation(1558, None, 1874)(1558, 1816)
+	('SW31', 'SW41'), Operation(1618, None, 2063)(1618, 2005)
+	('SW41', 'CM1CB'), Operation(1678, 2070, 2128)(2070, 2070)
+39. Flow F39 [SBAND2-->DU4] with period 4000, payload 361B, e2e delay 4000us, jitter 400us
+	('SBAND2', 'SW12'), Operation(283, 283, 312)(283, 283)
+	('SW12', 'SW21'), Operation(314, 319, 348)(319, 319)
+	('SW21', 'SW14'), Operation(350, 355, 384)(355, 355)
+	('SW14', 'DU4'), Operation(386, 391, 420)(391, 391)
+40. Flow F40 [SM1CB-->SBAND2] with period 2000, payload 573B, e2e delay 2000us, jitter 200us
+	('SM1CB', 'SW51'), Operation(556, None, 602)(556, 556)
+	('SW51', 'SW41'), Operation(604, 609, 655)(609, 609)
+	('SW41', 'SW31'), Operation(657, 662, 708)(662, 662)
+	('SW31', 'SW21'), Operation(710, 715, 761)(715, 715)
+	('SW21', 'SW12'), Operation(763, 768, 814)(768, 768)
+	('SW12', 'SBAND2'), Operation(816, 821, 867)(821, 821)
+41. Flow F41 [SM2CA-->CMRIU1] with period 64000, payload 1365B, e2e delay 64000us, jitter 6400us
+	('SM2CA', 'SW52'), Operation(470, None, 580)(470, 470)
+	('SW52', 'SW8'), Operation(582, None, 821)(582, 711)
+	('SW8', 'SW31'), Operation(694, None, 1062)(694, 952)
+	('SW31', 'SW21'), Operation(806, 1069, 1179)(1069, 1069)
+	('SW21', 'CMRIU1'), Operation(1181, None, 1420)(1181, 1310)
+42. Flow F42 [DU4-->MIMU2] with period 64000, payload 536B, e2e delay 64000us, jitter 6400us
+	('DU4', 'SW14'), Operation(662, None, 705)(662, 662)
+	('SW14', 'SW21'), Operation(707, None, 879)(707, 836)
+	('SW21', 'SW13'), Operation(752, None, 1053)(752, 1010)
+	('SW13', 'MIMU2'), Operation(797, None, 1227)(797, 1184)
+43. Flow F43 [SM2CA-->SBAND2] with period 64000, payload 1336B, e2e delay 64000us, jitter 6400us
+	('SM2CA', 'SW52'), Operation(845, None, 952)(845, 845)
+	('SW52', 'SW8'), Operation(954, None, 1190)(954, 1083)
+	('SW8', 'SW31'), Operation(1063, 1197, 1304)(1197, 1197)
+	('SW31', 'SW21'), Operation(1306, 1311, 1418)(1311, 1311)
+	('SW21', 'SW12'), Operation(1420, None, 1656)(1420, 1549)
+	('SW12', 'SBAND2'), Operation(1529, None, 1894)(1529, 1787)
+44. Flow F44 [DU3-->StarTr2] with period 128000, payload 1509B, e2e delay 128000us, jitter 12800us
+	('DU3', 'SW11'), Operation(1468, None, 1589)(1468, 1468)
+	('SW11', 'SW21'), Operation(1591, None, 1841)(1591, 1720)
+	('SW21', 'SW13'), Operation(1714, None, 2093)(1714, 1972)
+	('SW13', 'StarTr2'), Operation(1837, None, 2345)(1837, 2224)
+45. Flow F45 [CMRIU2-->LCM2] with period 8000, payload 944B, e2e delay 8000us, jitter 800us
+	('CMRIU2', 'SW22'), Operation(39, 39, 115)(39, 39)
+	('SW22', 'SW32'), Operation(117, 122, 198)(122, 122)
+	('SW32', 'LCM2'), Operation(200, None, 405)(200, 329)
+46. Flow F46 [SM1CB-->DU3] with period 32000, payload 280B, e2e delay 32000us, jitter 3200us
+	('SM1CB', 'SW51'), Operation(1626, None, 1649)(1626, 1626)
+	('SW51', 'SW41'), Operation(1651, None, 1803)(1651, 1780)
+	('SW41', 'SW31'), Operation(1676, None, 1957)(1676, 1934)
+	('SW31', 'SW21'), Operation(1701, None, 2111)(1701, 2088)
+	('SW21', 'SW11'), Operation(1726, None, 2265)(1726, 2242)
+	('SW11', 'DU3'), Operation(1751, 2272, 2295)(2272, 2272)
+47. Flow F47 [DU4-->SM1CA] with period 16000, payload 1204B, e2e delay 16000us, jitter 1600us
+	('DU4', 'SW14'), Operation(1762, None, 1859)(1762, 1762)
+	('SW14', 'SW21'), Operation(1861, 1866, 1963)(1866, 1866)
+	('SW21', 'SW31'), Operation(1965, None, 2191)(1965, 2094)
+	('SW31', 'SW41'), Operation(2064, 2198, 2295)(2198, 2198)
+	('SW41', 'SW51'), Operation(2297, 2302, 2399)(2302, 2302)
+	('SW51', 'SM1CA'), Operation(2401, 2406, 2503)(2406, 2406)
+48. Flow F48 [DU1-->MIMU1] with period 8000, payload 263B, e2e delay 8000us, jitter 800us
+	('DU1', 'SW11'), Operation(1008, None, 1030)(1008, 1008)
+	('SW11', 'SW21'), Operation(1032, 1037, 1059)(1037, 1037)
+	('SW21', 'SW13'), Operation(1061, None, 1212)(1061, 1190)
+	('SW13', 'MIMU1'), Operation(1085, 1219, 1241)(1219, 1219)
+49. Flow F49 [BFCU-->CM2CA] with period 64000, payload 1476B, e2e delay 64000us, jitter 6400us
+	('BFCU', 'SW22'), Operation(78, None, 197)(78, 78)
+	('SW22', 'SW32'), Operation(199, 204, 323)(204, 204)
+	('SW32', 'SW42'), Operation(325, None, 573)(325, 454)
+	('SW42', 'CM2CA'), Operation(446, None, 823)(446, 704)
+50. Flow F50 [CM1CB-->CMRIU2] with period 64000, payload 201B, e2e delay 64000us, jitter 6400us
+	('CM1CB', 'SW41'), Operation(714, None, 731)(714, 714)
+	('SW41', 'SW31'), Operation(733, 738, 755)(738, 738)
+	('SW31', 'SW7'), Operation(757, 762, 779)(762, 762)
+	('SW7', 'SW22'), Operation(781, None, 927)(781, 910)
+	('SW22', 'CMRIU2'), Operation(800, None, 1075)(800, 1058)
+51. Flow F51 [CM1CA-->MIMU1] with period 4000, payload 1207B, e2e delay 4000us, jitter 400us
+	('CM1CA', 'SW41'), Operation(977, 977, 1074)(977, 977)
+	('SW41', 'SW31'), Operation(1076, 1081, 1178)(1081, 1081)
+	('SW31', 'SW21'), Operation(1180, 1185, 1282)(1185, 1185)
+	('SW21', 'SW13'), Operation(1284, None, 1510)(1284, 1413)
+	('SW13', 'MIMU1'), Operation(1383, 1517, 1614)(1517, 1517)
+52. Flow F52 [DU4-->CMRIU1] with period 2000, payload 854B, e2e delay 2000us, jitter 200us
+	('DU4', 'SW14'), Operation(256, 256, 325)(256, 256)
+	('SW14', 'SW21'), Operation(327, 332, 401)(332, 332)
+	('SW21', 'CMRIU1'), Operation(403, 408, 477)(408, 408)
+53. Flow F53 [LCM2-->CMRIU2] with period 16000, payload 290B, e2e delay 16000us, jitter 1600us
+	('LCM2', 'SW32'), Operation(1024, None, 1048)(1024, 1024)
+	('SW32', 'SW22'), Operation(1050, None, 1203)(1050, 1179)
+	('SW22', 'CMRIU2'), Operation(1076, 1210, 1234)(1210, 1210)
+54. Flow F54 [CM1CA-->DU5] with period 2000, payload 1499B, e2e delay 2000us, jitter 200us
+	('CM1CA', 'SW41'), Operation(1170, 1170, 1290)(1170, 1170)
+	('SW41', 'SW31'), Operation(1292, 1297, 1417)(1297, 1297)
+	('SW31', 'SW21'), Operation(1419, 1424, 1544)(1424, 1424)
+	('SW21', 'SW14'), Operation(1546, 1551, 1671)(1551, 1551)
+	('SW14', 'DU5'), Operation(1673, 1678, 1798)(1678, 1678)
+55. Flow F55 [StarTr1-->StarTr2] with period 32000, payload 296B, e2e delay 32000us, jitter 3200us
+	('StarTr1', 'SW13'), Operation(510, None, 534)(510, 510)
+	('SW13', 'StarTr2'), Operation(536, None, 689)(536, 665)
+56. Flow F56 [CM2CB-->LCM2] with period 32000, payload 1305B, e2e delay 32000us, jitter 3200us
+	('CM2CB', 'SW42'), Operation(192, None, 297)(192, 192)
+	('SW42', 'SW32'), Operation(299, None, 533)(299, 428)
+	('SW32', 'LCM2'), Operation(406, 540, 645)(540, 540)
+57. Flow F57 [FCM2-->CM1CB] with period 64000, payload 147B, e2e delay 64000us, jitter 6400us
+	('FCM2', 'SW32'), Operation(1103, None, 1115)(1103, 1103)
+	('SW32', 'SW6'), Operation(1117, None, 1258)(1117, 1246)
+	('SW6', 'SW31'), Operation(1131, 1265, 1277)(1265, 1265)
+	('SW31', 'SW41'), Operation(1279, 1284, 1296)(1284, 1284)
+	('SW41', 'CM1CB'), Operation(1298, None, 1439)(1298, 1427)
+58. Flow F58 [SM1CA-->CM1CB] with period 2000, payload 1491B, e2e delay 2000us, jitter 200us
+	('SM1CA', 'SW51'), Operation(1191, 1191, 1311)(1191, 1191)
+	('SW51', 'SW41'), Operation(1313, 1318, 1438)(1318, 1318)
+	('SW41', 'CM1CB'), Operation(1440, 1445, 1565)(1445, 1445)
+59. Flow F59 [CMRIU1-->DU4] with period 64000, payload 1507B, e2e delay 64000us, jitter 6400us
+	('CMRIU1', 'SW21'), Operation(399, None, 520)(399, 399)
+	('SW21', 'SW14'), Operation(522, None, 772)(522, 651)
+	('SW14', 'DU4'), Operation(645, 779, 900)(779, 779)
+60. Flow F60 [FCM1-->LCM1] with period 8000, payload 189B, e2e delay 8000us, jitter 800us
+	('FCM1', 'SW31'), Operation(21, 21, 37)(21, 21)
+	('SW31', 'LCM1'), Operation(39, 44, 60)(44, 44)
+61. Flow F61 [SM1CB-->BFCU] with period 4000, payload 927B, e2e delay 4000us, jitter 400us
+	('SM1CB', 'SW51'), Operation(109, 109, 184)(109, 109)
+	('SW51', 'SW8'), Operation(186, 191, 266)(191, 191)
+	('SW8', 'SW32'), Operation(268, None, 472)(268, 397)
+	('SW32', 'SW22'), Operation(345, 479, 554)(479, 479)
+	('SW22', 'BFCU'), Operation(556, 561, 636)(561, 561)
+62. Flow F62 [DU3-->MIMU3] with period 16000, payload 726B, e2e delay 16000us, jitter 1600us
+	('DU3', 'SW11'), Operation(1967, None, 2026)(1967, 1967)
+	('SW11', 'SW21'), Operation(2028, 2033, 2092)(2033, 2033)
+	('SW21', 'SW13'), Operation(2094, 2099, 2158)(2099, 2099)
+	('SW13', 'MIMU3'), Operation(2160, 2165, 2224)(2165, 2165)
+63. Flow F63 [SM1CB-->SMRIU1] with period 4000, payload 157B, e2e delay 4000us, jitter 400us
+	('SM1CB', 'SW51'), Operation(931, None, 944)(931, 931)
+	('SW51', 'SW41'), Operation(946, 951, 964)(951, 951)
+	('SW41', 'SW31'), Operation(966, 971, 984)(971, 971)
+	('SW31', 'SW6'), Operation(986, 991, 1004)(991, 991)
+	('SW6', 'SMRIU1'), Operation(1006, 1011, 1024)(1011, 1011)
+64. Flow F64 [MIMU3-->BFCU] with period 32000, payload 1426B, e2e delay 32000us, jitter 3200us
+	('MIMU3', 'SW13'), Operation(14, None, 129)(14, 14)
+	('SW13', 'SW22'), Operation(131, None, 375)(131, 260)
+	('SW22', 'BFCU'), Operation(248, 382, 497)(382, 382)
+65. Flow F65 [CM2CA-->SMRIU2] with period 8000, payload 357B, e2e delay 8000us, jitter 800us
+	('CM2CA', 'SW42'), Operation(748, None, 777)(748, 748)
+	('SW42', 'SW32'), Operation(779, None, 937)(779, 908)
+	('SW32', 'SW6'), Operation(810, 944, 973)(944, 944)
+	('SW6', 'SMRIU2'), Operation(975, 980, 1009)(980, 980)
+66. Flow F66 [LCM2-->MIMU2] with period 8000, payload 776B, e2e delay 8000us, jitter 800us
+	('LCM2', 'SW32'), Operation(490, 490, 553)(490, 490)
+	('SW32', 'SW22'), Operation(555, 560, 623)(560, 560)
+	('SW22', 'SW13'), Operation(625, 630, 693)(630, 630)
+	('SW13', 'MIMU2'), Operation(695, 700, 763)(700, 700)
+67. Flow F67 [MIMU3-->MIMU1] with period 128000, payload 201B, e2e delay 128000us, jitter 12800us
+	('MIMU3', 'SW13'), Operation(130, None, 147)(130, 130)
+	('SW13', 'MIMU1'), Operation(149, None, 295)(149, 278)
+68. Flow F68 [FCM1-->LCM2] with period 32000, payload 524B, e2e delay 32000us, jitter 3200us
+	('FCM1', 'SW31'), Operation(1095, 1095, 1137)(1095, 1095)
+	('SW31', 'SW6'), Operation(1139, 1144, 1186)(1144, 1144)
+	('SW6', 'SW32'), Operation(1188, 1193, 1235)(1193, 1193)
+	('SW32', 'LCM2'), Operation(1237, None, 1408)(1237, 1366)
+69. Flow F69 [CMRIU2-->BFCU] with period 2000, payload 182B, e2e delay 2000us, jitter 200us
+	('CMRIU2', 'SW22'), Operation(481, 481, 496)(481, 481)
+	('SW22', 'BFCU'), Operation(498, 503, 518)(503, 503)
+70. Flow F70 [CM2CB-->SMRIU1] with period 2000, payload 1307B, e2e delay 2000us, jitter 200us
+	('CM2CB', 'SW42'), Operation(1040, 1040, 1145)(1040, 1040)
+	('SW42', 'SW32'), Operation(1147, 1152, 1257)(1152, 1152)
+	('SW32', 'SW6'), Operation(1259, 1264, 1369)(1264, 1264)
+	('SW6', 'SMRIU1'), Operation(1371, 1376, 1481)(1376, 1376)
+71. Flow F71 [RCM2-->SMRIU2] with period 32000, payload 1343B, e2e delay 32000us, jitter 3200us
+	('RCM2', 'SW32'), Operation(1260, None, 1368)(1260, 1260)
+	('SW32', 'SW6'), Operation(1370, None, 1607)(1370, 1499)
+	('SW6', 'SMRIU2'), Operation(1480, None, 1846)(1480, 1738)
+72. Flow F72 [LCM2-->SM1CA] with period 4000, payload 1305B, e2e delay 4000us, jitter 400us
+	('LCM2', 'SW32'), Operation(806, 806, 911)(806, 806)
+	('SW32', 'SW8'), Operation(913, 918, 1023)(918, 918)
+	('SW8', 'SW51'), Operation(1025, 1030, 1135)(1030, 1030)
+	('SW51', 'SM1CA'), Operation(1137, None, 1371)(1137, 1266)
+73. Flow F73 [LCM2-->SM1CB] with period 4000, payload 187B, e2e delay 4000us, jitter 400us
+	('LCM2', 'SW32'), Operation(219, 219, 234)(219, 219)
+	('SW32', 'SW8'), Operation(236, None, 380)(236, 365)
+	('SW8', 'SW51'), Operation(253, 387, 402)(387, 387)
+	('SW51', 'SM1CB'), Operation(404, 409, 424)(409, 409)
+74. Flow F74 [DU3-->StarTr2] with period 32000, payload 1216B, e2e delay 32000us, jitter 3200us
+	('DU3', 'SW11'), Operation(2041, 2041, 2139)(2041, 2041)
+	('SW11', 'SW21'), Operation(2141, 2146, 2244)(2146, 2146)
+	('SW21', 'SW13'), Operation(2246, None, 2473)(2246, 2375)
+	('SW13', 'StarTr2'), Operation(2346, None, 2702)(2346, 2604)
+75. Flow F75 [SBAND2-->LCM1] with period 2000, payload 655B, e2e delay 2000us, jitter 200us
+	('SBAND2', 'SW12'), Operation(405, None, 458)(405, 405)
+	('SW12', 'SW21'), Operation(460, 465, 518)(465, 465)
+	('SW21', 'SW31'), Operation(520, 525, 578)(525, 525)
+	('SW31', 'LCM1'), Operation(580, 585, 638)(585, 585)
+76. Flow F76 [DU4-->MIMU1] with period 8000, payload 1212B, e2e delay 8000us, jitter 800us
+	('DU4', 'SW14'), Operation(2326, 2326, 2423)(2326, 2326)
+	('SW14', 'SW21'), Operation(2425, 2430, 2527)(2430, 2430)
+	('SW21', 'SW13'), Operation(2529, None, 2755)(2529, 2658)
+	('SW13', 'MIMU1'), Operation(2628, 2762, 2859)(2762, 2762)
+77. Flow F77 [RCM2-->DU5] with period 128000, payload 763B, e2e delay 128000us, jitter 12800us
+	('RCM2', 'SW32'), Operation(560, None, 622)(560, 560)
+	('SW32', 'SW22'), Operation(624, None, 815)(624, 753)
+	('SW22', 'SW14'), Operation(688, None, 1008)(688, 946)
+	('SW14', 'DU5'), Operation(752, None, 1201)(752, 1139)
+78. Flow F78 [DU5-->SMRIU1] with period 128000, payload 1052B, e2e delay 128000us, jitter 12800us
+	('DU5', 'SW14'), Operation(2018, None, 2103)(2018, 2018)
+	('SW14', 'SW21'), Operation(2105, None, 2319)(2105, 2234)
+	('SW21', 'SW31'), Operation(2192, 2326, 2411)(2326, 2326)
+	('SW31', 'SW6'), Operation(2413, None, 2627)(2413, 2542)
+	('SW6', 'SMRIU1'), Operation(2500, None, 2843)(2500, 2758)
+79. Flow F79 [RCM2-->CMRIU1] with period 128000, payload 1211B, e2e delay 128000us, jitter 12800us
+	('RCM2', 'SW32'), Operation(147, None, 244)(147, 147)
+	('SW32', 'SW7'), Operation(246, None, 472)(246, 375)
+	('SW7', 'SW21'), Operation(345, 479, 576)(479, 479)
+	('SW21', 'CMRIU1'), Operation(578, None, 804)(578, 707)
+80. Flow F80 [SM1CA-->StarTr1] with period 16000, payload 683B, e2e delay 16000us, jitter 1600us
+	('SM1CA', 'SW51'), Operation(2599, 2599, 2654)(2599, 2599)
+	('SW51', 'SW41'), Operation(2656, 2661, 2716)(2661, 2661)
+	('SW41', 'SW31'), Operation(2718, None, 2902)(2718, 2847)
+	('SW31', 'SW21'), Operation(2775, 2909, 2964)(2909, 2909)
+	('SW21', 'SW13'), Operation(2966, 2971, 3026)(2971, 2971)
+	('SW13', 'StarTr1'), Operation(3028, None, 3212)(3028, 3157)
+81. Flow F81 [MIMU3-->MIMU2] with period 64000, payload 1303B, e2e delay 64000us, jitter 6400us
+	('MIMU3', 'SW13'), Operation(148, None, 253)(148, 148)
+	('SW13', 'MIMU2'), Operation(255, None, 489)(255, 384)
+82. Flow F82 [CMRIU1-->FCM2] with period 16000, payload 1124B, e2e delay 16000us, jitter 1600us
+	('CMRIU1', 'SW21'), Operation(0, None, 90)(0, 0)
+	('SW21', 'SW7'), Operation(92, None, 311)(92, 221)
+	('SW7', 'SW32'), Operation(184, 318, 408)(318, 318)
+	('SW32', 'FCM2'), Operation(410, 415, 505)(415, 415)
+83. Flow F83 [CM2CA-->DU2] with period 4000, payload 102B, e2e delay 4000us, jitter 400us
+	('CM2CA', 'SW42'), Operation(0, 0, 9)(0, 0)
+	('SW42', 'SW32'), Operation(11, 16, 25)(16, 16)
+	('SW32', 'SW22'), Operation(27, 32, 41)(32, 32)
+	('SW22', 'SW11'), Operation(43, None, 181)(43, 172)
+	('SW11', 'DU2'), Operation(54, None, 321)(54, 312)
+84. Flow F84 [DU4-->CM1CB] with period 128000, payload 272B, e2e delay 128000us, jitter 12800us
+	('DU4', 'SW14'), Operation(2531, None, 2553)(2531, 2531)
+	('SW14', 'SW21'), Operation(2555, None, 2706)(2555, 2684)
+	('SW21', 'SW31'), Operation(2579, None, 2859)(2579, 2837)
+	('SW31', 'SW41'), Operation(2603, 2866, 2888)(2866, 2866)
+	('SW41', 'CM1CB'), Operation(2890, None, 3041)(2890, 3019)
+85. Flow F85 [RCM1-->SMRIU2] with period 128000, payload 1348B, e2e delay 128000us, jitter 12800us
+	('RCM1', 'SW31'), Operation(1627, None, 1735)(1627, 1627)
+	('SW31', 'SW6'), Operation(1737, None, 1974)(1737, 1866)
+	('SW6', 'SMRIU2'), Operation(1847, None, 2213)(1847, 2105)
+86. Flow F86 [SBAND1-->DU1] with period 2000, payload 446B, e2e delay 2000us, jitter 200us
+	('SBAND1', 'SW12'), Operation(311, 311, 347)(311, 311)
+	('SW12', 'SW21'), Operation(349, 354, 390)(354, 354)
+	('SW21', 'SW11'), Operation(392, 397, 433)(397, 397)
+	('SW11', 'DU1'), Operation(435, 440, 476)(440, 440)
+87. Flow F87 [CM1CA-->SM2CB] with period 32000, payload 489B, e2e delay 32000us, jitter 3200us
+	('CM1CA', 'SW41'), Operation(1916, None, 1956)(1916, 1916)
+	('SW41', 'SW31'), Operation(1958, None, 2127)(1958, 2087)
+	('SW31', 'SW8'), Operation(2000, None, 2298)(2000, 2258)
+	('SW8', 'SW52'), Operation(2042, None, 2469)(2042, 2429)
+	('SW52', 'SM2CB'), Operation(2084, None, 2640)(2084, 2600)
+88. Flow F88 [RCM2-->SBAND1] with period 16000, payload 1248B, e2e delay 16000us, jitter 1600us
+	('RCM2', 'SW32'), Operation(714, None, 814)(714, 714)
+	('SW32', 'SW22'), Operation(816, None, 1045)(816, 945)
+	('SW22', 'SW12'), Operation(918, None, 1276)(918, 1176)
+	('SW12', 'SBAND1'), Operation(1020, None, 1507)(1020, 1407)
+89. Flow F89 [MIMU3-->CMRIU1] with period 16000, payload 1423B, e2e delay 16000us, jitter 1600us
+	('MIMU3', 'SW13'), Operation(591, None, 705)(591, 591)
+	('SW13', 'SW21'), Operation(707, 712, 826)(712, 712)
+	('SW21', 'CMRIU1'), Operation(828, None, 1071)(828, 957)
+90. Flow F90 [CM1CB-->DU5] with period 8000, payload 387B, e2e delay 8000us, jitter 800us
+	('CM1CB', 'SW41'), Operation(2095, 2095, 2126)(2095, 2095)
+	('SW41', 'SW31'), Operation(2128, None, 2288)(2128, 2257)
+	('SW31', 'SW21'), Operation(2161, None, 2450)(2161, 2419)
+	('SW21', 'SW14'), Operation(2194, 2457, 2488)(2457, 2457)
+	('SW14', 'DU5'), Operation(2490, 2495, 2526)(2495, 2495)
+91. Flow F91 [BFCU-->DU4] with period 16000, payload 998B, e2e delay 16000us, jitter 1600us
+	('BFCU', 'SW22'), Operation(252, None, 332)(252, 252)
+	('SW22', 'SW14'), Operation(334, 339, 419)(339, 339)
+	('SW14', 'DU4'), Operation(421, 426, 506)(426, 426)
+92. Flow F92 [SM2CA-->RCM2] with period 4000, payload 784B, e2e delay 4000us, jitter 400us
+	('SM2CA', 'SW52'), Operation(1188, 1188, 1251)(1188, 1188)
+	('SW52', 'SW42'), Operation(1253, 1258, 1321)(1258, 1258)
+	('SW42', 'SW32'), Operation(1323, 1328, 1391)(1328, 1328)
+	('SW32', 'RCM2'), Operation(1393, 1398, 1461)(1398, 1398)
+93. Flow F93 [DU3-->BFCU] with period 64000, payload 932B, e2e delay 64000us, jitter 6400us
+	('DU3', 'SW11'), Operation(483, 483, 558)(483, 483)
+	('SW11', 'SW22'), Operation(560, None, 764)(560, 689)
+	('SW22', 'BFCU'), Operation(637, None, 970)(637, 895)
+94. Flow F94 [DU1-->SM2CB] with period 16000, payload 1046B, e2e delay 16000us, jitter 1600us
+	('DU1', 'SW11'), Operation(2683, None, 2767)(2683, 2683)
+	('SW11', 'SW21'), Operation(2769, 2774, 2858)(2774, 2774)
+	('SW21', 'SW31'), Operation(2860, None, 3073)(2860, 2989)
+	('SW31', 'SW8'), Operation(2946, None, 3288)(2946, 3204)
+	('SW8', 'SW52'), Operation(3032, 3295, 3379)(3295, 3295)
+	('SW52', 'SM2CB'), Operation(3381, 3386, 3470)(3386, 3386)
+95. Flow F95 [SBAND2-->MIMU1] with period 128000, payload 798B, e2e delay 128000us, jitter 12800us
+	('SBAND2', 'SW12'), Operation(1379, None, 1443)(1379, 1379)
+	('SW12', 'SW21'), Operation(1445, None, 1638)(1445, 1574)
+	('SW21', 'SW13'), Operation(1511, 1645, 1709)(1645, 1645)
+	('SW13', 'MIMU1'), Operation(1711, None, 1904)(1711, 1840)
+96. Flow F96 [SBAND1-->DU1] with period 64000, payload 810B, e2e delay 64000us, jitter 6400us
+	('SBAND1', 'SW12'), Operation(1049, None, 1114)(1049, 1049)
+	('SW12', 'SW21'), Operation(1116, None, 1310)(1116, 1245)
+	('SW21', 'SW11'), Operation(1183, 1317, 1382)(1317, 1317)
+	('SW11', 'DU1'), Operation(1384, None, 1578)(1384, 1513)
+97. Flow F97 [SM1CA-->DU2] with period 32000, payload 1299B, e2e delay 32000us, jitter 3200us
+	('SM1CA', 'SW51'), Operation(2691, None, 2795)(2691, 2691)
+	('SW51', 'SW41'), Operation(2797, None, 3030)(2797, 2926)
+	('SW41', 'SW31'), Operation(2903, None, 3265)(2903, 3161)
+	('SW31', 'SW21'), Operation(3009, 3272, 3376)(3272, 3272)
+	('SW21', 'SW11'), Operation(3378, 3383, 3487)(3383, 3383)
+	('SW11', 'DU2'), Operation(3489, None, 3722)(3489, 3618)
+98. Flow F98 [SMRIU1-->MIMU1] with period 16000, payload 1023B, e2e delay 16000us, jitter 1600us
+	('SMRIU1', 'SW6'), Operation(3377, 3377, 3459)(3377, 3377)
+	('SW6', 'SW31'), Operation(3461, None, 3672)(3461, 3590)
+	('SW31', 'SW21'), Operation(3545, 3679, 3761)(3679, 3679)
+	('SW21', 'SW13'), Operation(3763, None, 3974)(3763, 3892)
+	('SW13', 'MIMU1'), Operation(3847, None, 4187)(3847, 4105)
+99. Flow F99 [MIMU2-->DU3] with period 16000, payload 973B, e2e delay 16000us, jitter 1600us
+	('MIMU2', 'SW13'), Operation(1218, 1218, 1296)(1218, 1218)
+	('SW13', 'SW21'), Operation(1298, 1303, 1381)(1303, 1303)
+	('SW21', 'SW11'), Operation(1383, 1388, 1466)(1388, 1388)
+	('SW11', 'DU3'), Operation(1468, None, 1675)(1468, 1597)
+100. Flow F100 [DU2-->SM1CA] with period 32000, payload 291B, e2e delay 32000us, jitter 3200us
+	('DU2', 'SW11'), Operation(3022, 3022, 3046)(3022, 3022)
+	('SW11', 'SW21'), Operation(3048, None, 3201)(3048, 3177)
+	('SW21', 'SW31'), Operation(3074, 3208, 3232)(3208, 3208)
+	('SW31', 'SW41'), Operation(3234, 3239, 3263)(3239, 3239)
+	('SW41', 'SW51'), Operation(3265, 3270, 3294)(3270, 3270)
+	('SW51', 'SM1CA'), Operation(3296, 3301, 3325)(3301, 3301)
+101. Flow F101 [LCM2-->DU1] with period 16000, payload 896B, e2e delay 16000us, jitter 1600us
+	('LCM2', 'SW32'), Operation(1223, 1223, 1295)(1223, 1223)
+	('SW32', 'SW22'), Operation(1297, None, 1498)(1297, 1426)
+	('SW22', 'SW11'), Operation(1371, 1505, 1577)(1505, 1505)
+	('SW11', 'DU1'), Operation(1579, None, 1780)(1579, 1708)
+102. Flow F102 [StarTr1-->StarTr2] with period 32000, payload 779B, e2e delay 32000us, jitter 3200us
+	('StarTr1', 'SW13'), Operation(625, None, 688)(625, 625)
+	('SW13', 'StarTr2'), Operation(690, 695, 758)(695, 695)
+103. Flow F103 [DU2-->BFCU] with period 8000, payload 95B, e2e delay 8000us, jitter 800us
+	('DU2', 'SW11'), Operation(951, 951, 959)(951, 951)
+	('SW11', 'SW22'), Operation(961, None, 1098)(961, 1090)
+	('SW22', 'BFCU'), Operation(971, 1105, 1113)(1105, 1105)
+104. Flow F104 [SBAND1-->DU4] with period 16000, payload 456B, e2e delay 16000us, jitter 1600us
+	('SBAND1', 'SW12'), Operation(784, 784, 821)(784, 784)
+	('SW12', 'SW21'), Operation(823, None, 989)(823, 952)
+	('SW21', 'SW14'), Operation(862, None, 1157)(862, 1120)
+	('SW14', 'DU4'), Operation(901, 1164, 1201)(1164, 1164)
+105. Flow F105 [SMRIU1-->MIMU3] with period 64000, payload 509B, e2e delay 64000us, jitter 6400us
+	('SMRIU1', 'SW6'), Operation(3846, 3846, 3887)(3846, 3846)
+	('SW6', 'SW31'), Operation(3889, None, 4059)(3889, 4018)
+	('SW31', 'SW21'), Operation(3932, None, 4231)(3932, 4190)
+	('SW21', 'SW13'), Operation(3975, None, 4403)(3975, 4362)
+	('SW13', 'MIMU3'), Operation(4018, None, 4575)(4018, 4534)
