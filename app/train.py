@@ -163,10 +163,15 @@ if __name__ == "__main__":
 
     NUM_ENVS = args.num_envs
     logging.basicConfig(
-        stream=sys.stdout,
-        level=logging.DEBUG if args.debug else logging.INFO,
-        format='%(asctime)s - %(levelname)s - %(message)s',
+        level=logging.DEBUG,
+        format='%(asctime)s - %(name)s - %(levelname)s - %(message)s',
+        handlers=[
+            logging.FileHandler(os.path.join(OUT_DIR, f"train.log"), mode='w'),
+            logging.StreamHandler()
+        ]
     )
+
+    logging.info(args)
 
     done = False
     i = 0
@@ -181,6 +186,7 @@ if __name__ == "__main__":
             continue
     assert MONITOR_DIR is not None
 
+    logging.info("start training...")
     train(args.topo, args.time_steps, num_flows=args.num_flows, pre_trained_model=args.model)
 
     # MONITOR_DIR = os.path.join(MONITOR_ROOT_DIR, str(1))
