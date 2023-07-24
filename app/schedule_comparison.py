@@ -10,7 +10,7 @@ import time
 from definitions import OUT_DIR
 from src.app.smt_scheduler import SmtScheduler, NoWaitSmtScheduler
 from src.app.drl_scheduler import DrlScheduler
-from src.lib.config import ConfigManager
+from src.lib.log_config import log_config
 from src.lib.execute import execute_from_command_line
 from src.network.net import generate_linear_5, generate_cev, generate_flows
 
@@ -161,5 +161,5 @@ def get_alg(best_model):
 
 
 if __name__ == '__main__':
-    logging.basicConfig(level=logging.INFO, format='%(asctime)s - %(levelname)s - %(message)s')
+    log_config(os.path.join(OUT_DIR, 'exp.log'), logging.DEBUG)
     execute_from_command_line(main)

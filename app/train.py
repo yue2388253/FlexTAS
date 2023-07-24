@@ -4,7 +4,6 @@ import matplotlib.pyplot as plt
 import multiprocessing
 import numpy as np
 import os
-import sys
 
 from app.test import test
 from definitions import OUT_DIR
@@ -12,6 +11,7 @@ from src.agent.encoder import FeaturesExtractor
 from src.env.env_helper import generate_env
 from src.env.env import NetEnv, TrainingNetEnv
 from src.lib.config import ConfigManager
+from src.lib.log_config import log_config
 from src.lib.timing_decorator import timing_decorator
 from src.app.drl_scheduler import DrlScheduler
 from src.network.net import generate_linear_5, generate_cev, generate_flows, Net
@@ -162,14 +162,8 @@ if __name__ == "__main__":
     TOPO = args.topo
 
     NUM_ENVS = args.num_envs
-    logging.basicConfig(
-        level=logging.DEBUG,
-        format='%(asctime)s - %(name)s - %(levelname)s - %(message)s',
-        handlers=[
-            logging.FileHandler(os.path.join(OUT_DIR, f"train.log"), mode='w'),
-            logging.StreamHandler()
-        ]
-    )
+
+    log_config(os.path.join(OUT_DIR, f"train.log"), logging.DEBUG)
 
     logging.info(args)
 
