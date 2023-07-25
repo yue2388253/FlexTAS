@@ -37,6 +37,7 @@ def get_best_model_path():
 def make_env(num_flows, rank: int, topo: str, training: bool = True, link_rate: int = 100):
     initial_ratio = ConfigManager().config.getfloat('Training', 'cl_initial_ratio')
     step_ratio = ConfigManager().config.getfloat('Training', 'cl_step_ratio')
+    link_rate = int(link_rate)
 
     def _init():
         if topo == "CEV":
