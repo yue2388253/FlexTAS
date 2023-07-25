@@ -34,10 +34,9 @@ def get_best_model_path():
     return os.path.join(OUT_DIR, f"best_model_{TOPO}_{DRL_ALG}")
 
 
-def make_env(num_flows, rank: int, topo: str, training: bool = True):
+def make_env(num_flows, rank: int, topo: str, training: bool = True, link_rate: int = 100):
     initial_ratio = ConfigManager().config.getfloat('Training', 'cl_initial_ratio')
     step_ratio = ConfigManager().config.getfloat('Training', 'cl_step_ratio')
-    link_rate = ConfigManager().config.getint('Net', 'link_rate')
 
     def _init():
         if topo == "CEV":
@@ -66,7 +65,7 @@ def make_env(num_flows, rank: int, topo: str, training: bool = True):
 
 
 @timing_decorator(logging.info)
-def train(topo: str, num_time_steps, num_flows=NUM_FLOWS, pre_trained_model=None):
+def train(topo: str, num_time_steps, num_flows=NUM_FLOWS, pre_trained_model=None, link_rate=None):
     os.makedirs(OUT_DIR, exist_ok=True)
 
     if pre_trained_model is not None:
@@ -75,7 +74,7 @@ def train(topo: str, num_time_steps, num_flows=NUM_FLOWS, pre_trained_model=None
         ConfigManager().config.set('Training', 'cl_step_ratio', '0')
 
     n_envs = NUM_ENVS  # Number of environments to create
-    env = SubprocVecEnv([make_env(num_flows, i, topo) for i in range(n_envs)])
+    env = SubprocVecEnv([make_env(num_flows, i, topo, link_rate=link_rate) for i in range(n_envs)])
 
     if pre_trained_model is not None:
         model = DrlScheduler.SUPPORTING_ALG[DRL_ALG].load(pre_trained_model, env)
@@ -91,7 +90,7 @@ def train(topo: str, num_time_steps, num_flows=NUM_FLOWS, pre_trained_model=None
         else:
             model = DrlScheduler.SUPPORTING_ALG[DRL_ALG]("MultiInputPolicy", env, policy_kwargs=policy_kwargs, verbose=1)
 
-    eval_env = SubprocVecEnv([make_env(num_flows, i, topo, training=False) for i in range(n_envs)])
+    eval_env = SubprocVecEnv([make_env(num_flows, i, topo, training=False, link_rate=link_rate) for i in range(n_envs)])
     callback = EvalCallback(eval_env, best_model_save_path=get_best_model_path(),
                             log_path=OUT_DIR, eval_freq=max(10000 // n_envs, 1))
 
@@ -157,7 +156,6 @@ if __name__ == "__main__":
         support_link_rates = [100, 1000]
         assert int(link_rate) in support_link_rates, \
             f"Unknown link rate {link_rate}, which is not in supported link rates {support_link_rates}"
-        ConfigManager().config.set('Net', 'link_rate', str(link_rate))
 
     TOPO = args.topo
 
@@ -181,7 +179,7 @@ if __name__ == "__main__":
     assert MONITOR_DIR is not None
 
     logging.info("start training...")
-    train(args.topo, args.time_steps, num_flows=args.num_flows, pre_trained_model=args.model)
+    train(args.topo, args.time_steps, num_flows=args.num_flows, pre_trained_model=args.model, link_rate=args.link_rate)
 
     # MONITOR_DIR = os.path.join(MONITOR_ROOT_DIR, str(1))
     plot_results(MONITOR_DIR)
