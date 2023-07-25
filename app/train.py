@@ -8,9 +8,7 @@ import os
 from app.test import test
 from definitions import OUT_DIR
 from src.agent.encoder import FeaturesExtractor
-from src.env.env_helper import generate_env
 from src.env.env import NetEnv, TrainingNetEnv
-from src.lib.config import ConfigManager
 from src.lib.log_config import log_config
 from src.lib.timing_decorator import timing_decorator
 from src.app.drl_scheduler import DrlScheduler
@@ -35,27 +33,19 @@ def get_best_model_path():
 
 
 def make_env(num_flows, rank: int, topo: str, training: bool = True, link_rate: int = 100):
-    initial_ratio = ConfigManager().config.getfloat('Training', 'cl_initial_ratio')
-    step_ratio = ConfigManager().config.getfloat('Training', 'cl_step_ratio')
-    link_rate = int(link_rate)
-
     def _init():
         if topo == "CEV":
-            graph = generate_cev()
+            graph = generate_cev(link_rate)
         elif topo == "L5":
-            graph = generate_linear_5()
+            graph = generate_linear_5(link_rate)
         else:
             raise ValueError(f"Unknown topo {topo}")
 
         if training:
-            env = TrainingNetEnv(graph, generate_flows, num_flows,
-                                 initial_ratio=initial_ratio,
-                                 step_ratio=step_ratio,
-                                 link_rate=link_rate
-                                 )
+            env = TrainingNetEnv(graph, generate_flows, num_flows)
         else:
             flows = generate_flows(graph, num_flows)
-            env = NetEnv(graph, flows, link_rate=link_rate)
+            env = NetEnv(graph, flows)
 
         # Wrap the environment with Monitor
         env = Monitor(env, os.path.join(MONITOR_DIR, f'{"train" if training else "eval"}_{rank}'))
@@ -66,13 +56,8 @@ def make_env(num_flows, rank: int, topo: str, training: bool = True, link_rate: 
 
 
 @timing_decorator(logging.info)
-def train(topo: str, num_time_steps, num_flows=NUM_FLOWS, pre_trained_model=None, link_rate=None):
+def train(topo: str, num_time_steps, num_flows=NUM_FLOWS, pre_trained_model=None, link_rate=100):
     os.makedirs(OUT_DIR, exist_ok=True)
-
-    if pre_trained_model is not None:
-        # has already a pre-trained model, no need to use curriculum learning.
-        ConfigManager().config.set('Training', 'cl_initial_ratio', '1.0')
-        ConfigManager().config.set('Training', 'cl_step_ratio', '0')
 
     n_envs = NUM_ENVS  # Number of environments to create
     env = SubprocVecEnv([make_env(num_flows, i, topo, link_rate=link_rate) for i in range(n_envs)])
@@ -145,7 +130,7 @@ if __name__ == "__main__":
     parser.add_argument('--alg', type=str, default=None)
     parser.add_argument('--model', type=str, default=None)
     parser.add_argument('--topo', type=str, default="CEV")
-    parser.add_argument('--link_rate', default=None)
+    parser.add_argument('--link_rate', type=int, default=100)
     args = parser.parse_args()
 
     if args.alg is not None:
@@ -153,10 +138,9 @@ if __name__ == "__main__":
         DRL_ALG = args.alg
 
     if args.link_rate is not None:
-        link_rate = args.link_rate
         support_link_rates = [100, 1000]
-        assert int(link_rate) in support_link_rates, \
-            f"Unknown link rate {link_rate}, which is not in supported link rates {support_link_rates}"
+        assert args.link_rate in support_link_rates, \
+            f"Unknown link rate {args.link_rate}, which is not in supported link rates {support_link_rates}"
 
     TOPO = args.topo
 
@@ -180,9 +164,13 @@ if __name__ == "__main__":
     assert MONITOR_DIR is not None
 
     logging.info("start training...")
-    train(args.topo, args.time_steps, num_flows=args.num_flows, pre_trained_model=args.model, link_rate=args.link_rate)
+    train(args.topo, args.time_steps,
+          num_flows=args.num_flows,
+          pre_trained_model=args.model,
+          link_rate=args.link_rate)
 
     # MONITOR_DIR = os.path.join(MONITOR_ROOT_DIR, str(1))
     plot_results(MONITOR_DIR)
 
-    test(args.topo, args.num_flows, NUM_ENVS, os.path.join(get_best_model_path(), "best_model"), DRL_ALG)
+    test(args.topo, args.num_flows, NUM_ENVS,
+         os.path.join(get_best_model_path(), "best_model"), DRL_ALG, args.link_rate)

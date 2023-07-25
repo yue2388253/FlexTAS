@@ -14,9 +14,7 @@ from src.network.net import generate_linear_5, Flow
 class TestEnvState(unittest.TestCase):
     def setUp(self) -> None:
         logging.basicConfig(level=logging.DEBUG)
-        graph, flows = generate_net_flows_from_json(
-            os.path.join(ROOT_DIR, 'data/input/smt_output/FlexTAS_50_1204.json'))
-        self.env = NetEnv(graph, flows)
+        self.env = NetEnv()
         self.state_encoder = self.env.state_encoder
 
     def test_edge_lists(self):
@@ -35,9 +33,7 @@ class TestEnvState(unittest.TestCase):
 class TestEnv(unittest.TestCase):
     def setUp(self) -> None:
         logging.basicConfig(level=logging.DEBUG)
-        graph, flows = generate_net_flows_from_json(
-            os.path.join(ROOT_DIR, 'data/input/smt_output/FlexTAS_50_1204.json'))
-        self.env = NetEnv(graph, flows)
+        self.env = NetEnv()
 
     def test_check_env(self):
         check_env(self.env)

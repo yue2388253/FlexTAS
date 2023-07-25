@@ -42,12 +42,12 @@ class TestLink(unittest.TestCase):
         d1 = Duration(0, 0, 4)
         d2 = Duration(2, 2, 4)
         d3 = Duration(1, 1, 2)
-        link = Link('link0')
+        link = Link('link0', 100)
         link.add_reserved_duration(d1, check=True)
         link.add_reserved_duration(d2, check=True)
         link.add_reserved_duration(d3, check=True)
 
-        link = Link('link1')
+        link = Link('link1', 100)
         d4 = Duration(0, 0, 5)
         link.add_reserved_duration(d4, check=True)
         with self.assertRaises(RuntimeError) as _:
@@ -58,7 +58,7 @@ class TestLink(unittest.TestCase):
             link.add_reserved_duration(d3, check=True)
 
     def test_embedding(self):
-        link = Link('link')
+        link = Link('link', 100)
         link.add_reserved_duration(Duration(0, 0, 4))
         link.add_reserved_duration(Duration(1, 1, 8))
         embedding = link.embedding()

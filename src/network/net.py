@@ -205,7 +205,7 @@ class Flow:
             - num_switches * Net.DELAY_PROC_MAX
 
 
-def generate_linear_5() -> nx.DiGraph:
+def generate_linear_5(link_rate=100) -> nx.DiGraph:
     graph = nx.DiGraph()
 
     # The id of nodes should be unique.
@@ -223,18 +223,18 @@ def generate_linear_5() -> nx.DiGraph:
 
     for i in range(5):
         n0, n1 = f'S{i + 1}', f'E{i + 1}'
-        graph.add_edge(n0, n1, link_id=f"{n0}-{n1}")
-        graph.add_edge(n1, n0, link_id=f"{n1}-{n0}")
+        graph.add_edge(n0, n1, link_id=f"{n0}-{n1}", link_rate=link_rate)
+        graph.add_edge(n1, n0, link_id=f"{n1}-{n0}", link_rate=link_rate)
 
     for i in range(4):
         n0, n1 = f'S{i + 1}', f'S{i + 2}'
-        graph.add_edge(n0, n1, link_id=f"{n0}-{n1}")
-        graph.add_edge(n1, n0, link_id=f"{n1}-{n0}")
+        graph.add_edge(n0, n1, link_id=f"{n0}-{n1}", link_rate=link_rate)
+        graph.add_edge(n1, n0, link_id=f"{n1}-{n0}", link_rate=link_rate)
 
     return graph
 
 
-def generate_cev() -> nx.DiGraph:
+def generate_cev(link_rate=100) -> nx.DiGraph:
     edges = [
         ("DU1", "SW11"),
         ("DU2", "SW11"),
@@ -302,14 +302,17 @@ def generate_cev() -> nx.DiGraph:
 
     graph = nx.DiGraph(graph)
 
+    for edge in graph.edges:
+        graph.edges[edge]['link_rate'] = link_rate
+
     return graph
 
 
-def transform_line_graph(graph, link_rate) -> (nx.Graph, typing.Dict):
+def transform_line_graph(graph) -> (nx.Graph, typing.Dict):
     line_graph = nx.line_graph(graph)
     links_dict = {}
     for node in line_graph.nodes:
-        links_dict[node] = Link(node, link_rate)
+        links_dict[node] = Link(node, graph.edges[node]['link_rate'])
     return line_graph, links_dict
 
 

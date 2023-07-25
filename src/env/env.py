@@ -12,8 +12,7 @@ import pandas as pd
 from typing import SupportsFloat, Any, Optional
 
 from definitions import ROOT_DIR, OUT_DIR, LOG_DIR
-from src.network.net import Duration, Flow, Link, transform_line_graph, Net, PERIOD_SET
-from src.network.from_json import generate_net_flows_from_json
+from src.network.net import Duration, Flow, Link, transform_line_graph, Net, PERIOD_SET, generate_cev, generate_flows
 from src.lib.operation import Operation, check_operation_isolation
 
 
@@ -140,12 +139,12 @@ class NetEnv(gym.Env):
     beta: float = 10
     gamma: float = 0.1
 
-    def __init__(self, graph: nx.DiGraph = None, flows: list[Flow] = None,
-                 link_rate=100):
+    def __init__(self, graph: nx.DiGraph = None, flows: list[Flow] = None):
         super().__init__()
 
         if graph is None and flows is None:
-            self.graph, self.flows = generate_net_flows_from_json(os.path.join(ROOT_DIR, 'data/input/smt_output.json'))
+            self.graph = generate_cev()
+            self.flows = generate_flows(self.graph, 10)
         elif graph is not None and flows is not None:
             self.graph: nx.DiGraph = graph
             self.flows: list[Flow] = flows
@@ -155,7 +154,7 @@ class NetEnv(gym.Env):
         self.num_flows: int = len(self.flows)
         self.line_graph: nx.Graph
         self.link_dict: dict[str, Link]
-        self.line_graph, self.link_dict = transform_line_graph(self.graph, link_rate)
+        self.line_graph, self.link_dict = transform_line_graph(self.graph)
 
         self.flows_operations: dict[Flow, list[tuple[Link, Operation]]] = defaultdict(list)
         self.links_operations: dict[Link, list[tuple[Flow, Operation]]] = defaultdict(list)
@@ -406,7 +405,7 @@ class TrainingNetEnv(NetEnv):
     increase the number of flows gradually to make the env harder if the agent can easily
     pass the current env.
     """
-    def __init__(self, graph, flow_generator, num_flows, link_rate,
+    def __init__(self, graph, flow_generator, num_flows,
                  initial_ratio=0.2, step_ratio=0.05, changing_freq=10):
 
         self.flow_generator = flow_generator
@@ -420,7 +419,7 @@ class TrainingNetEnv(NetEnv):
         num_flows_initial = math.ceil(num_flows * initial_ratio)
         flows = flow_generator(graph, num_flows_initial)
 
-        super().__init__(graph, flows, link_rate)
+        super().__init__(graph, flows)
 
         self.num_passed = 0
         self.changing_freq = changing_freq
