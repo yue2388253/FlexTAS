@@ -16,10 +16,10 @@ from src.network.net import generate_linear_5, generate_cev, generate_flows
 
 
 def run_test(topo, num_flows, scheduler_str, scheduler_cls, seed, timeout, link_rate, best_model=None):
-    graph = get_graph(topo)
+    graph = get_graph(topo, link_rate)
     flows = generate_flows(graph, num_flows, seed=seed)
 
-    scheduler = scheduler_cls(graph, flows, timeout_s=timeout, link_rate=link_rate)
+    scheduler = scheduler_cls(graph, flows, timeout_s=timeout)
     if isinstance(scheduler, DrlScheduler):
         assert best_model is not None
         scheduler.load_model(best_model, 'MaskablePPO')
@@ -35,7 +35,13 @@ def run_test(topo, num_flows, scheduler_str, scheduler_cls, seed, timeout, link_
 
 
 class SchedulerManager:
-    def __init__(self, topo, best_model, time_limit, num_flows, seed, num_tests, link_rate):
+    scheduler_dict = {
+        'smt': SmtScheduler,
+        'smt_no_wait': NoWaitSmtScheduler,
+        'drl': DrlScheduler
+    }
+    
+    def __init__(self, topo, best_model, time_limit, num_flows, seed, num_tests, link_rate, schedulers: list[str]):
         # [scheduler, [seed, # of flows]]
         self.scheduler_capacity = defaultdict(lambda: defaultdict(None))
 
@@ -46,21 +52,16 @@ class SchedulerManager:
         self.seed = seed
         self.num_tests = num_tests
         self.link_rate = link_rate
+        self.schedulers = schedulers if schedulers is not None else self.scheduler_dict.keys()
 
     def run_normally(self):
-        schedulers = [
-            ('smt', SmtScheduler),
-            ('smt_no_wait', NoWaitSmtScheduler),
-            ('drl', DrlScheduler)
-        ]
-
         column_names = ['topo', 'num_flows', 'seed',
                         'scheduler', 'is_scheduled', 'consuming_time']
         df = pd.DataFrame(columns=column_names)
-        for (scheduler_str, scheduler_cls), num_flows, seed in \
-                itertools.product(schedulers, self.num_flows, range(self.seed, self.seed + self.num_tests)):
+        for scheduler_str, num_flows, seed in \
+                itertools.product(self.schedulers, self.num_flows, range(self.seed, self.seed + self.num_tests)):
             result = run_test(
-                self.topo, num_flows, scheduler_str, scheduler_cls, seed,
+                self.topo, num_flows, scheduler_str, self.scheduler_dict[scheduler_str], seed,
                 self.time_limit, self.link_rate, self.best_model
             )
             filename = os.path.join(OUT_DIR, f'schedule_stat_{self.topo}_{self.seed}_{self.time_limit}.csv')
@@ -70,17 +71,11 @@ class SchedulerManager:
             logging.info(f"scheduling statistics is saved to {filename}")
 
     def run_dichotomy(self):
-        schedulers = [
-            ('smt', SmtScheduler),
-            ('smt_no_wait', NoWaitSmtScheduler),
-            ('drl', DrlScheduler)
-        ]
-
         column_names = ['topo', 'num_flows', 'seed',
                         'scheduler', 'is_scheduled', 'consuming_time']
         df = pd.DataFrame(columns=column_names)
 
-        for scheduler_str, scheduler_cls in schedulers:
+        for scheduler_str in self.schedulers:
             for seed in range(self.seed, self.seed + self.num_tests):
                 low = 0
                 high = len(self.num_flows) - 1
@@ -91,7 +86,7 @@ class SchedulerManager:
                     graph = get_graph(self.topo)
 
                     result = run_test(
-                        graph, num_flows, scheduler_str, scheduler_cls, seed,
+                        graph, num_flows, scheduler_str, self.scheduler_dict[scheduler_str], seed,
                         self.time_limit, self.link_rate, self.best_model
                     )
 
@@ -121,20 +116,24 @@ def schedule(scheduler):
     return is_scheduled, elapsed_time
 
 
-def get_graph(topo):
+def get_graph(topo, link_rate):
     if topo == 'L5':
-        return generate_linear_5()
+        return generate_linear_5(link_rate)
     elif topo == 'CEV':
-        return generate_cev()
+        return generate_cev(link_rate)
     raise ValueError(f"Unknown graph type {topo}")
 
 
 def main(num_flows: str, num_tests: int, best_model: str, seed: int = None,
-         link_rate: int = None, time_limit: int = 300, topo: str = 'L5', test_time: bool = False):
+         link_rate: int = None, time_limit: int = 300, topo: str = 'L5', test_time: bool = False,
+         schedulers: str = None):
     seed = seed or random.randint(0, 10000)
     num_flows = map(int, num_flows.split(',')) if isinstance(num_flows, str) else num_flows
 
-    scheduler_manager = SchedulerManager(topo, best_model, time_limit, num_flows, seed, num_tests, link_rate)
+    if schedulers is not None:
+        schedulers = schedulers.split(',')
+
+    scheduler_manager = SchedulerManager(topo, best_model, time_limit, num_flows, seed, num_tests, link_rate, schedulers)
     if test_time:
         logging.info("test time consumed.")
         scheduler_manager.run_normally()
