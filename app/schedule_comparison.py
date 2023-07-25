@@ -83,10 +83,8 @@ class SchedulerManager:
                     mid = (low + high) // 2
 
                     num_flows = self.num_flows[mid]
-                    graph = get_graph(self.topo)
-
                     result = run_test(
-                        graph, num_flows, scheduler_str, self.scheduler_dict[scheduler_str], seed,
+                        self.topo, num_flows, scheduler_str, self.scheduler_dict[scheduler_str], seed,
                         self.time_limit, self.link_rate, self.best_model
                     )
 
