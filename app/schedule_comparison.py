@@ -88,7 +88,7 @@ class SchedulerManager:
                         self.time_limit, self.link_rate, self.best_model
                     )
 
-                    is_scheduled = result[0][-1]
+                    is_scheduled = result[0][-2]
 
                     if is_scheduled:
                         for i in range(low, mid):
