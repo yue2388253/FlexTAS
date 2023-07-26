@@ -64,7 +64,7 @@ class SchedulerManager:
                 self.topo, num_flows, scheduler_str, self.scheduler_dict[scheduler_str], seed,
                 self.time_limit, self.link_rate, self.best_model
             )
-            filename = os.path.join(OUT_DIR, f'schedule_stat_{self.topo}_{self.seed}_{self.time_limit}.csv')
+            filename = os.path.join(OUT_DIR, f'schedule_stat_{self.topo}_{self.link_rate}_{self.seed}_{self.time_limit}.csv')
             df_temp = pd.DataFrame(result, columns=column_names)
             df = pd.concat([df, df_temp], ignore_index=True)
             df.to_csv(filename, index=False)
