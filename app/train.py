@@ -42,7 +42,7 @@ def make_env(num_flows, rank: int, topo: str, training: bool = True, link_rate: 
             raise ValueError(f"Unknown topo {topo}")
 
         if training:
-            env = TrainingNetEnv(graph, generate_flows, num_flows)
+            env = TrainingNetEnv(graph, generate_flows, num_flows, 1.0, 0.0)
         else:
             flows = generate_flows(graph, num_flows)
             env = NetEnv(graph, flows)
