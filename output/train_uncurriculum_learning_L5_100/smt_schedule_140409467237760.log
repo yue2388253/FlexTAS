@@ -1,0 +1,544 @@
+0. Flow F0 [BFCU-->LCM2] with period 128000, payload 623B, e2e delay 128000us, jitter 12800us
+	('BFCU', 'SW22'), Operation(96114, 96114, 96164)(96114, 96114)
+	('SW22', 'SW32'), Operation(96166, 96171, 96221)(96171, 96171)
+	('SW32', 'LCM2'), Operation(96223, 96228, 96278)(96228, 96228)
+1. Flow F1 [MIMU3-->SMRIU1] with period 32000, payload 589B, e2e delay 32000us, jitter 3200us
+	('MIMU3', 'SW13'), Operation(16164, 16164, 16212)(16164, 16164)
+	('SW13', 'SW21'), Operation(16214, 16219, 16267)(16219, 16219)
+	('SW21', 'SW31'), Operation(16269, 16274, 16322)(16274, 16274)
+	('SW31', 'SW6'), Operation(16324, 31896, 31944)(31896, 31896)
+	('SW6', 'SMRIU1'), Operation(31946, 31951, 31999)(31951, 31951)
+2. Flow F2 [LCM1-->CM1CA] with period 16000, payload 1172B, e2e delay 16000us, jitter 1600us
+	('LCM1', 'SW31'), Operation(211, 211, 305)(211, 211)
+	('SW31', 'SW41'), Operation(307, 312, 406)(312, 312)
+	('SW41', 'CM1CA'), Operation(408, 413, 507)(413, 413)
+3. Flow F3 [StarTr2-->SM2CB] with period 32000, payload 621B, e2e delay 32000us, jitter 3200us
+	('StarTr2', 'SW13'), Operation(1, 1, 51)(1, 1)
+	('SW13', 'SW22'), Operation(53, 58, 108)(58, 58)
+	('SW22', 'SW32'), Operation(110, 115, 165)(115, 115)
+	('SW32', 'SW42'), Operation(167, 172, 222)(172, 172)
+	('SW42', 'SW52'), Operation(224, 229, 279)(229, 229)
+	('SW52', 'SM2CB'), Operation(281, 286, 336)(286, 286)
+4. Flow F4 [CM2CA-->CMRIU2] with period 128000, payload 569B, e2e delay 128000us, jitter 12800us
+	('CM2CA', 'SW42'), Operation(1, 1, 47)(1, 1)
+	('SW42', 'SW32'), Operation(49, 54, 100)(54, 54)
+	('SW32', 'SW22'), Operation(102, 107, 153)(107, 107)
+	('SW22', 'CMRIU2'), Operation(155, 160, 206)(160, 160)
+5. Flow F5 [SBAND1-->SM1CB] with period 32000, payload 879B, e2e delay 32000us, jitter 3200us
+	('SBAND1', 'SW12'), Operation(1, 1, 72)(1, 1)
+	('SW12', 'SW21'), Operation(74, 79, 150)(79, 79)
+	('SW21', 'SW31'), Operation(152, 157, 228)(157, 157)
+	('SW31', 'SW41'), Operation(230, 235, 306)(235, 235)
+	('SW41', 'SW51'), Operation(308, 313, 384)(313, 313)
+	('SW51', 'SM1CB'), Operation(386, 391, 462)(391, 391)
+6. Flow F6 [FCM1-->SMRIU1] with period 128000, payload 195B, e2e delay 128000us, jitter 12800us
+	('FCM1', 'SW31'), Operation(1, 1, 17)(1, 1)
+	('SW31', 'SW6'), Operation(19, 24, 40)(24, 24)
+	('SW6', 'SMRIU1'), Operation(42, 47, 63)(47, 47)
+7. Flow F7 [RCM1-->MIMU3] with period 4000, payload 205B, e2e delay 4000us, jitter 400us
+	('RCM1', 'SW31'), Operation(432, 432, 449)(432, 432)
+	('SW31', 'SW21'), Operation(451, 546, 563)(546, 546)
+	('SW21', 'SW13'), Operation(565, 570, 587)(570, 570)
+	('SW13', 'MIMU3'), Operation(589, 594, 611)(594, 594)
+8. Flow F8 [DU2-->FCM1] with period 16000, payload 425B, e2e delay 16000us, jitter 1600us
+	('DU2', 'SW11'), Operation(152, 152, 186)(152, 152)
+	('SW11', 'SW21'), Operation(188, 193, 227)(193, 193)
+	('SW21', 'SW31'), Operation(229, 234, 268)(234, 234)
+	('SW31', 'FCM1'), Operation(270, 275, 309)(275, 275)
+9. Flow F9 [SM1CB-->StarTr1] with period 64000, payload 1330B, e2e delay 64000us, jitter 6400us
+	('SM1CB', 'SW51'), Operation(1, 1, 108)(1, 1)
+	('SW51', 'SW41'), Operation(110, 115, 222)(115, 115)
+	('SW41', 'SW31'), Operation(224, 229, 336)(229, 229)
+	('SW31', 'SW21'), Operation(338, 343, 450)(343, 343)
+	('SW21', 'SW13'), Operation(452, 457, 564)(457, 457)
+	('SW13', 'StarTr1'), Operation(566, 571, 678)(571, 571)
+
+SMT variables: 
+	F5_('SW31', 'SW41')_rr: 1
+	F0_('BFCU', 'SW22')_gc: True
+	F4_('SW42', 'SW32')_t3_max: 54
+	F7_('SW13', 'MIMU3')_t4_min: 594
+	F2_('SW31', 'SW41')_rr: 2
+	('LCM1', 'SW31')_gcl_cycle: 16000
+	F7_queue_index: 0
+	F5_('SBAND1', 'SW12')_t4_min: 1
+	F1_('SW31', 'SW6')_t4_max: 31896
+	('SW31', 'SW41')_gcl_length: 6
+	F6_('SW31', 'SW6')_t4_min: 24
+	('SW21', 'SW13')_gcl_cycle: 64000
+	('SW41', 'SW31')_gcl_cycle: 64000
+	F6_jitter: 0
+	F4_('CM2CA', 'SW42')_t3_max: 0
+	('SW51', 'SM1CB')_gcl_cycle: 32000
+	F9_('SM1CB', 'SW51')_t5_max: 108
+	F3_('SW13', 'SW22')_rr: 1
+	F1_('SW13', 'SW21')_t4_min: 16219
+	F9_jitter: 0
+	F7_('SW21', 'SW13')_t4_max: 570
+	F3_queue_index: 0
+	F4_('SW32', 'SW22')_gc: True
+	F7_('SW31', 'SW21')_t4_min: 546
+	F9_('SW31', 'SW21')_t4_max: 343
+	F4_('SW42', 'SW32')_rr: 1
+	F3_('SW32', 'SW42')_gc: True
+	F5_('SW41', 'SW51')_gc: True
+	('SM1CB', 'SW51')_gcl_cycle: 64000
+	F9_('SW31', 'SW21')_gc: True
+	F3_('SW13', 'SW22')_gc: True
+	F0_('SW32', 'LCM2')_t4_min: 96228
+	F3_('SW22', 'SW32')_gc: True
+	F5_('SW12', 'SW21')_t4_min: 79
+	F9_('SW41', 'SW31')_t4_min: 229
+	F1_('SW13', 'SW21')_t3_max: 16219
+	F4_('SW32', 'SW22')_rr: 1
+	('SW51', 'SW41')_gcl_cycle: 64000
+	F6_('SW6', 'SMRIU1')_t5_max: 63
+	F0_queue_index: 0
+	F5_('SW21', 'SW31')_rr: 1
+	F5_queue_index: 0
+	F6_('SW31', 'SW6')_t5_min: 40
+	F4_('SW32', 'SW22')_t3_max: 107
+	F3_('SW42', 'SW52')_t4_max: 229
+	F4_('SW42', 'SW32')_gc: True
+	F4_('CM2CA', 'SW42')_t3_min: 1
+	F8_('DU2', 'SW11')_gc: True
+	F1_('SW13', 'SW21')_rr: 1
+	F0_('SW22', 'SW32')_t3_max: 96171
+	F9_('SW51', 'SW41')_t4_max: 115
+	F3_('SW42', 'SW52')_rr: 1
+	F9_('SW41', 'SW31')_rr: 1
+	F9_('SW21', 'SW13')_t4_max: 457
+	F3_('SW42', 'SW52')_t3_max: 229
+	('DU2', 'SW11')_gcl_length: 2
+	F5_('SW41', 'SW51')_tb: 313
+	F1_jitter: 0
+	('SW32', 'LCM2')_gcl_cycle: 128000
+	F1_('SW6', 'SMRIU1')_t4_min: 31951
+	F5_('SW41', 'SW51')_t3_max: 313
+	F6_('SW6', 'SMRIU1')_t4_min: 47
+	F5_('SW12', 'SW21')_gc: True
+	F0_('SW22', 'SW32')_t4_max: 96171
+	F1_('SW21', 'SW31')_t4_min: 16274
+	F3_('StarTr2', 'SW13')_t5_min: 51
+	F6_('SW31', 'SW6')_gc: True
+	F8_('DU2', 'SW11')_rr: 1
+	F3_('SW22', 'SW32')_t4_min: 115
+	F6_('SW31', 'SW6')_t3_max: 24
+	F1_('SW31', 'SW6')_rr: 4
+	F6_queue_index: 0
+	F1_('SW6', 'SMRIU1')_rr: 4
+	F7_('RCM1', 'SW31')_t3_max: 0
+	('SW42', 'SW52')_gcl_cycle: 32000
+	F5_('SW41', 'SW51')_t5_min: 384
+	F1_('MIMU3', 'SW13')_rr: 1
+	F6_('SW6', 'SMRIU1')_gc: True
+	F3_('SW22', 'SW32')_t4_max: 115
+	F3_('StarTr2', 'SW13')_gc: True
+	F5_('SBAND1', 'SW12')_t4_max: 1
+	F3_('SW32', 'SW42')_t4_max: 172
+	F9_('SM1CB', 'SW51')_rr: 1
+	F8_('SW11', 'SW21')_t4_max: 193
+	F5_('SW51', 'SM1CB')_t3_max: 391
+	F4_('SW32', 'SW22')_t4_max: 107
+	F3_('SW32', 'SW42')_t4_min: 172
+	F9_('SW31', 'SW21')_t4_min: 343
+	F2_('SW31', 'SW41')_t3_max: 312
+	F7_jitter: 0
+	('SW31', 'FCM1')_gcl_cycle: 16000
+	F5_('SW41', 'SW51')_t3_min: 308
+	F0_('SW22', 'SW32')_t4_min: 96171
+	F4_('SW22', 'CMRIU2')_t4_min: 160
+	F0_('SW32', 'LCM2')_gc: True
+	F3_('SW52', 'SM2CB')_gc: True
+	F4_('SW22', 'CMRIU2')_gc: True
+	F2_queue_index: 0
+	F5_('SBAND1', 'SW12')_t3_max: 0
+	F5_('SW51', 'SM1CB')_rr: 1
+	F7_('SW31', 'SW21')_rr: 16
+	F4_('CM2CA', 'SW42')_t5_max: 47
+	('SW31', 'SW41')_gcl_cycle: 32000
+	F8_('SW21', 'SW31')_t4_max: 234
+	F3_('SW22', 'SW32')_rr: 4
+	('FCM1', 'SW31')_gcl_cycle: 128000
+	F9_('SW51', 'SW41')_rr: 1
+	F2_('LCM1', 'SW31')_gc: True
+	F9_('SW51', 'SW41')_gc: True
+	F1_('SW31', 'SW6')_t4_min: 31896
+	F5_('SW21', 'SW31')_gc: True
+	F9_('SW51', 'SW41')_t4_min: 115
+	F1_('MIMU3', 'SW13')_t3_max: 0
+	F9_('SW51', 'SW41')_t3_max: 115
+	F3_('SW42', 'SW52')_gc: True
+	('SW13', 'SW21')_gcl_cycle: 32000
+	F7_('SW31', 'SW21')_t3_max: 456
+	F8_('SW11', 'SW21')_gc: True
+	F7_('SW13', 'MIMU3')_t3_max: 594
+	('StarTr2', 'SW13')_gcl_cycle: 32000
+	F6_('SW31', 'SW6')_rr: 1
+	F5_('SW12', 'SW21')_t3_max: 79
+	F9_('SW41', 'SW31')_t4_max: 229
+	F5_('SW31', 'SW41')_gc: True
+	('SW21', 'SW31')_gcl_cycle: 32000
+	F0_('SW22', 'SW32')_rr: 1
+	F6_('SW6', 'SMRIU1')_rr: 1
+	F9_('SM1CB', 'SW51')_gc: True
+	F4_('SW22', 'CMRIU2')_rr: 1
+	F5_('SBAND1', 'SW12')_gc: True
+	F0_('SW32', 'LCM2')_rr: 1
+	F1_('SW21', 'SW31')_gc: True
+	('SW41', 'SW51')_gcl_cycle: 32000
+	F1_('MIMU3', 'SW13')_gc: True
+	F5_('SW21', 'SW31')_t4_max: 157
+	F4_queue_index: 0
+	F3_('SW42', 'SW52')_t4_min: 229
+	F9_('SW21', 'SW13')_gc: True
+	F2_('SW41', 'CM1CA')_gc: True
+	F7_('SW31', 'SW21')_gc: True
+	F5_('SW41', 'SW51')_t4_max: 313
+	F1_('SW6', 'SMRIU1')_gc: True
+	F2_('SW41', 'CM1CA')_t4_min: 413
+	F8_('SW21', 'SW31')_rr: 2
+	F3_('SW13', 'SW22')_t3_max: 58
+	F5_('SW21', 'SW31')_t4_min: 157
+	('SW13', 'SW22')_gcl_cycle: 32000
+	F5_('SW12', 'SW21')_rr: 1
+	F3_('SW13', 'SW22')_t4_min: 58
+	F5_('SW12', 'SW21')_t4_max: 79
+	F9_('SW13', 'StarTr1')_gc: True
+	F8_('SW11', 'SW21')_t3_max: 193
+	F8_('SW21', 'SW31')_t4_min: 234
+	F3_('SW32', 'SW42')_rr: 1
+	F6_('FCM1', 'SW31')_t3_max: 0
+	F9_('SW41', 'SW31')_gc: True
+	('SW11', 'SW21')_gcl_cycle: 16000
+	F3_('SW32', 'SW42')_t3_max: 172
+	F8_('SW11', 'SW21')_t4_min: 193
+	F1_('SW13', 'SW21')_t4_max: 16219
+	F5_('SW31', 'SW41')_t4_min: 235
+	F3_('SW13', 'SW22')_t4_max: 58
+	F7_('SW21', 'SW13')_rr: 16
+	F9_('SW13', 'StarTr1')_t4_min: 571
+	F4_('SW42', 'SW32')_t4_max: 54
+	F7_('SW21', 'SW13')_t4_min: 570
+	F6_('FCM1', 'SW31')_rr: 1
+	F3_('SW42', 'SW52')_tb: 229
+	F1_('SW13', 'SW21')_gc: True
+	('SBAND1', 'SW12')_gcl_cycle: 32000
+	F2_('SW31', 'SW41')_t4_min: 312
+	F8_jitter: 0
+	F4_('CM2CA', 'SW42')_rr: 1
+	('SW12', 'SW21')_gcl_cycle: 32000
+	F3_jitter: 0
+	('CM2CA', 'SW42')_gcl_cycle: 128000
+	F0_('SW22', 'SW32')_gc: True
+	F9_('SW13', 'StarTr1')_t3_min: 566
+	F9_('SM1CB', 'SW51')_t3_min: 1
+	('RCM1', 'SW31')_gcl_cycle: 4000
+	F8_('SW31', 'FCM1')_t4_min: 275
+	('SW13', 'StarTr1')_gcl_cycle: 64000
+	F9_queue_index: 0
+	F2_('LCM1', 'SW31')_rr: 1
+	F3_('SW52', 'SM2CB')_rr: 1
+	('SW51', 'SM1CB')_gcl_length: 2
+	F1_('SW31', 'SW6')_gc: True
+	F7_('RCM1', 'SW31')_rr: 1
+	F9_('SW31', 'SW21')_t3_min: 338
+	('DU2', 'SW11')_gcl_cycle: 16000
+	F9_('SW21', 'SW13')_rr: 1
+	F2_('SW31', 'SW41')_gc: True
+	('SW41', 'CM1CA')_gcl_length: 2
+	F8_queue_index: 0
+	('SW13', 'MIMU3')_gcl_cycle: 4000
+	F8_('SW21', 'SW31')_t3_min: 229
+	F8_('SW11', 'SW21')_rr: 1
+	F5_('SW31', 'SW41')_t4_max: 235
+	('SW32', 'SW42')_gcl_cycle: 32000
+	F5_('SW41', 'SW51')_rr: 1
+	F0_('BFCU', 'SW22')_rr: 1
+	('SW31', 'SW21')_gcl_cycle: 64000
+	('SW42', 'SW32')_gcl_cycle: 128000
+	F0_('SW32', 'LCM2')_tb: 96228
+	F7_('SW13', 'MIMU3')_rr: 1
+	F5_jitter: 0
+	F5_('SW51', 'SM1CB')_t4_min: 391
+	('FCM1', 'SW31')_gcl_length: 2
+	F3_('SW52', 'SM2CB')_t4_min: 286
+	('SW31', 'SW6')_gcl_length: 10
+	F8_('SW31', 'FCM1')_rr: 1
+	F1_queue_index: 0
+	F7_('SW31', 'SW21')_t4_max: 546
+	F2_('SW41', 'CM1CA')_rr: 1
+	('SW22', 'CMRIU2')_gcl_cycle: 128000
+	F5_('SBAND1', 'SW12')_rr: 1
+	F5_('SW51', 'SM1CB')_gc: True
+	F9_('SW31', 'SW21')_rr: 1
+	F2_('LCM1', 'SW31')_t3_max: 0
+	F5_('SW41', 'SW51')_t4_min: 313
+	F2_jitter: 0
+	F4_('SW42', 'SW32')_t4_min: 54
+	F5_('SBAND1', 'SW12')_t5_min: 72
+	('SW6', 'SMRIU1')_gcl_cycle: 128000
+	('SW41', 'CM1CA')_gcl_cycle: 16000
+	F3_('StarTr2', 'SW13')_t3_max: 0
+	F3_('SW32', 'SW42')_tb: 172
+	('SW42', 'SW32')_gcl_length: 2
+	F7_('RCM1', 'SW31')_tb: 432
+	F4_('SW32', 'SW22')_t4_min: 107
+	F8_('DU2', 'SW11')_t3_max: 0
+	F8_('SW31', 'FCM1')_gc: True
+	F4_jitter: 0
+	F0_('BFCU', 'SW22')_t3_max: 0
+	F8_('SW21', 'SW31')_gc: True
+	F4_('CM2CA', 'SW42')_gc: True
+	F1_('SW21', 'SW31')_rr: 1
+	F7_('SW21', 'SW13')_gc: True
+	F6_('FCM1', 'SW31')_gc: True
+	F3_('StarTr2', 'SW13')_rr: 1
+	('SW31', 'SW6')_gcl_cycle: 128000
+	('SW52', 'SM2CB')_gcl_cycle: 32000
+	F7_('SW13', 'MIMU3')_gc: True
+	F7_('RCM1', 'SW31')_gc: True
+	F9_('SW21', 'SW13')_t4_min: 457
+	F6_('SW31', 'SW6')_t4_max: 24
+	('BFCU', 'SW22')_gcl_cycle: 128000
+	F1_('SW21', 'SW31')_t4_max: 16274
+	F2_('SW31', 'SW41')_t4_max: 312
+	('MIMU3', 'SW13')_gcl_cycle: 32000
+	('SW32', 'SW22')_gcl_cycle: 128000
+	F3_('SW13', 'SW22')_t5_min: 108
+	F0_jitter: 0
+	('SW22', 'SW32')_gcl_cycle: 128000
+	F9_('SM1CB', 'SW51')_t3_max: 0
+	F9_('SW13', 'StarTr1')_rr: 1
+	F6_('SW6', 'SMRIU1')_t4_max: 47
+	F1_('SW6', 'SMRIU1')_tb: 31951
+	F5_('SW51', 'SM1CB')_t4_max: 391
+	('SW51', 'SW41')_gcl_length: 2
+	F1_('SW31', 'SW6')_t5_max: 31944
+	('SW13', 'SW22')_gcl_length: 2
+	F1_('SW21', 'SW31')_t3_max: 16274
+	F6_('SW31', 'SW6')_tb: 24
+	('SW32', 'SW42')_gcl_length: 2
+	F1_('SW13', 'SW21')_t3_min: 16214
+	F9_('SW31', 'SW21')_t5_min: 450
+	F0_('BFCU', 'SW22')_tb: 96114
+	F8_('SW21', 'SW31')_tb: 234
+	F3_('SW32', 'SW42')_t5_max: 222
+	F2_('SW41', 'CM1CA')_t3_max: 413
+	F1_('SW6', 'SMRIU1')_t4_max: 31951
+	F1_('MIMU3', 'SW13')_t5_max: 16212
+	F5_('SW12', 'SW21')_t5_max: 150
+	F9_('SW21', 'SW13')_t5_max: 564
+	F1_('SW31', 'SW6')_tb: 31896
+	F5_('SBAND1', 'SW12')_t3_min: 1
+	F3_('StarTr2', 'SW13')_t5_max: 51
+	F1_('MIMU3', 'SW13')_t3_min: 16164
+	F5_('SW21', 'SW31')_t5_max: 228
+	F3_('SW32', 'SW42')_t3_min: 167
+	F5_('SW31', 'SW41')_t5_min: 306
+	F5_('SW12', 'SW21')_tb: 79
+	F2_('LCM1', 'SW31')_tb: 211
+	F0_('BFCU', 'SW22')_t5_max: 96164
+	F9_('SW41', 'SW31')_t3_max: 229
+	F4_('SW22', 'CMRIU2')_t3_max: 160
+	F0_('SW22', 'SW32')_t5_min: 96221
+	F3_('SW52', 'SM2CB')_tb: 286
+	F9_('SW13', 'StarTr1')_t4_max: 571
+	F9_('SW41', 'SW31')_t5_min: 336
+	F1_('SW13', 'SW21')_tb: 16219
+	F3_('SW52', 'SM2CB')_t3_min: 281
+	F7_('SW13', 'MIMU3')_t5_max: 611
+	F4_('CM2CA', 'SW42')_tb: 1
+	F5_('SW31', 'SW41')_tb: 235
+	F6_('FCM1', 'SW31')_t4_min: 1
+	F6_('SW6', 'SMRIU1')_t5_min: 63
+	F3_('SW22', 'SW32')_t3_min: 110
+	F1_('SW31', 'SW6')_t3_max: 16329
+	F0_('BFCU', 'SW22')_t3_min: 96114
+	F2_('LCM1', 'SW31')_t5_min: 305
+	F3_('SW32', 'SW42')_t5_min: 222
+	F1_('MIMU3', 'SW13')_t4_max: 16164
+	F8_('SW31', 'FCM1')_t4_max: 275
+	F8_('SW11', 'SW21')_t5_min: 227
+	F6_('SW31', 'SW6')_t5_max: 40
+	F4_('SW32', 'SW22')_t3_min: 102
+	F3_('SW42', 'SW52')_t5_min: 279
+	F1_('SW21', 'SW31')_t5_min: 16322
+	F3_('SW22', 'SW32')_t5_min: 165
+	F2_('SW41', 'CM1CA')_tb: 413
+	F7_('RCM1', 'SW31')_t4_max: 432
+	F2_('SW41', 'CM1CA')_t4_max: 413
+	F1_('MIMU3', 'SW13')_t4_min: 16164
+	F5_('SW51', 'SM1CB')_t3_min: 386
+	('SW22', 'SW32')_gcl_length: 10
+	F7_('SW13', 'MIMU3')_t5_min: 611
+	F5_('SW21', 'SW31')_t3_min: 152
+	F9_('SW21', 'SW13')_tb: 457
+	F9_('SW51', 'SW41')_tb: 115
+	F0_('SW22', 'SW32')_t3_min: 96166
+	F4_('SW42', 'SW32')_t5_max: 100
+	F3_('SW42', 'SW52')_t3_min: 224
+	('CM2CA', 'SW42')_gcl_length: 2
+	('SW52', 'SM2CB')_gcl_length: 2
+	F7_('SW21', 'SW13')_t5_max: 587
+	F4_('SW32', 'SW22')_t5_max: 153
+	F1_('SW6', 'SMRIU1')_t3_min: 31946
+	F6_('FCM1', 'SW31')_tb: 1
+	F8_('SW11', 'SW21')_tb: 193
+	F2_('SW41', 'CM1CA')_t5_min: 507
+	('SW42', 'SW52')_gcl_length: 2
+	F6_('FCM1', 'SW31')_t3_min: 1
+	F9_('SM1CB', 'SW51')_tb: 1
+	F3_('SW22', 'SW32')_tb: 115
+	F6_('SW6', 'SMRIU1')_t3_max: 47
+	F8_('SW31', 'FCM1')_tb: 275
+	F9_('SW41', 'SW31')_t5_max: 336
+	F9_('SW13', 'StarTr1')_tb: 571
+	F6_('SW6', 'SMRIU1')_tb: 47
+	F8_('SW11', 'SW21')_t3_min: 188
+	F7_('SW13', 'MIMU3')_t3_min: 589
+	F1_('SW13', 'SW21')_t5_max: 16267
+	F7_('SW21', 'SW13')_t3_max: 570
+	F4_('SW22', 'CMRIU2')_t5_min: 206
+	F8_('DU2', 'SW11')_t5_max: 186
+	F3_('SW42', 'SW52')_t5_max: 279
+	F0_('BFCU', 'SW22')_t5_min: 96164
+	F9_('SW31', 'SW21')_tb: 343
+	F1_('MIMU3', 'SW13')_tb: 16164
+	F9_('SM1CB', 'SW51')_t4_max: 1
+	F0_('SW32', 'LCM2')_t5_max: 96278
+	F2_('SW31', 'SW41')_t5_min: 406
+	F3_('SW52', 'SM2CB')_t3_max: 286
+	F8_('DU2', 'SW11')_t3_min: 152
+	F9_('SW31', 'SW21')_t5_max: 450
+	('SW41', 'SW51')_gcl_length: 2
+	F2_('SW31', 'SW41')_tb: 312
+	F7_('RCM1', 'SW31')_t5_max: 449
+	F1_('SW6', 'SMRIU1')_t3_max: 31951
+	F5_('SW21', 'SW31')_t5_min: 228
+	F5_('SW31', 'SW41')_t5_max: 306
+	F7_('RCM1', 'SW31')_t5_min: 449
+	F2_('SW31', 'SW41')_t5_max: 406
+	F7_('SW21', 'SW13')_tb: 570
+	F2_('SW41', 'CM1CA')_t5_max: 507
+	F0_('BFCU', 'SW22')_t4_max: 96114
+	('SW31', 'FCM1')_gcl_length: 2
+	F5_('SW12', 'SW21')_t5_min: 150
+	F3_('SW13', 'SW22')_tb: 58
+	('SW12', 'SW21')_gcl_length: 2
+	('SW11', 'SW21')_gcl_length: 2
+	('StarTr2', 'SW13')_gcl_length: 2
+	F4_('SW42', 'SW32')_t3_min: 49
+	F7_('SW21', 'SW13')_t3_min: 565
+	F5_('SW51', 'SM1CB')_tb: 391
+	F4_('SW32', 'SW22')_t5_min: 153
+	F8_('SW11', 'SW21')_t5_max: 227
+	F8_('SW31', 'FCM1')_t5_min: 309
+	F6_('FCM1', 'SW31')_t5_min: 17
+	F5_('SW41', 'SW51')_t5_max: 384
+	F9_('SW21', 'SW13')_t5_min: 564
+	F8_('DU2', 'SW11')_tb: 152
+	F5_('SW51', 'SM1CB')_t5_max: 462
+	F9_('SW41', 'SW31')_tb: 229
+	F4_('SW42', 'SW32')_t5_min: 100
+	F7_('SW31', 'SW21')_tb: 546
+	('BFCU', 'SW22')_gcl_length: 2
+	('LCM1', 'SW31')_gcl_length: 2
+	('SW22', 'CMRIU2')_gcl_length: 2
+	F0_('SW32', 'LCM2')_t3_max: 96228
+	F4_('SW32', 'SW22')_tb: 107
+	F6_('FCM1', 'SW31')_t5_max: 17
+	('SW13', 'StarTr1')_gcl_length: 2
+	F7_('SW21', 'SW13')_t5_min: 587
+	F4_('CM2CA', 'SW42')_t5_min: 47
+	('SW21', 'SW13')_gcl_length: 34
+	F6_('FCM1', 'SW31')_t4_max: 1
+	F8_('SW21', 'SW31')_t5_min: 268
+	F7_('SW31', 'SW21')_t5_max: 563
+	F0_('SW32', 'LCM2')_t5_min: 96278
+	F8_('SW31', 'FCM1')_t3_max: 275
+	('SW21', 'SW31')_gcl_length: 8
+	F2_('LCM1', 'SW31')_t4_min: 211
+	F1_('SW21', 'SW31')_t5_max: 16322
+	F9_('SW41', 'SW31')_t3_min: 224
+	F0_('SW22', 'SW32')_t5_max: 96221
+	F9_('SW31', 'SW21')_t3_max: 343
+	F5_('SBAND1', 'SW12')_t5_max: 72
+	F7_('SW31', 'SW21')_t5_min: 563
+	F3_('SW52', 'SM2CB')_t4_max: 286
+	F3_('SW52', 'SM2CB')_t5_min: 336
+	('SW13', 'MIMU3')_gcl_length: 2
+	F4_('CM2CA', 'SW42')_t4_max: 1
+	F9_('SW13', 'StarTr1')_t5_min: 678
+	('SBAND1', 'SW12')_gcl_length: 2
+	F1_('SW31', 'SW6')_t5_min: 31944
+	('SW41', 'SW31')_gcl_length: 2
+	F0_('SW32', 'LCM2')_t4_max: 96228
+	F9_('SW13', 'StarTr1')_t5_max: 678
+	('RCM1', 'SW31')_gcl_length: 2
+	F7_('RCM1', 'SW31')_t3_min: 432
+	F2_('LCM1', 'SW31')_t3_min: 211
+	F3_('SW22', 'SW32')_t5_max: 165
+	('SW32', 'LCM2')_gcl_length: 2
+	F5_('SBAND1', 'SW12')_tb: 1
+	F3_('SW22', 'SW32')_t3_max: 115
+	('MIMU3', 'SW13')_gcl_length: 2
+	F0_('SW32', 'LCM2')_t3_min: 96223
+	F3_('SW52', 'SM2CB')_t5_max: 336
+	('SM1CB', 'SW51')_gcl_length: 2
+	F3_('SW13', 'SW22')_t3_min: 53
+	F9_('SW51', 'SW41')_t3_min: 110
+	F1_('SW31', 'SW6')_t3_min: 16324
+	F5_('SW21', 'SW31')_t3_max: 157
+	F8_('DU2', 'SW11')_t4_min: 152
+	F6_('SW6', 'SMRIU1')_t3_min: 42
+	F3_('StarTr2', 'SW13')_t4_max: 1
+	('SW6', 'SMRIU1')_gcl_length: 10
+	F8_('DU2', 'SW11')_t4_max: 152
+	F1_('SW6', 'SMRIU1')_t5_max: 31999
+	F0_('SW22', 'SW32')_tb: 96171
+	F9_('SW51', 'SW41')_t5_max: 222
+	F8_('SW21', 'SW31')_t3_max: 234
+	F2_('LCM1', 'SW31')_t5_max: 305
+	F7_('SW13', 'MIMU3')_t4_max: 594
+	F4_('SW22', 'CMRIU2')_t3_min: 155
+	F0_('BFCU', 'SW22')_t4_min: 96114
+	F1_('SW21', 'SW31')_tb: 16274
+	F4_('SW42', 'SW32')_tb: 54
+	F9_('SW13', 'StarTr1')_t3_max: 571
+	F5_('SW31', 'SW41')_t3_max: 235
+	F5_('SW31', 'SW41')_t3_min: 230
+	('SW31', 'SW21')_gcl_length: 34
+	('SW13', 'SW21')_gcl_length: 2
+	F5_('SW21', 'SW31')_tb: 157
+	F9_('SM1CB', 'SW51')_t4_min: 1
+	F8_('SW21', 'SW31')_t5_max: 268
+	F5_('SW12', 'SW21')_t3_min: 74
+	F1_('SW21', 'SW31')_t3_min: 16269
+	F1_('SW13', 'SW21')_t5_min: 16267
+	F2_('LCM1', 'SW31')_t4_max: 211
+	F8_('SW31', 'FCM1')_t3_min: 270
+	F7_('RCM1', 'SW31')_t4_min: 432
+	F4_('SW22', 'CMRIU2')_tb: 160
+	F9_('SW51', 'SW41')_t5_min: 222
+	F3_('StarTr2', 'SW13')_tb: 1
+	F3_('StarTr2', 'SW13')_t3_min: 1
+	F9_('SW21', 'SW13')_t3_max: 457
+	F2_('SW41', 'CM1CA')_t3_min: 408
+	F9_('SW21', 'SW13')_t3_min: 452
+	F3_('StarTr2', 'SW13')_t4_min: 1
+	F8_('SW31', 'FCM1')_t5_max: 309
+	F5_('SW51', 'SM1CB')_t5_min: 462
+	F3_('SW13', 'SW22')_t5_max: 108
+	F7_('SW31', 'SW21')_t3_min: 451
+	F4_('CM2CA', 'SW42')_t4_min: 1
+	F4_('SW22', 'CMRIU2')_t5_max: 206
+	F1_('SW6', 'SMRIU1')_t5_min: 31999
+	F6_('SW31', 'SW6')_t3_min: 19
+	F1_('MIMU3', 'SW13')_t5_min: 16212
+	('SW32', 'SW22')_gcl_length: 2
+	F2_('SW31', 'SW41')_t3_min: 307
+	F9_('SM1CB', 'SW51')_t5_min: 108
+	F7_('SW13', 'MIMU3')_tb: 594
+	F4_('SW22', 'CMRIU2')_t4_max: 160
+	F8_('DU2', 'SW11')_t5_min: 186
