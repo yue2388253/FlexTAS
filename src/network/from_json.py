@@ -5,9 +5,7 @@ from src.network.net import Flow
 
 def _generate_net_from_json(json_topo) -> nx.Graph:
     return nx.node_link_graph(json_topo, directed=False, multigraph=False,
-                              attrs=dict(source='sourceNodeId', target='destNodeId', name='id',
-                                         key='key', link='links')
-                              )
+                              source='sourceNodeId', target='destNodeId', name='id', key='key', link='links')
 
 
 def _generate_flows_from_json(json_flows_schedules) -> list[Flow]:
