@@ -27,6 +27,7 @@ class SchedulingError(Exception):
     def __init__(self, error_type: ErrorType, msg):
         super().__init__(f"SchedulingError: {msg}")
         self.error_type: ErrorType = error_type
+        self.msg: str = msg
 
 
 class _StateEncoder:
@@ -332,7 +333,7 @@ class NetEnv(gym.Env):
             self.reward = 1 - self.alpha * gcl_added / link.max_gcl_length - self.beta * wait_time / flow.e2e_delay
 
         except SchedulingError as e:
-            self.logger.info(f"{e}\tScheduled flows: {sum(self.flows_scheduled)}")
+            self.logger.info(f"end of episode, reason: [{e.error_type}: {e.msg}]\tScheduled flows: {sum(self.flows_scheduled)}")
             if e.error_type == ErrorType.AlreadyScheduled:
                 done = False
             elif e.error_type == ErrorType.JitterExceed:
