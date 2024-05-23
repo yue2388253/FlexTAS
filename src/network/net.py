@@ -28,6 +28,9 @@ class Net:
     BINARY_LENGTH_MAX = GCL_CYCLE_MAX
     PERIOD_MAX = GCL_CYCLE_MAX
 
+    # num of st queues
+    ST_QUEUES = 2
+
 
 class Duration:
     PRECISION = 1000  # 1ms
@@ -316,7 +319,14 @@ def transform_line_graph(graph) -> (nx.Graph, typing.Dict):
     return line_graph, links_dict
 
 
-def generate_flows(graph, num_flows: int = 50, seed: int = None) -> list[Flow]:
+def generate_flows(graph, num_flows: int = 50, seed: int = None,
+                   period_set=None) -> list[Flow]:
+    if period_set is None:
+        period_set = [2000, 4000, 8000, 16000, 32000, 64000, 128000]
+    else:
+        for period in period_set:
+            assert isinstance(period, int) and period > 0
+
     if seed is not None:
         random.seed(seed)
 
@@ -324,7 +334,6 @@ def generate_flows(graph, num_flows: int = 50, seed: int = None) -> list[Flow]:
     es_nodes = [n for n, d in graph.nodes(data=True) if d['node_type'] == 'ES']
 
     res = []
-    period_set = [2000, 4000, 8000, 16000, 32000, 64000, 128000]
 
     for i in range(num_flows):
         # Select two random nodes from the es_nodes list
