@@ -100,8 +100,7 @@ class TimeTablingScheduler(BaseScheduler):
         for flow_rhs, operation_rhs in self.links_operations[link]:
             offset = check_operation_isolation(
                 (operation, flow.period),
-                (operation_rhs, flow_rhs.period),
-                safe_distance
+                (operation_rhs, flow_rhs.period)
             )
             if offset is not None:
                 return offset
