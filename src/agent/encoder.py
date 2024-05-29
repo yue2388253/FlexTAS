@@ -21,6 +21,11 @@ class GinModel(torch.nn.Module):
 
     def forward(self, data):
         x, edge_index, batch = data.x, data.edge_index, data.batch
+
+        # Filter out padded edges
+        valid_edge_mask = (edge_index >= 0).all(dim=0)
+        edge_index = edge_index[:, valid_edge_mask]
+
         x = F.relu(self.conv1(x, edge_index))
         x = self.bn1(x)
         x = F.relu(self.conv2(x, edge_index))
@@ -48,7 +53,6 @@ def dict_to_batch(obs):
 
     # Convert the list of Data objects to a Batch
     batch = Batch.from_data_list(data_list)
-
     return batch
 
 

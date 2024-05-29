@@ -7,7 +7,6 @@ import unittest
 
 from definitions import ROOT_DIR, OUT_DIR
 from src.env.env import NetEnv
-from src.network.from_json import generate_net_flows_from_json
 from src.network.net import generate_linear_5, Flow
 
 
@@ -16,10 +15,6 @@ class TestEnvState(unittest.TestCase):
         logging.basicConfig(level=logging.DEBUG)
         self.env = NetEnv()
         self.state_encoder = self.env.state_encoder
-
-    def test_edge_lists(self):
-        edge_lists = self.state_encoder.edge_lists
-        self.assertEqual(edge_lists.shape, (2, len(self.env.line_graph.edges)))
 
     def test_state(self):
         state = self.state_encoder.state()

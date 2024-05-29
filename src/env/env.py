@@ -10,10 +10,14 @@ import networkx as nx
 import os
 import pandas as pd
 from typing import SupportsFloat, Any, Optional
+import torch
 
 from definitions import ROOT_DIR, OUT_DIR, LOG_DIR
 from src.network.net import Duration, Flow, Link, transform_line_graph, Net, PERIOD_SET, generate_cev, generate_flows
 from src.lib.operation import Operation, check_operation_isolation
+
+
+MAX_NEIGHBORS = 10
 
 
 class ErrorType(Enum):
@@ -33,8 +37,7 @@ class SchedulingError(Exception):
 class _StateEncoder:
     def __init__(self, env: 'NetEnv'):
         self.env = env
-
-        self.graph = nx.convert_node_labels_to_integers(self.env.line_graph, label_attribute='link_id')
+        self.max_neighbors = MAX_NEIGHBORS
 
         flows = self.env.flows
         self.periods_list = PERIOD_SET
@@ -53,16 +56,45 @@ class _StateEncoder:
                 link = link_dict[link_id]
                 self.link_flow_period_dict[link][flow.period] += 1
 
-        self.edge_lists = np.array(self.graph.edges, dtype=np.int64).T
-
         state = self.state()
+
         self.observation_space = spaces.Dict({
             "flow_feature": spaces.Box(low=0, high=1, shape=state['flow_feature'].shape, dtype=np.float32),
             "link_feature": spaces.Box(low=0, high=1, shape=state['link_feature'].shape, dtype=np.float32),
-            "adjacency_matrix": spaces.Box(low=0, high=len(self.graph.nodes) - 1, shape=(2, len(self.graph.edges)),
+            "adjacency_matrix": spaces.Box(low=0, high=self.max_neighbors,
+                                           shape=state['adjacency_matrix'].shape,
                                            dtype=np.int64),
             "features_matrix": spaces.Box(low=0, high=1, shape=state['features_matrix'].shape, dtype=np.float32)
         })
+
+    def _link_feature(self, link_id):
+        link = self.env.link_dict[link_id]
+
+        link_utilization = 0
+        if len(self.env.links_operations[link]) != 0:
+            for flow, operation in self.env.links_operations[link]:
+                link_utilization += (operation.end_time - operation.start_time) / flow.period
+        assert link_utilization <= 1
+
+        link_gcl_feature = np.concatenate([
+            self.links_one_hot_dict[link_id],
+            [
+                link_utilization,
+                link.gcl_cycle / Net.GCL_CYCLE_MAX,
+                link.gcl_length / Net.GCL_LENGTH_MAX
+            ]
+        ])
+
+        link_flow_periods_feature = np.array([
+            self.link_flow_period_dict[link][period] / len(self.env.flows)
+            for period in self.periods_list
+        ])
+
+        feature = np.concatenate((
+            link_flow_periods_feature, link_gcl_feature
+        ), dtype=np.float32)
+
+        return feature
 
     def state(self):
         flow = self.env.flows[self.env.flow_index]
@@ -85,52 +117,48 @@ class _StateEncoder:
         ], dtype=np.float32)
 
         current_link = flow.path[hop_index]
+        link_feature = self._link_feature(current_link)
 
+        neighbors = list(self.env.line_graph.neighbors(current_link))
+        neighbors.insert(0, current_link)
+
+        if len(neighbors) > self.max_neighbors:
+            neighbors = neighbors[:self.max_neighbors]  # Truncate to max_neighbors
+        elif len(neighbors) < self.max_neighbors:
+            neighbors += [-1] * (self.max_neighbors - len(neighbors))  # Pad with -1 or another invalid index
+
+        # Feature matrix and adjacency matrix handling
         feature_matrix = []
-
-        link_feature = None
-
-        for node in self.graph.nodes:
-            link_id = self.graph.nodes[node]['link_id']
-            link = self.env.link_dict[link_id]
-
-            link_utilization = 0
-            if len(self.env.links_operations[link]) != 0:
-                for flow, operation in self.env.links_operations[link]:
-                    link_utilization += (operation.end_time - operation.start_time) / flow.period
-            assert link_utilization <= 1
-
-            link_gcl_feature = np.concatenate([
-                self.links_one_hot_dict[link_id],
-                [
-                    link_utilization,
-                    link.gcl_cycle / Net.GCL_CYCLE_MAX,
-                    link.gcl_length / Net.GCL_LENGTH_MAX
-                ]
-            ])
-
-            link_flow_periods_feature = np.array([
-                self.link_flow_period_dict[link][period] / len(self.env.flows)
-                for period in self.periods_list
-            ])
-
-            feature = np.concatenate((
-                link_flow_periods_feature, link_gcl_feature
-            ), dtype=np.float32)
-
-            if link_id == current_link:
-                link_feature = feature
+        edges = []
+        max_edges = self.max_neighbors * (self.max_neighbors - 1)
+        for idx, link_id in enumerate(neighbors):
+            if link_id != -1:
+                feature = self._link_feature(link_id)
+            else:
+                # Padding node: it must not be the first one.
+                feature = np.zeros_like(feature_matrix[-1])
 
             feature_matrix.append(feature)
 
-        feature_matrix = np.array(feature_matrix, dtype=np.float32)
+            for jdx, dst_link in enumerate(neighbors):
+                if dst_link == -1 or not self.env.line_graph.has_edge(link_id, dst_link):
+                    continue
+                edges.append([idx, jdx])
 
-        assert link_feature is not None, "Link feature is not represented."
+        if len(edges) < max_edges:
+            # Pad edge_index to ensure consistent shape
+            padded_edges = edges + [[-1, -1]] * (max_edges - len(edges))  # Pad with non-existent edge
+        else:
+            padded_edges = edges[:max_edges]  # Ensure it does not exceed max_edges
+
+        edge_index = torch.tensor(padded_edges, dtype=torch.long).t().contiguous()
+
+        feature_matrix = np.array(feature_matrix, dtype=np.float32)
 
         return {
             "flow_feature": flow_feature,
             "link_feature": link_feature,
-            "adjacency_matrix": self.edge_lists,
+            "adjacency_matrix": edge_index,
             "features_matrix": feature_matrix
         }
 
