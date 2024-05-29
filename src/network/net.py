@@ -1,11 +1,11 @@
-import json
+import math
+import networkx as nx
+import numpy as np
+import random
 import typing
 
-import networkx as nx
-import random
-import math
 
-import numpy as np
+PERIOD_SET = [2000, 4000, 8000, 16000, 32000, 64000, 128000]
 
 
 class Net:
@@ -22,14 +22,14 @@ class Net:
     # propagation delay
     DELAY_PROP = 1
 
-    LINK_RATE = 1e2
-    DELAY_INTERFERENCE = math.ceil((PAYLOAD_MAX * 8 + 96 + 8 * 8) / LINK_RATE)  # IFG + preamble + interference packet
-
     # This value should be set carefully. A large value like 128,000 would make the program slow.
     GCL_CYCLE_MAX = 128000
     GCL_LENGTH_MAX = 256
     BINARY_LENGTH_MAX = GCL_CYCLE_MAX
     PERIOD_MAX = GCL_CYCLE_MAX
+
+    # num of st queues
+    ST_QUEUES = 2
 
 
 class Duration:
@@ -85,11 +85,13 @@ class Duration:
 class Link:
     embedding_length = 3
 
-    def __init__(self, link_id):
+    def __init__(self, link_id, link_rate):
         self.link_id = link_id
         self.gcl_cycle = 1
         self.gcl_length = 0
         self.max_gcl_length = Net.GCL_LENGTH_MAX
+        self.link_rate = link_rate
+
         self.reserved_durations: list[Duration] = []
         self.reserved_binaries = Duration(None, None, Net.GCL_CYCLE_MAX)
 
@@ -110,8 +112,11 @@ class Link:
         self.reserved_durations = []
         self.reserved_binaries = Duration(None, None, Net.GCL_CYCLE_MAX)
 
+    def interference_time(self) -> int:
+        return math.ceil((Net.PAYLOAD_MAX * 8 + 96 + 8 * 8) / self.link_rate)  # IFG + preamble + interference packet
+
     def transmission_time(self, payload: int) -> int:
-        return math.ceil(payload * 8 / Net.LINK_RATE)
+        return math.ceil(payload * 8 / self.link_rate)
 
     def safe_distance(self) -> int:
         # inter-frame gap
@@ -137,9 +142,14 @@ class Link:
         return not self.reserved_binaries.is_conflict(duration)
 
     def add_gating(self, period: int, attempt=False) -> bool:
+        """
+        :return: True if can enable gating, otherwise depend on the value of attempt
+            return False if attempt is True,
+            otherwise raise RuntimeError
+        """
         new_cycle = math.lcm(self.gcl_cycle, period)
         new_length = self.gcl_length * (new_cycle // self.gcl_cycle)
-        new_length += ((self.gcl_cycle // period) * 2)
+        new_length += ((new_cycle // period) * 2)
         if new_length > self.max_gcl_length:
             if attempt:
                 return False
@@ -158,6 +168,8 @@ class Flow:
         self.src_id = src_id
         self.dst_id = dst_id
         self.path = path
+
+        assert period in PERIOD_SET, f"Invalid period {period}"
         self.period = period
         self.payload = payload
         self.e2e_delay = period if e2e_delay is None else e2e_delay
@@ -168,8 +180,6 @@ class Flow:
             self.jitter = jitter
         assert type(self.jitter) is int, f"jitter ({self.jitter}) must be an integer."
         assert self.jitter <= self.period, f"jitter ({self.jitter}) must be not greater than period ({self.period})."
-
-        self.wait_time_allowed = self._wait_time_allowed()
 
     def __hash__(self):
         return hash(self.flow_id)
@@ -189,15 +199,16 @@ class Flow:
                          self.e2e_delay / self.period,
                          self.jitter / self.period])
 
-    def _wait_time_allowed(self) -> int:
+    def _wait_time_allowed(self, link_rate: int) -> int:
+        assert isinstance(link_rate, int) and link_rate > 0
         num_hops = len(self.path)
         num_switches = num_hops - 1
-        return self.e2e_delay - \
-            num_hops * (math.ceil(self.payload * 8 / Net.LINK_RATE) + Net.SYNC_PRECISION + Net.DELAY_PROP) - \
-            num_switches * Net.DELAY_PROC_MAX
+        transmission_time = num_hops * math.ceil(self.payload * 8 / link_rate)
+        return self.e2e_delay - transmission_time - num_hops * (Net.SYNC_PRECISION + Net.DELAY_PROP) \
+            - num_switches * Net.DELAY_PROC_MAX
 
 
-def generate_linear_5() -> nx.Graph:
+def generate_linear_5(link_rate=100) -> nx.DiGraph:
     graph = nx.DiGraph()
 
     # The id of nodes should be unique.
@@ -215,13 +226,87 @@ def generate_linear_5() -> nx.Graph:
 
     for i in range(5):
         n0, n1 = f'S{i + 1}', f'E{i + 1}'
-        graph.add_edge(n0, n1, link_id=f"{n0}-{n1}")
-        graph.add_edge(n1, n0, link_id=f"{n1}-{n0}")
+        graph.add_edge(n0, n1, link_id=f"{n0}-{n1}", link_rate=link_rate)
+        graph.add_edge(n1, n0, link_id=f"{n1}-{n0}", link_rate=link_rate)
 
     for i in range(4):
         n0, n1 = f'S{i + 1}', f'S{i + 2}'
-        graph.add_edge(n0, n1, link_id=f"{n0}-{n1}")
-        graph.add_edge(n1, n0, link_id=f"{n1}-{n0}")
+        graph.add_edge(n0, n1, link_id=f"{n0}-{n1}", link_rate=link_rate)
+        graph.add_edge(n1, n0, link_id=f"{n1}-{n0}", link_rate=link_rate)
+
+    return graph
+
+
+def generate_cev(link_rate=100) -> nx.DiGraph:
+    edges = [
+        ("DU1", "SW11"),
+        ("DU2", "SW11"),
+        ("DU3", "SW11"),
+        ("CMRIU1", "SW21"),
+        ("FCM1", "SW31"),
+        ("LCM1", "SW31"),
+        ("RCM1", "SW31"),
+        ("CM1CA", "SW41"),
+        ("CM1CB", "SW41"),
+        ("SM1CA", "SW51"),
+        ("SM1CB", "SW51"),
+        ("SMRIU1", "SW6"),
+        ("SMRIU2", "SW6"),
+        ("SM2CB", "SW52"),
+        ("SM2CA", "SW52"),
+        ("CM2CB", "SW42"),
+        ("CM2CA", "SW42"),
+        ("RCM2", "SW32"),
+        ("LCM2", "SW32"),
+        ("FCM2", "SW32"),
+        ("CMRIU2", "SW22"),
+        ("BFCU", "SW22"),
+        ("DU5", "SW14"),
+        ("DU4", "SW14"),
+        ("StarTr2", "SW13"),
+        ("StarTr1", "SW13"),
+        ("MIMU3", "SW13"),
+        ("MIMU2", "SW13"),
+        ("MIMU1", "SW13"),
+        ("SBAND2", "SW12"),
+        ("SBAND1", "SW12"),
+
+        # links between switches
+        ("SW11", "SW21"),
+        ("SW11", "SW22"),
+        ("SW12", "SW21"),
+        ("SW12", "SW22"),
+        ("SW13", "SW21"),
+        ("SW13", "SW22"),
+        ("SW14", "SW21"),
+        ("SW14", "SW22"),
+        ("SW21", "SW31"),
+        ("SW21", "SW31"),
+        ("SW22", "SW32"),
+        ("SW21", "SW7"),
+        ("SW22", "SW7"),
+        ("SW31", "SW7"),
+        ("SW32", "SW7"),
+        ("SW31", "SW41"),
+        ("SW31", "SW8"),
+        ("SW31", "SW6"),
+        ("SW32", "SW8"),
+        ("SW32", "SW6"),
+        ("SW32", "SW42"),
+        ("SW41", "SW51"),
+        ("SW42", "SW52"),
+        ("SW8", "SW51"),
+        ("SW8", "SW52"),
+    ]
+
+    graph = nx.from_edgelist(edges)
+    leaf_dict = {node: 'ES' if degree == 1 else 'SW' for node, degree in graph.degree()}
+    nx.set_node_attributes(graph, leaf_dict, 'node_type')
+
+    graph = nx.DiGraph(graph)
+
+    for edge in graph.edges:
+        graph.edges[edge]['link_rate'] = link_rate
 
     return graph
 
@@ -230,11 +315,18 @@ def transform_line_graph(graph) -> (nx.Graph, typing.Dict):
     line_graph = nx.line_graph(graph)
     links_dict = {}
     for node in line_graph.nodes:
-        links_dict[node] = Link(node)
+        links_dict[node] = Link(node, graph.edges[node]['link_rate'])
     return line_graph, links_dict
 
 
-def generate_flows(graph, num_flows: int = 50, seed: int = None) -> list[Flow]:
+def generate_flows(graph, num_flows: int = 50, seed: int = None,
+                   period_set=None) -> list[Flow]:
+    if period_set is None:
+        period_set = [2000, 4000, 8000, 16000, 32000, 64000, 128000]
+    else:
+        for period in period_set:
+            assert isinstance(period, int) and period > 0
+
     if seed is not None:
         random.seed(seed)
 
@@ -242,7 +334,6 @@ def generate_flows(graph, num_flows: int = 50, seed: int = None) -> list[Flow]:
     es_nodes = [n for n, d in graph.nodes(data=True) if d['node_type'] == 'ES']
 
     res = []
-    period_set = [2000, 4000, 8000, 16000, 32000, 64000, 128000]
 
     for i in range(num_flows):
         # Select two random nodes from the es_nodes list

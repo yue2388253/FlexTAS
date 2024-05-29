@@ -1,104 +1,84 @@
 import argparse
 import logging
 import matplotlib.pyplot as plt
+import multiprocessing
 import numpy as np
 import os
-from sb3_contrib import MaskablePPO
-import sys
 
+from app.test import test
 from definitions import OUT_DIR
-from src.agent.encoder import GNNModel, FeaturesExtractor
-from src.env.env_helper import linear_5, from_file
+from src.agent.encoder import FeaturesExtractor
+from src.env.env import NetEnv, TrainingNetEnv
+from src.lib.log_config import log_config
 from src.lib.timing_decorator import timing_decorator
+from src.app.drl_scheduler import DrlScheduler
+from src.network.net import generate_linear_5, generate_cev, generate_flows, Net
 
-from stable_baselines3.common import results_plotter
-from stable_baselines3.common.callbacks import BaseCallback
+from stable_baselines3.common.callbacks import EvalCallback
 from stable_baselines3.common.results_plotter import load_results, ts2xy
 from stable_baselines3.common.monitor import Monitor
-from stable_baselines3.common.vec_env import DummyVecEnv, SubprocVecEnv
+from stable_baselines3.common.vec_env import SubprocVecEnv
 
-NUM_TIME_STEPS = 10000_00
-NUM_ENVS = 1
-BEST_MODEL_PATH = os.path.join(OUT_DIR, 'best_model')
+TOPO = 'CEV'
+NUM_ENVS = multiprocessing.cpu_count()
 NUM_FLOWS = 50
 
+DRL_ALG = 'A2C'
 
-def make_env(num_flows, rank: int):
+MONITOR_ROOT_DIR = os.path.join(OUT_DIR, "monitor")
+
+
+def get_best_model_path():
+    return os.path.join(OUT_DIR, f"best_model_{TOPO}_{DRL_ALG}")
+
+
+def make_env(num_flows, rank: int, topo: str, training: bool = True, link_rate: int = 100):
     def _init():
-        log_subdir = os.path.join(OUT_DIR, str(rank))
-        os.makedirs(log_subdir, exist_ok=True)
-        env = linear_5(num_flows, rank)
-        env = Monitor(env, log_subdir)  # Wrap the environment with Monitor
+        if topo == "CEV":
+            graph = generate_cev(link_rate)
+        elif topo == "L5":
+            graph = generate_linear_5(link_rate)
+        else:
+            raise ValueError(f"Unknown topo {topo}")
+
+        if training:
+            env = TrainingNetEnv(graph, generate_flows, num_flows, 1.0, 0.0)
+        else:
+            flows = generate_flows(graph, num_flows)
+            env = NetEnv(graph, flows)
+
+        # Wrap the environment with Monitor
+        env = Monitor(env, os.path.join(MONITOR_DIR, f'{"train" if training else "eval"}_{rank}'))
+
         return env
 
     return _init
 
 
-class SaveOnBestTrainingRewardCallback(BaseCallback):
-    """
-    Callback for saving a model (the check is done every ``check_freq`` steps)
-    based on the training reward (in practice, we recommend using ``EvalCallback``).
-
-    :param check_freq: (int)
-    :param log_dirs: (list[str]) Paths to the folder where the file created by the ``Monitor`` is generated.
-    :param verbose: (int)
-    """
-
-    def __init__(self, rank: int, check_freq: int, verbose=1):
-        super(SaveOnBestTrainingRewardCallback, self).__init__(verbose)
-        self.check_freq = check_freq
-        self.rank = rank
-        self.log_dirs = [os.path.join(OUT_DIR, str(i)) for i in range(rank)]
-        self.save_path = BEST_MODEL_PATH
-        self.best_mean_reward = -np.inf
-
-    def _init_callback(self) -> None:
-        # Create folder if needed
-        if self.save_path is not None:
-            os.makedirs(os.path.dirname(self.save_path), exist_ok=True)
-
-    def _on_step(self) -> bool:
-        if self.n_calls % self.check_freq == 0:
-            for i in range(self.rank):
-                self._check_and_update_model(i)
-
-        return True
-
-    def _check_and_update_model(self, rank):
-        # Retrieve training reward
-        x, y = ts2xy(load_results(self.log_dirs[rank]), 'timesteps')
-        if len(x) > 0:
-            # Mean training reward over the last 100 episodes
-            mean_reward = np.mean(y[-100:])
-            if self.verbose > 0:
-                print("Num timesteps: {}".format(self.num_timesteps))
-                print(
-                    "Best mean reward: {:.2f} - Last mean reward per episode: {:.2f}".format(self.best_mean_reward,
-                                                                                             mean_reward))
-
-            # New best model, you could save the agent here
-            if mean_reward > self.best_mean_reward:
-                self.best_mean_reward = mean_reward
-                # Example for saving best model
-                if self.verbose > 0:
-                    print("Saving new best model to {}".format(self.save_path))
-                self.model.save(self.save_path)
-
-
 @timing_decorator(logging.info)
-def train(num_time_steps=NUM_TIME_STEPS, num_flows=NUM_FLOWS):
+def train(topo: str, num_time_steps, num_flows=NUM_FLOWS, pre_trained_model=None, link_rate=100):
     os.makedirs(OUT_DIR, exist_ok=True)
 
     n_envs = NUM_ENVS  # Number of environments to create
-    env = DummyVecEnv([make_env(num_flows, i) for i in range(n_envs)])  # or SubprocVecEnv
+    env = SubprocVecEnv([make_env(num_flows, i, topo, link_rate=link_rate) for i in range(n_envs)])
 
-    policy_kwargs = dict(
-        features_extractor_class=FeaturesExtractor,
-    )
+    if pre_trained_model is not None:
+        model = DrlScheduler.SUPPORTING_ALG[DRL_ALG].load(pre_trained_model, env)
+    else:
+        policy_kwargs = dict(
+            features_extractor_class=FeaturesExtractor,
+        )
 
-    model = MaskablePPO("MultiInputPolicy", env, policy_kwargs=policy_kwargs, verbose=1)
+        if DRL_ALG == 'DQN':
+            # limit the buffer size.
+            model = DrlScheduler.SUPPORTING_ALG[DRL_ALG]("MultiInputPolicy", env, policy_kwargs=policy_kwargs, verbose=1,
+                                                         buffer_size=500_000)
+        else:
+            model = DrlScheduler.SUPPORTING_ALG[DRL_ALG]("MultiInputPolicy", env, policy_kwargs=policy_kwargs, verbose=1)
 
-    callback = SaveOnBestTrainingRewardCallback(n_envs, check_freq=1000)
+    eval_env = SubprocVecEnv([make_env(num_flows, i, topo, training=False, link_rate=link_rate) for i in range(n_envs)])
+    callback = EvalCallback(eval_env, best_model_save_path=get_best_model_path(),
+                            log_path=OUT_DIR, eval_freq=max(10000 // n_envs, 1))
 
     # logging.debug(model.policy)
 
@@ -106,26 +86,6 @@ def train(num_time_steps=NUM_TIME_STEPS, num_flows=NUM_FLOWS):
     model.learn(total_timesteps=num_time_steps, callback=callback)
 
     logging.info("------Finish learning------")
-
-
-def test(num_flows=NUM_FLOWS):
-    logging.basicConfig(level=logging.DEBUG)
-    # Load the weights from the trained model
-    model = MaskablePPO.load(BEST_MODEL_PATH)
-
-    env = DummyVecEnv([make_env(num_flows, NUM_ENVS)])  # or SubprocVecEnv
-    obs = env.reset()
-    dones = [False]
-    time_steps = 0
-    while not dones[0]:
-        action, _state = model.predict(obs, deterministic=True)
-        logging.info(f"take action {action}")
-        obs, rewards, dones, info = env.step(action)
-        env.render("human")
-        logging.info(f"get reward {rewards}")
-        time_steps += 1
-
-    logging.info(f"Finished testing, time steps {time_steps}")
 
 
 def moving_average(values, window):
@@ -156,24 +116,61 @@ def plot_results(log_folder, title="Learning Curve"):
     plt.xlabel("Number of Timesteps")
     plt.ylabel("Rewards")
     plt.title(title + " Smoothed")
+    plt.savefig(os.path.join(log_folder, "reward.png"))
     plt.show()
 
 
 if __name__ == "__main__":
+    # specify an existing model to train.
     parser = argparse.ArgumentParser()
-    parser.add_argument('--time_steps', type=int, default=NUM_TIME_STEPS)
+    parser.add_argument('--time_steps', type=int, required=True)
     parser.add_argument('--num_flows', type=int, nargs='?', default=NUM_FLOWS)
     parser.add_argument('--debug', action='store_true')
+    parser.add_argument('--num_envs', type=int, default=NUM_ENVS)
+    parser.add_argument('--alg', type=str, default=None)
+    parser.add_argument('--model', type=str, default=None)
+    parser.add_argument('--topo', type=str, default="CEV")
+    parser.add_argument('--link_rate', type=int, default=100)
     args = parser.parse_args()
 
-    logging.basicConfig(
-        stream=sys.stdout,
-        level=logging.DEBUG if args.debug else logging.INFO,
-        format='%(asctime)s - %(levelname)s - %(message)s',
-    )
+    if args.alg is not None:
+        assert args.alg in DrlScheduler.SUPPORTING_ALG, ValueError(f"Unknown alg {args.alg}")
+        DRL_ALG = args.alg
 
-    train(args.time_steps, num_flows=args.num_flows)
-    for i in range(NUM_ENVS):
-        plot_results(os.path.join(OUT_DIR, str(i)))
+    if args.link_rate is not None:
+        support_link_rates = [100, 1000]
+        assert args.link_rate in support_link_rates, \
+            f"Unknown link rate {args.link_rate}, which is not in supported link rates {support_link_rates}"
 
-    test(args.num_flows)
+    TOPO = args.topo
+
+    NUM_ENVS = args.num_envs
+
+    log_config(os.path.join(OUT_DIR, f"train.log"), logging.DEBUG)
+
+    logging.info(args)
+
+    done = False
+    i = 0
+    MONITOR_DIR = None
+    while not done:
+        try:
+            MONITOR_DIR = os.path.join(MONITOR_ROOT_DIR, str(i))
+            os.makedirs(MONITOR_DIR, exist_ok=False)
+            done = True
+        except OSError:
+            i += 1
+            continue
+    assert MONITOR_DIR is not None
+
+    logging.info("start training...")
+    train(args.topo, args.time_steps,
+          num_flows=args.num_flows,
+          pre_trained_model=args.model,
+          link_rate=args.link_rate)
+
+    # MONITOR_DIR = os.path.join(MONITOR_ROOT_DIR, str(1))
+    plot_results(MONITOR_DIR)
+
+    test(args.topo, args.num_flows, NUM_ENVS,
+         os.path.join(get_best_model_path(), "best_model"), DRL_ALG, args.link_rate)

@@ -1,6 +1,8 @@
 import logging
 import networkx as nx
+import os
 from sb3_contrib import MaskablePPO
+from stable_baselines3 import A2C, DQN, PPO
 from stable_baselines3.common.callbacks import BaseCallback
 from stable_baselines3.common.vec_env import SubprocVecEnv
 import time
@@ -52,25 +54,39 @@ class SuccessCallback(BaseCallback):
 
 
 class DrlScheduler(BaseScheduler):
-    def __init__(self, graph: nx.Graph, flows: list[Flow], timeout_s: int = 3600,
-                 num_envs: int = 1, time_steps=10000):
-        super().__init__(graph, flows, timeout_s)
+    SUPPORTING_ALG = {
+        'A2C': A2C,
+        'DQN': DQN,
+        'PPO': PPO,
+        'MaskablePPO': MaskablePPO
+    }
+
+    def __init__(self, graph: nx.DiGraph, flows: list[Flow],
+                 num_envs: int = 1, time_steps=100000, **kwargs):
+        super().__init__(graph, flows,  **kwargs)
         self.num_envs = num_envs
         self.time_steps = time_steps
 
-    @timing_decorator(logging.info)
-    def schedule(self):
-        env = SubprocVecEnv([lambda: NetEnv(self.graph, self.flows) for _ in range(self.num_envs)])
+        self.env = SubprocVecEnv([lambda: NetEnv(self.graph, self.flows) for _ in range(self.num_envs)])
         policy_kwargs = dict(
             features_extractor_class=FeaturesExtractor,
         )
+        self.model = MaskablePPO("MultiInputPolicy", self.env, policy_kwargs=policy_kwargs, verbose=1)
 
-        model = MaskablePPO("MultiInputPolicy", env, policy_kwargs=policy_kwargs, verbose=1)
+    def load_model(self, filepath: str, alg: str = 'PPO'):
+        del self.model
+        if filepath.endswith(r".zip"):
+            filepath = filepath[:-4]
+        assert os.path.isfile(f"{filepath}.zip"), f"No such file {filepath}"
+        logging.info(f"loading model at {filepath}.zip")
+        self.model = self.SUPPORTING_ALG[alg].load(filepath, self.env)
 
-        callback = SuccessCallback(time_limit=self.timeout)
+    @timing_decorator(logging.info)
+    def schedule(self):
+        callback = SuccessCallback(time_limit=self.timeout_s)
 
         # Train the agent
-        model.learn(total_timesteps=self.time_steps, callback=callback)
+        self.model.learn(total_timesteps=self.time_steps, callback=callback)
 
         is_scheduled = callback.get_result()
         if is_scheduled:

@@ -1,3 +1,4 @@
+import json
 import jsons
 import os.path
 import unittest
@@ -5,6 +6,20 @@ import unittest
 from definitions import ROOT_DIR, OUT_DIR
 from src.network.from_json import generate_net_flows_from_json
 from src.network.net import *
+
+
+class TestCEV(unittest.TestCase):
+    def test_cev(self):
+        cev = generate_cev()
+
+        # # user should check the graph manually.
+        # from pyvis.network import Network
+        # net = Network(notebook=True)
+        # net.from_nx(cev)
+        # net.show(os.path.join(OUT_DIR, 'cev.html'))
+
+        self.assertEqual(len(cev.nodes), 46)
+        self.assertEqual(len(cev.edges), 2 * (31 + 24))
 
 
 class TestDuration(unittest.TestCase):
@@ -27,12 +42,12 @@ class TestLink(unittest.TestCase):
         d1 = Duration(0, 0, 4)
         d2 = Duration(2, 2, 4)
         d3 = Duration(1, 1, 2)
-        link = Link('link0')
+        link = Link('link0', 100)
         link.add_reserved_duration(d1, check=True)
         link.add_reserved_duration(d2, check=True)
         link.add_reserved_duration(d3, check=True)
 
-        link = Link('link1')
+        link = Link('link1', 100)
         d4 = Duration(0, 0, 5)
         link.add_reserved_duration(d4, check=True)
         with self.assertRaises(RuntimeError) as _:
@@ -43,7 +58,7 @@ class TestLink(unittest.TestCase):
             link.add_reserved_duration(d3, check=True)
 
     def test_embedding(self):
-        link = Link('link')
+        link = Link('link', 100)
         link.add_reserved_duration(Duration(0, 0, 4))
         link.add_reserved_duration(Duration(1, 1, 8))
         embedding = link.embedding()
@@ -82,7 +97,7 @@ class TestFlow(unittest.TestCase):
 
     def test_flow_wait_time_budget(self):
         flow = self.flows[0]
-        self.assertEqual(flow.wait_time_allowed, 1643)
+        self.assertEqual(flow._wait_time_allowed(100), 1643)
 
     def test_path(self):
         print(self.flows[0].path)
@@ -100,7 +115,7 @@ class TestFlow(unittest.TestCase):
 
         self.import_flows = jsons.load(flows_list, list[Flow])
         print([str(flow) for flow in self.import_flows])
-        
+
 
 class TestFlowGenerator(unittest.TestCase):
     def test_random_seed(self):

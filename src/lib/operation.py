@@ -33,15 +33,12 @@ class Operation:
         return f"Operation{self.start_time, self.gating_time, self.end_time}{self.earliest_time, self.latest_time}"
 
 
-# add tests
 def check_operation_isolation(operation1: tuple[Operation, int],
-                              operation2: tuple[Operation, int],
-                              safe_distance: int) -> Optional[int]:
+                              operation2: tuple[Operation, int]) -> Optional[int]:
     """
 
     :param operation1:
     :param operation2:
-    :param safe_distance:
     :return: None if isolation constraint is satisfied,
              otherwise, it returns the offset that `operation1` should add.
              Notice that the adding the returned offset might make `operation` out of period.
@@ -58,12 +55,14 @@ def check_operation_isolation(operation1: tuple[Operation, int],
 
     operation_lhs = copy.deepcopy(operation1)
 
-    for i in range(alpha):
+    for _ in range(alpha):
+
         operation_rhs = copy.deepcopy(operation2)
-        for j in range(beta):
-            if (operation_lhs.start_time - safe_distance <= operation_rhs.start_time < operation_lhs.end_time + safe_distance) or \
-                    (operation_rhs.start_time - safe_distance <= operation_lhs.start_time < operation_rhs.end_time):
-                return operation_rhs.end_time - operation_lhs.start_time + safe_distance
+        for _ in range(beta):
+            if (operation_lhs.start_time <= operation_rhs.start_time < operation_lhs.end_time) or \
+                    (operation_rhs.start_time <= operation_lhs.start_time < operation_rhs.end_time):
+                return operation_rhs.end_time - operation_lhs.start_time
             operation_rhs.add(period2)
+
         operation_lhs.add(period1)
     return None

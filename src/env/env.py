@@ -1,18 +1,18 @@
-from collections import defaultdict
+from collections import defaultdict, Counter
 from enum import Enum, auto
 import gymnasium as gym
 from gymnasium import spaces
 from gymnasium.core import ActType, ObsType, RenderFrame
 import logging
+import math
 import numpy as np
 import networkx as nx
 import os
 import pandas as pd
 from typing import SupportsFloat, Any, Optional
 
-from definitions import ROOT_DIR, OUT_DIR
-from src.network.net import Duration, Flow, Link, transform_line_graph, Net
-from src.network.from_json import generate_net_flows_from_json
+from definitions import ROOT_DIR, OUT_DIR, LOG_DIR
+from src.network.net import Duration, Flow, Link, transform_line_graph, Net, PERIOD_SET, generate_cev, generate_flows
 from src.lib.operation import Operation, check_operation_isolation
 
 
@@ -27,98 +27,127 @@ class SchedulingError(Exception):
     def __init__(self, error_type: ErrorType, msg):
         super().__init__(f"SchedulingError: {msg}")
         self.error_type: ErrorType = error_type
+        self.msg: str = msg
 
-        
+
 class _StateEncoder:
     def __init__(self, env: 'NetEnv'):
         self.env = env
 
+        self.graph = nx.convert_node_labels_to_integers(self.env.line_graph, label_attribute='link_id')
+
         flows = self.env.flows
-        edges = []
-        nodes = ["S", "T"]
-        for flow_index, flow in enumerate(flows):
+        self.periods_list = PERIOD_SET
+        self.periods_list.sort()
+        self.periods_one_hot_dict = pd.get_dummies(self.periods_list)
+        self.periods_dict = {period: 0 for period in self.periods_list}
+
+        link_dict = self.env.link_dict
+        self.links_one_hot_dict = pd.get_dummies(link_dict.keys())
+
+        # [link, [period, num_flows]]
+        self.link_flow_period_dict: dict = defaultdict(Counter)
+        for flow in flows:
             path = flow.path
-            nodes.append((flow_index, path[0]))
-            edges.append(("S", (flow_index, path[0])))
-            for i in range(len(path) - 1):
-                nodes.append((flow_index, path[i+1]))
-                edges.append(((flow_index, path[i]), (flow_index, path[i+1])))
-            edges.append(((flow_index, path[len(path)-1]), "T"))
+            for link_id in path:
+                link = link_dict[link_id]
+                self.link_flow_period_dict[link][flow.period] += 1
 
-        graph = nx.DiGraph()
-        graph.add_nodes_from(nodes)
-        graph.add_edges_from(edges)
-        self.graph = graph
+        self.edge_lists = np.array(self.graph.edges, dtype=np.int64).T
 
-        # the shape would be (num_operations+2, num_operations+2)
-        self.adjacency_matrix = np.array(nx.to_scipy_sparse_array(self.graph).todense(), dtype=np.float32)
-
-        self.num_operations = sum([len(flow.path) for flow in self.env.flows])
         state = self.state()
         self.observation_space = spaces.Dict({
-            "adjacency_matrix": spaces.Box(low=0, high=1, shape=(self.num_operations+2, self.num_operations+2), dtype=np.float32),
+            "flow_feature": spaces.Box(low=0, high=1, shape=state['flow_feature'].shape, dtype=np.float32),
+            "link_feature": spaces.Box(low=0, high=1, shape=state['link_feature'].shape, dtype=np.float32),
+            "adjacency_matrix": spaces.Box(low=0, high=len(self.graph.nodes) - 1, shape=(2, len(self.graph.edges)),
+                                           dtype=np.int64),
             "features_matrix": spaces.Box(low=0, high=1, shape=state['features_matrix'].shape, dtype=np.float32)
         })
 
     def state(self):
-        links_id = self.env.link_dict.keys()
-        one_hot_dict = pd.get_dummies(links_id)
-        flows = self.env.flows
-        link_dict = self.env.link_dict
+        flow = self.env.flows[self.env.flow_index]
 
-        # the shape would be (num_operations+2, num_links) after encoding
+        accum_jitter = 0
+        if len(self.env.flows_operations[flow]) != 0:
+            operation = self.env.flows_operations[flow][-1][1]
+            accum_jitter = operation.latest_time - operation.start_time
+
+        hop_index = len(self.env.flows_operations[flow])
+        flow_feature = np.concatenate([
+            self.periods_one_hot_dict[flow.period],
+            [
+                flow.period / Net.GCL_CYCLE_MAX,
+                flow.payload / Net.PAYLOAD_MAX,
+                flow.jitter / flow.period,
+                min(1, accum_jitter / flow.jitter),
+                (hop_index + 1) / len(flow.path)
+            ]
+        ], dtype=np.float32)
+
+        current_link = flow.path[hop_index]
+
         feature_matrix = []
 
-        num_links = len(self.env.link_dict)
+        link_feature = None
+
         for node in self.graph.nodes:
-            if node == "S" or node == "T":
-                feature_matrix.append(np.zeros(num_links+2+7,))
-                continue
+            link_id = self.graph.nodes[node]['link_id']
+            link = self.env.link_dict[link_id]
 
-            flow_index, link_id = node
-            flow = flows[flow_index]
-            link = link_dict[link_id]
+            link_utilization = 0
+            if len(self.env.links_operations[link]) != 0:
+                for flow, operation in self.env.links_operations[link]:
+                    link_utilization += (operation.end_time - operation.start_time) / flow.period
+            assert link_utilization <= 1
 
-            link_one_hot_feature = one_hot_dict[link_id].values
+            link_gcl_feature = np.concatenate([
+                self.links_one_hot_dict[link_id],
+                [
+                    link_utilization,
+                    link.gcl_cycle / Net.GCL_CYCLE_MAX,
+                    link.gcl_length / Net.GCL_LENGTH_MAX
+                ]
+            ])
 
-            link_gcl_feature = np.array([link.gcl_cycle / Net.GCL_CYCLE_MAX, link.gcl_length / Net.GCL_LENGTH_MAX])
-
-            operation_feature = None
-            operations = self.env.flows_operations[flow]
-            for link, operation in operations:
-                if link.link_id == link_id:
-                    operation_feature = np.array([
-                        1,  # indicate this operation has been scheduled
-                        1 if operation.gating_time is not None else 0,  # indicate enable gating
-                        operation.start_time / flow.period,
-                        operation.earliest_time / flow.period,
-                        operation.latest_time / flow.period,
-                        operation.end_time / flow.period,
-                        max((operation.latest_time - operation.earliest_time) / flow.jitter, 1)
-                    ])
-            if operation_feature is None:
-                operation_feature = np.zeros(7, )
+            link_flow_periods_feature = np.array([
+                self.link_flow_period_dict[link][period] / len(self.env.flows)
+                for period in self.periods_list
+            ])
 
             feature = np.concatenate((
-                link_one_hot_feature, link_gcl_feature, operation_feature
-            ))
+                link_flow_periods_feature, link_gcl_feature
+            ), dtype=np.float32)
+
+            if link_id == current_link:
+                link_feature = feature
 
             feature_matrix.append(feature)
 
         feature_matrix = np.array(feature_matrix, dtype=np.float32)
 
-        return {"adjacency_matrix": self.adjacency_matrix,
-                "features_matrix": feature_matrix}
+        assert link_feature is not None, "Link feature is not represented."
+
+        return {
+            "flow_feature": flow_feature,
+            "link_feature": link_feature,
+            "adjacency_matrix": self.edge_lists,
+            "features_matrix": feature_matrix
+        }
 
 
 class NetEnv(gym.Env):
-    def __init__(self, graph: nx.Graph = None, flows: list[Flow] = None):
+    alpha: float = 1
+    beta: float = 10
+    gamma: float = 0.1
+
+    def __init__(self, graph: nx.DiGraph = None, flows: list[Flow] = None):
         super().__init__()
 
         if graph is None and flows is None:
-            self.graph, self.flows = generate_net_flows_from_json(os.path.join(ROOT_DIR, 'data/input/smt_output.json'))
+            self.graph = generate_cev()
+            self.flows = generate_flows(self.graph, 10)
         elif graph is not None and flows is not None:
-            self.graph: nx.Graph = graph
+            self.graph: nx.DiGraph = graph
             self.flows: list[Flow] = flows
 
         assert self.graph is not None and self.flows is not None, "fail to init env, invalid graph or flows"
@@ -133,6 +162,8 @@ class NetEnv(gym.Env):
 
         self.flows_scheduled: list[int] = [0 for _ in range(self.num_flows)]
 
+        self.flow_index: int = 0
+
         self.last_action = None
 
         self.reward: float = 0
@@ -141,10 +172,12 @@ class NetEnv(gym.Env):
 
         self.observation_space: spaces.Dict = self.state_encoder.observation_space
 
-        # action space:
-        # 1. which flow to schedule.
-        # 2. enable gating or not.
-        self.action_space = spaces.MultiDiscrete([len(self.flows), 2])
+        # action space: enable gating or not for current operation
+        self.action_space = spaces.Discrete(2)
+
+        logger = logging.getLogger(f"{__name__}.{os.getpid()}")
+        logger.setLevel(logging.INFO)
+        self.logger = logger
 
         self.reset()
 
@@ -165,6 +198,8 @@ class NetEnv(gym.Env):
 
         self.flows_scheduled = [0 for _ in range(self.num_flows)]
 
+        self.flow_index: int = 0
+
         self.reward = 0
 
         return self._generate_state(), {}
@@ -173,7 +208,10 @@ class NetEnv(gym.Env):
         return self.state_encoder.state()
 
     def action_masks(self) -> list[int]:
-        return [i == 0 for i in self.flows_scheduled] + [True, True]
+        flow = self.flows[self.flow_index]
+        hop_index = len(self.flows_operations[flow])
+        link = self.link_dict[flow.path[hop_index]]
+        return [True, link.add_gating(flow.period, attempt=True)]
 
     def check_valid_flow(self, flow: Flow) -> Optional[int]:
         """
@@ -195,8 +233,7 @@ class NetEnv(gym.Env):
         for flow_rhs, operation_rhs in self.links_operations[link][:-1]:
             offset = check_operation_isolation(
                 (operation, flow.period),
-                (operation_rhs, flow_rhs.period),
-                safe_distance
+                (operation_rhs, flow_rhs.period)
             )
             if offset is not None:
                 return offset
@@ -219,22 +256,18 @@ class NetEnv(gym.Env):
                 True means success, False means failure.
                 'msg' key contains information for debug
         """
-        flow_index, gating = action
+        gating = (action == 1)
 
-        flow = self.flows[flow_index]
-        gating = (gating == 1)
+        flow = self.flows[self.flow_index]
 
-        self.last_action = (flow_index, gating)
+        self.last_action = gating
 
         try:
-            if self.flows_scheduled[flow_index] != 0:
-                raise SchedulingError(ErrorType.AlreadyScheduled,
-                                      f"This flow {flow.flow_id} has already been scheduled.")
-
             hop_index = len(self.flows_operations[flow])
 
             link = self.link_dict[flow.path[hop_index]]
 
+            wait_time = 0
             if hop_index == 0:
                 operation = Operation(0, 0 if gating else None, 0, link.transmission_time(flow.payload))
             else:
@@ -245,22 +278,24 @@ class NetEnv(gym.Env):
                     flow.payload) + Net.DELAY_PROP + Net.DELAY_PROC_MIN
                 latest_time = last_link_latest + last_link.transmission_time(
                     flow.payload) + Net.SYNC_PRECISION + Net.DELAY_PROP + Net.DELAY_PROC_MAX
+
                 if not gating:
-                    latest_time += Net.DELAY_INTERFERENCE
+                    wait_time = link.interference_time()
+                    latest_time += wait_time
 
                 if (not gating) and (hop_index == len(flow.path) - 1):
                     # reach the dst, check jitter constraint.
                     accumulated_jitter = latest_time - earliest_time
                     if accumulated_jitter > flow.jitter:
                         raise SchedulingError(ErrorType.JitterExceed,
-                                              "Invalid due to jitter constraint.")
+                                              "jitter constraint unsatisfied.")
 
                 gating_time = latest_time if gating else None
                 end_time = latest_time + link.transmission_time(flow.payload)
 
                 if end_time > flow.period:
                     raise SchedulingError(ErrorType.PeriodExceed,
-                                          "Fail to find a valid solution.")
+                                          "injection time is too late")
 
                 operation = Operation(earliest_time, gating_time, latest_time, end_time)
 
@@ -279,57 +314,65 @@ class NetEnv(gym.Env):
                     operation.add(offset)
                     if operation.end_time > flow.period:
                         # cannot be scheduled
-                        raise SchedulingError(ErrorType.PeriodExceed, "Fail to find a valid solution.")
+                        raise SchedulingError(ErrorType.PeriodExceed, "timing isolation constraint unsatisfied.")
 
+            gcl_added = 0
             if gating:
                 # check gating constraint
                 try:
+                    old_gcl = link.gcl_length
                     link.add_gating(flow.period)
+                    new_gcl = link.gcl_length
+                    gcl_added = new_gcl - old_gcl
                 except RuntimeError:
                     raise SchedulingError(ErrorType.GatingExceed,
-                                          "Invalid due to gating constraint.")
+                                          "gating constraint unsatisfied.")
 
-            self.reward += 0.1
+            # self.reward += 0.1
+            self.reward = 1 - self.alpha * gcl_added / link.max_gcl_length - self.beta * wait_time / flow.e2e_delay
 
         except SchedulingError as e:
-            logging.info(f"{e}\nScheduled flows num: {sum(self.flows_scheduled)},\t"
-                         f"Operations num: {sum([len(value) for value in self.flows_operations.values()])}")
+            self.logger.info(f"end of episode, reason: [{e.error_type}: {e.msg}]\tScheduled flows: {sum(self.flows_scheduled)}")
             if e.error_type == ErrorType.AlreadyScheduled:
                 done = False
             elif e.error_type == ErrorType.JitterExceed:
-                self.reward -= 100
+                # self.reward -= 100
                 done = True
             elif e.error_type == ErrorType.GatingExceed:
-                self.reward -= 100
+                # self.reward -= 100
                 done = True
             elif e.error_type == ErrorType.PeriodExceed:
-                self.reward -= 100
+                # self.reward -= 100
                 done = True
             else:
                 assert False, "Unknown error type."
-            return self._generate_state(), self.reward, done, False, {'success': False, 'msg': e.__str__()}
+            return self.observation_space.sample(), self.reward, done, False, {'success': False, 'msg': e.__str__()}
 
         done = False
         # successfully scheduling
         if len(flow.path) == hop_index + 1:
             # reach the dst
-            self.flows_scheduled[flow_index] = 1
+            self.flows_scheduled[self.flow_index] = 1
+            self.flow_index += 1
+
+            if self.flow_index % math.ceil(self.num_flows * 0.1) == 0:
+                # give an extra reward when the agent schedule another set of flows.
+                self.reward += self.gamma * ((self.flow_index / self.num_flows) ** 2)
 
             if all(self.flows_scheduled):
                 # all flows are scheduled.
-                done = True
                 filename = os.path.join(OUT_DIR, f'schedule_rl_{id(self)}.log')
                 self.save_results(filename)
-                logging.info(f"Good job! Finish scheduling! Scheduling result is saved at {filename}.")
-                self.reward += 100
+                self.logger.info(f"Good job! Finish scheduling! Scheduling result is saved at {filename}.")
+
+                return self.observation_space.sample(), self.reward, True, False, {'success': True}
 
         self.render()
         return self._generate_state(), self.reward, done, False, {'success': done}
 
     def render(self) -> RenderFrame | list[RenderFrame] | None:
-        flow_index, gating = self.last_action
-        flow_id = self.flows[flow_index]
-        logging.debug(f"Action: ({flow_id}, {gating}), {self.flows_operations[self.flows[flow_index]][-1]}")
+        gating = self.last_action
+        self.logger.debug(f"Action: {gating}, Reward: {self.reward}")
         return
 
     def save_results(self, filename: str | os.PathLike):
@@ -353,3 +396,63 @@ class NetEnv(gym.Env):
 
     def close(self):
         return
+
+
+class TrainingNetEnv(NetEnv):
+    """
+    Use curriculum learning to help training.
+    Begin with an easy environment that contains a small set of flows for agent to learn,
+    increase the number of flows gradually to make the env harder if the agent can easily
+    pass the current env.
+    """
+    def __init__(self, graph, flow_generator, num_flows,
+                 initial_ratio=0.2, step_ratio=0.05, changing_freq=10):
+
+        self.flow_generator = flow_generator
+
+        self.num_flows_target = num_flows
+
+        # the number of flows newly added each time changing the env.
+        self.num_flows_step = math.ceil(num_flows * step_ratio)
+
+        # start with half of the target num_flows and incrementally add flows if agent has learnt to schedule.
+        num_flows_initial = math.ceil(num_flows * initial_ratio)
+        flows = flow_generator(graph, num_flows_initial)
+
+        super().__init__(graph, flows)
+
+        self.num_passed = 0
+        self.changing_freq = changing_freq
+
+        log_file = os.path.join(LOG_DIR, f"training_env_{os.getpid()}.txt")
+        fh = logging.FileHandler(filename=log_file)
+        fh.setLevel(logging.DEBUG)
+        # Create a formatter
+        formatter = logging.Formatter('%(asctime)s - %(levelname)s - %(message)s')
+        # Add the formatter to the handler
+        fh.setFormatter(formatter)
+        self.logger.addHandler(fh)
+
+        self.logger.info(f"Start training with {num_flows_initial} flows.")
+
+    def step(
+            self, action: ActType
+    ) -> tuple[ObsType, SupportsFloat, bool, bool, dict[str, Any]]:
+
+        res = super().step(action)
+
+        done, info = res[2], res[-1]
+        if done and info['success']:
+            self.num_passed += 1
+            self.logger.info(f"passed the job! ({self.num_passed})")
+
+            if self.num_passed == self.changing_freq:
+                num_flows = min(self.num_flows_target, self.num_flows + self.num_flows_step)
+                flows = self.flow_generator(self.graph, num_flows)
+                super().__init__(self.graph, flows)
+                self.logger.info(f"Great! The agent has already learnt how to solve the problem. "
+                                 f"Change the flows to train the agent. num_flows: {num_flows}")
+
+                self.num_passed = 0
+
+        return res

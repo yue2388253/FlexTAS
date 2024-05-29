@@ -28,30 +28,29 @@ class TestOperation(unittest.TestCase):
     def test_isolation(self):
         o1 = Operation(0, None, 10, 20)
         o2 = Operation(100, None, 110, 120)
-        safe_distance = 1
 
         self.assertEqual(
-            check_operation_isolation((o1, 100), (o2, 1000), safe_distance),
-            21
+            check_operation_isolation((o1, 100), (o2, 1000)),
+            20
         )
 
         self.assertEqual(
-            check_operation_isolation((o1, 200), (o2, 300), safe_distance),
-            21
+            check_operation_isolation((o1, 200), (o2, 300)),
+            20
         )
 
         self.assertEqual(
-            check_operation_isolation((o1, 20), (o2, 120), safe_distance),
-            41
+            check_operation_isolation((o1, 20), (o2, 120)),
+            20
         )
 
         self.assertEqual(
-            check_operation_isolation((o1, 200), (o2, 200), safe_distance),
+            check_operation_isolation((o1, 200), (o2, 200)),
             None
         )
 
         with self.assertRaises(AssertionError):
-            check_operation_isolation((o1, 200), (o2, 100), safe_distance)
+            check_operation_isolation((o1, 200), (o2, 100))
 
         # The original value should not change
         self.assertEqual(o1.start_time, 0)

@@ -1,0 +1,454 @@
+0. Flow F0 [E5-->E1] with period 128000, payload 388B, e2e delay 128000us, jitter 12800us
+	('E5', 'S5'), Operation(103119, None, 103151)(103119, 103119)
+	('S5', 'S4'), Operation(103153, None, 103314)(103153, 103282)
+	('S4', 'S3'), Operation(103187, None, 103477)(103187, 103445)
+	('S3', 'S2'), Operation(103221, None, 103640)(103221, 103608)
+	('S2', 'S1'), Operation(103255, None, 103803)(103255, 103771)
+	('S1', 'E1'), Operation(103289, None, 103966)(103289, 103934)
+1. Flow F1 [E5-->E2] with period 8000, payload 610B, e2e delay 8000us, jitter 800us
+	('E5', 'S5'), Operation(7264, None, 7313)(7264, 7264)
+	('S5', 'S4'), Operation(7315, 7427, 7476)(7427, 7427)
+	('S4', 'S3'), Operation(7478, 7590, 7639)(7590, 7590)
+	('S3', 'S2'), Operation(7641, None, 7819)(7641, 7770)
+	('S2', 'E2'), Operation(7692, None, 7999)(7692, 7950)
+2. Flow F2 [E4-->E3] with period 4000, payload 1428B, e2e delay 4000us, jitter 400us
+	('E4', 'S4'), Operation(2531, None, 2646)(2531, 2531)
+	('S4', 'S3'), Operation(2648, None, 2892)(2648, 2777)
+	('S3', 'E3'), Operation(2765, None, 3138)(2765, 3023)
+3. Flow F3 [E2-->E3] with period 4000, payload 335B, e2e delay 4000us, jitter 400us
+	('E2', 'S2'), Operation(2421, None, 2448)(2421, 2421)
+	('S2', 'S3'), Operation(2450, None, 2606)(2450, 2579)
+	('S3', 'E3'), Operation(2479, None, 2764)(2479, 2737)
+4. Flow F4 [E3-->E2] with period 64000, payload 541B, e2e delay 64000us, jitter 6400us
+	('E3', 'S3'), Operation(7908, None, 7952)(7908, 7908)
+	('S3', 'S2'), Operation(7954, None, 8127)(7954, 8083)
+	('S2', 'E2'), Operation(8000, None, 8302)(8000, 8258)
+5. Flow F5 [E2-->E1] with period 32000, payload 1130B, e2e delay 32000us, jitter 3200us
+	('E2', 'S2'), Operation(30254, None, 30345)(30254, 30254)
+	('S2', 'S1'), Operation(30347, None, 30567)(30347, 30476)
+	('S1', 'E1'), Operation(30440, 30574, 30665)(30574, 30574)
+6. Flow F6 [E2-->E5] with period 16000, payload 810B, e2e delay 16000us, jitter 1600us
+	('E2', 'S2'), Operation(14188, None, 14253)(14188, 14188)
+	('S2', 'S3'), Operation(14255, None, 14449)(14255, 14384)
+	('S3', 'S4'), Operation(14322, 14579, 14644)(14579, 14579)
+	('S4', 'S5'), Operation(14646, 14774, 14839)(14774, 14774)
+	('S5', 'E5'), Operation(14841, None, 15035)(14841, 14970)
+7. Flow F7 [E2-->E5] with period 2000, payload 1275B, e2e delay 2000us, jitter 200us
+	('E2', 'S2'), Operation(1, None, 103)(1, 1)
+	('S2', 'S3'), Operation(105, 110, 212)(110, 110)
+	('S3', 'S4'), Operation(214, 219, 321)(219, 219)
+	('S4', 'S5'), Operation(323, None, 554)(323, 452)
+	('S5', 'E5'), Operation(427, 561, 663)(561, 561)
+8. Flow F8 [E2-->E1] with period 64000, payload 883B, e2e delay 64000us, jitter 6400us
+	('E2', 'S2'), Operation(60104, None, 60175)(60104, 60104)
+	('S2', 'S1'), Operation(60177, None, 60377)(60177, 60306)
+	('S1', 'E1'), Operation(60250, 60509, 60580)(60509, 60509)
+9. Flow F9 [E5-->E4] with period 128000, payload 749B, e2e delay 128000us, jitter 12800us
+	('E5', 'S5'), Operation(127415, None, 127475)(127415, 127415)
+	('S5', 'S4'), Operation(127477, None, 127666)(127477, 127606)
+	('S4', 'E4'), Operation(127539, None, 127857)(127539, 127797)
+
+SMT variables: 
+	F9_('S4', 'E4')_gc: False
+	F0_('S3', 'S2')_t4_max: 103608
+	F0_('S2', 'S1')_rr: 0
+	('S2', 'S3')_gcl_cycle: 2000
+	('S4', 'S3')_gcl_cycle: 8000
+	F1_('S4', 'S3')_gc: True
+	F7_queue_index: 0
+	F0_('E5', 'S5')_rr: 0
+	F3_('S3', 'E3')_gc: False
+	F2_('E4', 'S4')_t3_max: 2407
+	F6_jitter: 129
+	F1_('S5', 'S4')_rr: 1
+	F6_('S4', 'S5')_t4_max: 14774
+	F8_('S2', 'S1')_t3_max: 60182
+	F9_jitter: 258
+	F3_queue_index: 0
+	F7_('E2', 'S2')_gc: False
+	F7_('S3', 'S4')_rr: 8
+	F2_('E4', 'S4')_rr: 0
+	F6_('S3', 'S4')_t4_max: 14579
+	F7_('E2', 'S2')_t3_max: -123
+	F0_('S4', 'S3')_t4_max: 103445
+	F9_('E5', 'S5')_gc: False
+	F4_('S3', 'S2')_gc: False
+	F3_('S2', 'S3')_t4_max: 2579
+	F0_queue_index: 0
+	F7_('S2', 'S3')_t3_max: 110
+	F5_queue_index: 0
+	F1_('S3', 'S2')_t3_min: 7641
+	F1_('S4', 'S3')_rr: 1
+	F9_('S5', 'S4')_tb: 127477
+	F7_('S5', 'E5')_gc: True
+	F4_('S2', 'E2')_t4_min: 8000
+	F0_('S5', 'S4')_t4_min: 103153
+	F8_('E2', 'S2')_t5_max: 60175
+	F0_('S3', 'S2')_gc: False
+	F1_('S2', 'E2')_rr: 0
+	F0_('S3', 'S2')_t4_min: 103221
+	F1_jitter: 258
+	F8_('E2', 'S2')_gc: False
+	F1_('E5', 'S5')_t3_min: 7264
+	F3_('S2', 'S3')_t5_min: 2477
+	F3_('S2', 'S3')_rr: 0
+	F3_('S3', 'E3')_rr: 0
+	F5_('E2', 'S2')_rr: 0
+	F1_('S5', 'S4')_t3_max: 7320
+	F0_('S4', 'S3')_tb: 103187
+	F4_('S3', 'S2')_t4_min: 7954
+	F6_('S5', 'E5')_t4_min: 14841
+	('E5', 'S5')_gcl_cycle: 1
+	F9_('S5', 'S4')_t4_max: 127606
+	F6_('E2', 'S2')_rr: 0
+	F6_queue_index: 0
+	('E3', 'S3')_gcl_cycle: 1
+	F5_('S1', 'E1')_gc: True
+	F7_('S2', 'S3')_t4_max: 110
+	F7_('S3', 'S4')_t4_max: 219
+	F2_('S4', 'S3')_tb: 2648
+	F1_('S5', 'S4')_t4_min: 7427
+	('E2', 'S2')_gcl_cycle: 1
+	F0_('S5', 'S4')_t4_max: 103282
+	('S2', 'E2')_gcl_cycle: 1
+	F7_jitter: 0
+	F2_queue_index: 0
+	('S2', 'S1')_gcl_cycle: 1
+	F2_('S3', 'E3')_t5_min: 2880
+	F6_('S3', 'S4')_gc: True
+	F2_('S4', 'S3')_gc: False
+	F6_('S2', 'S3')_t4_min: 14255
+	F6_('S4', 'S5')_rr: 1
+	F5_('S1', 'E1')_t5_max: 30665
+	F1_('E5', 'S5')_gc: False
+	F1_('S3', 'S2')_t4_max: 7770
+	F4_('E3', 'S3')_t3_max: 7784
+	('S3', 'E3')_gcl_cycle: 1
+	F2_('E4', 'S4')_gc: False
+	F1_('S4', 'S3')_t4_min: 7590
+	F8_('S2', 'S1')_t3_min: 60177
+	F8_('S1', 'E1')_gc: True
+	F3_('S3', 'E3')_t4_max: 2737
+	F2_('E4', 'S4')_tb: 2531
+	F0_('E5', 'S5')_t3_max: 102995
+	F5_('E2', 'S2')_t3_max: 30130
+	F9_('S4', 'E4')_t4_min: 127539
+	F8_('S2', 'S1')_rr: 0
+	F3_('S2', 'S3')_t4_min: 2450
+	F1_('S5', 'S4')_gc: True
+	F4_('E3', 'S3')_gc: False
+	F3_('E2', 'S2')_t3_max: 2297
+	F6_('S4', 'S5')_t4_min: 14774
+	F7_('S3', 'S4')_t5_max: 321
+	F6_('E2', 'S2')_gc: False
+	F1_('S4', 'S3')_t4_max: 7590
+	F3_('S3', 'E3')_t4_min: 2479
+	F8_('S1', 'E1')_rr: 1
+	F6_('S2', 'S3')_gc: False
+	F1_('S2', 'E2')_gc: False
+	F9_('S5', 'S4')_gc: False
+	F0_('S2', 'S1')_t4_min: 103255
+	F4_('S3', 'S2')_rr: 0
+	F7_('S5', 'E5')_rr: 1
+	F1_('S3', 'S2')_gc: False
+	F0_('S2', 'S1')_tb: 103255
+	F4_('E3', 'S3')_rr: 0
+	F7_('S3', 'S4')_t4_min: 219
+	F2_('S4', 'S3')_t4_max: 2777
+	F2_('S4', 'S3')_t3_max: 2653
+	F4_queue_index: 0
+	F9_('S5', 'S4')_t4_min: 127477
+	F0_('S4', 'S3')_gc: False
+	F3_('S2', 'S3')_gc: False
+	F8_('S2', 'S1')_t4_min: 60177
+	F0_('S3', 'S2')_rr: 0
+	F6_('S2', 'S3')_t3_max: 14260
+	F0_('S1', 'E1')_rr: 0
+	F2_('S4', 'S3')_t4_min: 2648
+	F7_('S4', 'S5')_t4_min: 323
+	F3_('E2', 'S2')_rr: 0
+	F7_('S2', 'S3')_rr: 1
+	F7_('E2', 'S2')_rr: 0
+	F8_('S2', 'S1')_t4_max: 60306
+	F0_('S1', 'E1')_t5_max: 103966
+	F8_('S1', 'E1')_t4_min: 60509
+	F0_('S5', 'S4')_t3_max: 103158
+	F6_('S2', 'S3')_t4_max: 14384
+	F9_('E5', 'S5')_rr: 0
+	F6_('E2', 'S2')_t3_max: 14064
+	F5_('S2', 'S1')_rr: 0
+	('E4', 'S4')_gcl_cycle: 1
+	F4_('S2', 'E2')_gc: False
+	F1_('S5', 'S4')_t4_max: 7427
+	F4_('S3', 'S2')_t4_max: 8083
+	F7_('S2', 'S3')_t4_min: 110
+	F7_('E2', 'S2')_t5_max: 103
+	F7_('S4', 'S5')_rr: 0
+	F1_('S3', 'S2')_t4_min: 7641
+	('S4', 'S5')_gcl_cycle: 16000
+	F3_('E2', 'S2')_t5_min: 2448
+	F8_jitter: 0
+	F2_('S3', 'E3')_rr: 0
+	F0_('S1', 'E1')_gc: False
+	('S3', 'S4')_gcl_cycle: 16000
+	F0_('E5', 'S5')_gc: False
+	F3_jitter: 258
+	F5_('S1', 'E1')_t3_min: 30440
+	F6_('S4', 'S5')_gc: True
+	F1_('S2', 'E2')_t4_min: 7692
+	F8_('S1', 'E1')_t5_min: 60580
+	('S5', 'S4')_gcl_cycle: 8000
+	F2_('S3', 'E3')_t4_min: 2765
+	F3_('S2', 'S3')_t3_max: 2455
+	F8_('E2', 'S2')_t3_max: 59980
+	F0_('S4', 'S3')_rr: 0
+	F7_('S3', 'S4')_t5_min: 321
+	F1_('E5', 'S5')_rr: 0
+	F5_('S2', 'S1')_gc: False
+	F9_queue_index: 0
+	F7_('S4', 'S5')_gc: False
+	F3_('E2', 'S2')_t3_min: 2421
+	F0_('S5', 'S4')_gc: False
+	F0_('S5', 'S4')_rr: 0
+	F6_('S5', 'E5')_gc: False
+	F1_('S3', 'S2')_rr: 0
+	F8_queue_index: 0
+	F5_('E2', 'S2')_gc: False
+	F8_('S2', 'S1')_gc: False
+	F3_('E2', 'S2')_gc: False
+	F0_('S1', 'E1')_t3_min: 103289
+	F3_('S3', 'E3')_t3_min: 2479
+	('S3', 'S2')_gcl_cycle: 1
+	F5_('S2', 'S1')_t4_max: 30476
+	F0_('S2', 'S1')_gc: False
+	F5_jitter: 0
+	F5_('S2', 'S1')_t4_min: 30347
+	('S5', 'E5')_gcl_cycle: 2000
+	F4_('S3', 'S2')_t3_max: 7959
+	F6_('S5', 'E5')_rr: 0
+	F5_('S2', 'S1')_t3_max: 30352
+	F7_('S4', 'S5')_t4_max: 452
+	F1_queue_index: 0
+	F5_('S1', 'E1')_rr: 2
+	F8_('E2', 'S2')_rr: 0
+	F9_('S5', 'S4')_rr: 0
+	F2_('S3', 'E3')_gc: False
+	F2_jitter: 258
+	('S1', 'E1')_gcl_cycle: 64000
+	F2_('S4', 'S3')_rr: 0
+	F4_('S3', 'S2')_t5_max: 8127
+	F7_('S3', 'S4')_gc: True
+	F0_('S2', 'S1')_t4_max: 103771
+	F9_('S4', 'E4')_rr: 0
+	F0_('S4', 'S3')_t4_min: 103187
+	F4_jitter: 258
+	F9_('E5', 'S5')_t5_min: 127475
+	F6_('S2', 'S3')_rr: 0
+	F6_('S3', 'S4')_tb: 14579
+	F9_('E5', 'S5')_t3_max: 127291
+	F4_('S2', 'E2')_rr: 0
+	('S4', 'E4')_gcl_cycle: 1
+	F7_('S2', 'S3')_gc: True
+	F9_('S5', 'S4')_t3_max: 127482
+	F7_('S5', 'E5')_t4_min: 561
+	F5_('S1', 'E1')_t4_min: 30574
+	F7_('S5', 'E5')_t5_min: 663
+	F6_('S3', 'S4')_t4_min: 14579
+	F3_('E2', 'S2')_t4_max: 2421
+	F0_jitter: 645
+	F6_('S3', 'S4')_rr: 1
+	F6_('E2', 'S2')_t5_max: 14253
+	F0_('S1', 'E1')_t4_min: 103289
+	F1_('E5', 'S5')_t3_max: 7140
+	F1_('S4', 'S3')_t5_min: 7639
+	F7_('S2', 'S3')_t5_min: 212
+	F0_('S3', 'S2')_t5_max: 103640
+	F1_('S5', 'S4')_t3_min: 7315
+	F2_('S3', 'E3')_tb: 2765
+	F3_('S3', 'E3')_t5_max: 2764
+	F5_('S2', 'S1')_t3_min: 30347
+	F5_('S2', 'S1')_t5_max: 30567
+	F1_('E5', 'S5')_t4_max: 7264
+	F6_('S4', 'S5')_t3_min: 14646
+	F5_('S1', 'E1')_t4_max: 30574
+	F0_('S5', 'S4')_t5_min: 103185
+	F1_('S5', 'S4')_tb: 7427
+	F2_('E4', 'S4')_t4_max: 2531
+	F1_('E5', 'S5')_t5_max: 7313
+	F0_('S2', 'S1')_t5_min: 103287
+	F5_('S1', 'E1')_t3_max: 30574
+	F4_('E3', 'S3')_t5_min: 7952
+	F7_('S5', 'E5')_t3_min: 427
+	F1_('S5', 'S4')_t5_min: 7476
+	F4_('S2', 'E2')_t3_min: 8000
+	F8_('S1', 'E1')_tb: 60509
+	F0_('S3', 'S2')_t5_min: 103253
+	F1_('S3', 'S2')_t5_min: 7690
+	F2_('E4', 'S4')_t4_min: 2531
+	F7_('S3', 'S4')_tb: 219
+	F8_('E2', 'S2')_t4_min: 60104
+	F0_('S1', 'E1')_t4_max: 103934
+	F6_('S5', 'E5')_t4_max: 14970
+	F6_('S3', 'S4')_t3_max: 14456
+	F2_('S3', 'E3')_t4_max: 3023
+	F9_('S5', 'S4')_t5_min: 127537
+	F2_('S4', 'S3')_t5_min: 2763
+	F7_('S5', 'E5')_t3_max: 561
+	F1_('E5', 'S5')_tb: 7264
+	('S5', 'E5')_gcl_length: 2
+	F7_('S4', 'S5')_t3_min: 323
+	F0_('S2', 'S1')_t5_max: 103803
+	F6_('S2', 'S3')_t3_min: 14255
+	F2_('S3', 'E3')_t5_max: 3138
+	F0_('S5', 'S4')_t5_max: 103314
+	F8_('S2', 'S1')_t5_min: 60248
+	F0_('E5', 'S5')_t4_min: 103119
+	F6_('S3', 'S4')_t5_max: 14644
+	F1_('S2', 'E2')_tb: 7692
+	F0_('S3', 'S2')_tb: 103221
+	F4_('E3', 'S3')_t3_min: 7908
+	F9_('S4', 'E4')_t3_min: 127539
+	('S4', 'E4')_gcl_length: 0
+	F6_('S2', 'S3')_tb: 14255
+	F1_('S4', 'S3')_tb: 7590
+	F0_('S1', 'E1')_t3_max: 103810
+	F6_('E2', 'S2')_tb: 14188
+	F1_('S2', 'E2')_t4_max: 7950
+	F0_('S2', 'S1')_t3_min: 103255
+	('S3', 'S2')_gcl_length: 0
+	F9_('E5', 'S5')_t4_min: 127415
+	F7_('S2', 'S3')_tb: 110
+	F9_('E5', 'S5')_t4_max: 127415
+	F7_('S2', 'S3')_t5_max: 212
+	('S1', 'E1')_gcl_length: 6
+	F2_('E4', 'S4')_t5_min: 2646
+	F8_('S1', 'E1')_t3_max: 60384
+	F6_('S3', 'S4')_t3_min: 14322
+	F7_('S4', 'S5')_t5_max: 554
+	F4_('E3', 'S3')_t4_max: 7908
+	('E5', 'S5')_gcl_length: 0
+	F4_('S3', 'S2')_t3_min: 7954
+	F3_('S3', 'E3')_t5_min: 2506
+	('E3', 'S3')_gcl_length: 0
+	F8_('S1', 'E1')_t3_min: 60250
+	F4_('S2', 'E2')_t5_max: 8302
+	F3_('S3', 'E3')_t3_max: 2613
+	F9_('E5', 'S5')_tb: 127415
+	F3_('S2', 'S3')_tb: 2450
+	F3_('S2', 'S3')_t3_min: 2450
+	F6_('S2', 'S3')_t5_max: 14449
+	F3_('E2', 'S2')_tb: 2421
+	F0_('S4', 'S3')_t5_max: 103477
+	F6_('E2', 'S2')_t4_max: 14188
+	F2_('S4', 'S3')_t5_max: 2892
+	F1_('S2', 'E2')_t3_max: 7826
+	('S2', 'S3')_gcl_length: 2
+	F7_('S5', 'E5')_t5_max: 663
+	F6_('S4', 'S5')_tb: 14774
+	F6_('S4', 'S5')_t3_max: 14651
+	F6_('S5', 'E5')_t5_max: 15035
+	F4_('S2', 'E2')_t5_min: 8044
+	F0_('S5', 'S4')_tb: 103153
+	F8_('E2', 'S2')_t5_min: 60175
+	F8_('E2', 'S2')_t4_max: 60104
+	F2_('E4', 'S4')_t5_max: 2646
+	F1_('S4', 'S3')_t3_min: 7478
+	F1_('S2', 'E2')_t5_min: 7741
+	F7_('S2', 'S3')_t3_min: 105
+	F6_('S5', 'E5')_t3_max: 14846
+	F4_('S2', 'E2')_t4_max: 8258
+	F0_('S4', 'S3')_t3_min: 103187
+	F0_('S4', 'S3')_t3_max: 103321
+	F2_('S3', 'E3')_t3_min: 2765
+	F9_('E5', 'S5')_t3_min: 127415
+	F3_('E2', 'S2')_t4_min: 2421
+	('S5', 'S4')_gcl_length: 2
+	F9_('S4', 'E4')_t4_max: 127797
+	F6_('S5', 'E5')_t3_min: 14841
+	F8_('E2', 'S2')_tb: 60104
+	F6_('S5', 'E5')_tb: 14841
+	F5_('E2', 'S2')_t5_max: 30345
+	F4_('E3', 'S3')_t5_max: 7952
+	('S2', 'S1')_gcl_length: 0
+	F1_('S4', 'S3')_t3_max: 7483
+	F1_('E5', 'S5')_t4_min: 7264
+	F7_('S5', 'E5')_t4_max: 561
+	F7_('E2', 'S2')_t3_min: 1
+	F8_('S1', 'E1')_t4_max: 60509
+	F7_('S4', 'S5')_tb: 323
+	F5_('E2', 'S2')_t4_min: 30254
+	F5_('S2', 'S1')_t5_min: 30438
+	F6_('E2', 'S2')_t3_min: 14188
+	F5_('E2', 'S2')_t5_min: 30345
+	F1_('S3', 'S2')_t5_max: 7819
+	('S3', 'E3')_gcl_length: 0
+	F5_('S1', 'E1')_tb: 30574
+	F9_('S5', 'S4')_t3_min: 127477
+	F1_('S2', 'E2')_t3_min: 7692
+	F5_('E2', 'S2')_t3_min: 30254
+	F5_('E2', 'S2')_t4_max: 30254
+	F7_('S5', 'E5')_tb: 561
+	F0_('E5', 'S5')_tb: 103119
+	('E2', 'S2')_gcl_length: 0
+	F0_('S1', 'E1')_t5_min: 103321
+	F7_('S3', 'S4')_t3_min: 214
+	F0_('S5', 'S4')_t3_min: 103153
+	F3_('E2', 'S2')_t5_max: 2448
+	F9_('S4', 'E4')_tb: 127539
+	F3_('S3', 'E3')_tb: 2479
+	F6_('S4', 'S5')_t5_max: 14839
+	F1_('S3', 'S2')_tb: 7641
+	('S4', 'S3')_gcl_length: 2
+	F9_('S4', 'E4')_t3_max: 127673
+	F5_('E2', 'S2')_tb: 30254
+	F3_('S2', 'S3')_t5_max: 2606
+	F0_('S4', 'S3')_t5_min: 103219
+	F4_('S2', 'E2')_t3_max: 8134
+	F4_('S2', 'E2')_tb: 8000
+	F4_('S3', 'S2')_tb: 7954
+	F7_('S3', 'S4')_t3_max: 219
+	F7_('S4', 'S5')_t3_max: 328
+	F5_('S1', 'E1')_t5_min: 30665
+	('S4', 'S5')_gcl_length: 2
+	F0_('E5', 'S5')_t5_min: 103151
+	F6_('S3', 'S4')_t5_min: 14644
+	F2_('S3', 'E3')_t3_max: 2899
+	F9_('S4', 'E4')_t5_max: 127857
+	F6_('S2', 'S3')_t5_min: 14320
+	F4_('S3', 'S2')_t5_min: 7998
+	F8_('S2', 'S1')_tb: 60177
+	F7_('S4', 'S5')_t5_min: 425
+	F9_('S5', 'S4')_t5_max: 127666
+	F2_('S4', 'S3')_t3_min: 2648
+	F1_('S3', 'S2')_t3_max: 7646
+	F0_('S2', 'S1')_t3_max: 103647
+	F0_('E5', 'S5')_t5_max: 103151
+	F9_('E5', 'S5')_t5_max: 127475
+	F8_('S2', 'S1')_t5_max: 60377
+	F1_('S5', 'S4')_t5_max: 7476
+	F1_('E5', 'S5')_t5_min: 7313
+	F0_('S1', 'E1')_tb: 103289
+	F1_('S2', 'E2')_t5_max: 7999
+	F9_('S4', 'E4')_t5_min: 127599
+	F4_('E3', 'S3')_t4_min: 7908
+	('E4', 'S4')_gcl_length: 0
+	('S3', 'S4')_gcl_length: 18
+	F8_('S1', 'E1')_t5_max: 60580
+	F7_('E2', 'S2')_tb: 1
+	F6_('E2', 'S2')_t5_min: 14253
+	('S2', 'E2')_gcl_length: 0
+	F8_('E2', 'S2')_t3_min: 60104
+	F7_('E2', 'S2')_t4_max: 1
+	F2_('E4', 'S4')_t3_min: 2531
+	F6_('S5', 'E5')_t5_min: 14906
+	F7_('E2', 'S2')_t5_min: 103
+	F0_('E5', 'S5')_t4_max: 103119
+	F0_('S3', 'S2')_t3_min: 103221
+	F0_('E5', 'S5')_t3_min: 103119
+	F0_('S3', 'S2')_t3_max: 103484
+	F6_('S4', 'S5')_t5_min: 14839
+	F5_('S2', 'S1')_tb: 30347
+	F7_('E2', 'S2')_t4_min: 1
+	F4_('E3', 'S3')_tb: 7908
+	F1_('S4', 'S3')_t5_max: 7639
+	F6_('E2', 'S2')_t4_min: 14188

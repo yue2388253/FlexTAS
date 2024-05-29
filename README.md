@@ -31,6 +31,13 @@ sudo apt install graphviz
 
 Python-related packages are managed by `conda`.
 
+Note that the pytorch version specified by the file is NOT GPU-enabled.
+You might need to reinstall pytorch if you have a GPU-enabled machine.
+
 ```shell
 conda env create -f conda_env.yml
 ```
+
+# TODO
+
+* format logging
