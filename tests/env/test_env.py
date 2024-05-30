@@ -22,6 +22,7 @@ class TestEnvState(unittest.TestCase):
         for key, value in state.items():
             logging.debug((key, value.shape))
 
+        logging.debug(self.state_encoder.observation_space)
         self.assertTrue(self.state_encoder.observation_space.contains(state))
 
 

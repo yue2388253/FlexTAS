@@ -42,11 +42,9 @@ class _StateEncoder:
         flows = self.env.flows
         self.periods_list = PERIOD_SET
         self.periods_list.sort()
-        self.periods_one_hot_dict = pd.get_dummies(self.periods_list)
         self.periods_dict = {period: 0 for period in self.periods_list}
 
         link_dict = self.env.link_dict
-        self.links_one_hot_dict = pd.get_dummies(link_dict.keys())
 
         # [link, [period, num_flows]]
         self.link_flow_period_dict: dict = defaultdict(Counter)
@@ -60,11 +58,11 @@ class _StateEncoder:
 
         self.observation_space = spaces.Dict({
             "flow_feature": spaces.Box(low=0, high=1, shape=state['flow_feature'].shape, dtype=np.float32),
-            "link_feature": spaces.Box(low=0, high=1, shape=state['link_feature'].shape, dtype=np.float32),
-            "adjacency_matrix": spaces.Box(low=0, high=self.max_neighbors,
+            "link_feature": spaces.Box(low=-1, high=1, shape=state['link_feature'].shape, dtype=np.float32),
+            "adjacency_matrix": spaces.Box(low=-1, high=self.max_neighbors,
                                            shape=state['adjacency_matrix'].shape,
                                            dtype=np.int64),
-            "features_matrix": spaces.Box(low=0, high=1, shape=state['features_matrix'].shape, dtype=np.float32)
+            "features_matrix": spaces.Box(low=-1, high=1, shape=state['features_matrix'].shape, dtype=np.float32)
         })
 
     def _link_feature(self, link_id):
@@ -76,14 +74,11 @@ class _StateEncoder:
                 link_utilization += (operation.end_time - operation.start_time) / flow.period
         assert link_utilization <= 1
 
-        link_gcl_feature = np.concatenate([
-            self.links_one_hot_dict[link_id],
-            [
-                link_utilization,
-                link.gcl_cycle / Net.GCL_CYCLE_MAX,
-                link.gcl_length / Net.GCL_LENGTH_MAX
-            ]
-        ])
+        link_gcl_feature = np.array([
+            link_utilization,
+            link.gcl_cycle / Net.GCL_CYCLE_MAX,
+            link.gcl_length / Net.GCL_LENGTH_MAX
+        ], dtype=np.float32)
 
         link_flow_periods_feature = np.array([
             self.link_flow_period_dict[link][period] / len(self.env.flows)
@@ -105,15 +100,12 @@ class _StateEncoder:
             accum_jitter = operation.latest_time - operation.start_time
 
         hop_index = len(self.env.flows_operations[flow])
-        flow_feature = np.concatenate([
-            self.periods_one_hot_dict[flow.period],
-            [
-                flow.period / Net.GCL_CYCLE_MAX,
-                flow.payload / Net.PAYLOAD_MAX,
-                flow.jitter / flow.period,
-                min(1, accum_jitter / flow.jitter),
-                (hop_index + 1) / len(flow.path)
-            ]
+        flow_feature = np.array([
+            flow.period / Net.GCL_CYCLE_MAX,
+            flow.payload / Net.PAYLOAD_MAX,
+            flow.jitter / flow.period,
+            min(1, accum_jitter / flow.jitter),
+            (hop_index + 1) / len(flow.path)
         ], dtype=np.float32)
 
         current_link = flow.path[hop_index]
