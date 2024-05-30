@@ -94,9 +94,6 @@ class TimeTablingScheduler(BaseScheduler):
         return None
 
     def _check_valid_link(self, link: Link, operation: Operation, flow: Flow) -> Optional[int]:
-        # only needs to check whether the newly added operation is conflict with other operations.
-        safe_distance = link.safe_distance()
-
         for flow_rhs, operation_rhs in self.links_operations[link]:
             offset = check_operation_isolation(
                 (operation, flow.period),

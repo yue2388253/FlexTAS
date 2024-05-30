@@ -164,7 +164,6 @@ class SmtScheduler(BaseScheduler):
 
                 for link_id in common_links:
                     link = self.links_dict[link_id]
-                    delay_ifg = link.safe_distance()
 
                     for alpha in range(rr_i + 5):
                         for beta in range(rr_j + 5):
@@ -174,19 +173,15 @@ class SmtScheduler(BaseScheduler):
                                     self.z3_variables_flow[flow_j]['queue_index'],
                                     z3.Or(
                                         self.z3_variables_flow_link[flow_i][link]['t3_min'] + alpha * flow_i.period >=
-                                        self.z3_variables_flow_link[flow_j][link]['t5_max'] + beta * flow_j.period +
-                                        delay_ifg,
+                                        self.z3_variables_flow_link[flow_j][link]['t5_max'] + beta * flow_j.period,
                                         self.z3_variables_flow_link[flow_j][link]['t3_min'] + beta * flow_j.period >=
-                                        self.z3_variables_flow_link[flow_i][link]['t5_max'] + alpha * flow_i.period +
-                                        delay_ifg
+                                        self.z3_variables_flow_link[flow_i][link]['t5_max'] + alpha * flow_i.period
                                     ),
                                     z3.Or(
                                         self.z3_variables_flow_link[flow_i][link]['tb'] + alpha * flow_i.period >=
-                                        self.z3_variables_flow_link[flow_j][link]['t5_max'] + beta * flow_j.period +
-                                        delay_ifg,
+                                        self.z3_variables_flow_link[flow_j][link]['t5_max'] + beta * flow_j.period,
                                         self.z3_variables_flow_link[flow_j][link]['tb'] + beta * flow_j.period >=
-                                        self.z3_variables_flow_link[flow_i][link]['t5_max'] + alpha * flow_i.period +
-                                        delay_ifg
+                                        self.z3_variables_flow_link[flow_i][link]['t5_max'] + alpha * flow_i.period
                                     )
                                 )
                             )

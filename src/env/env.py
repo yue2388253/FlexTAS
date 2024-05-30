@@ -248,7 +248,6 @@ class NetEnv(gym.Env):
     def check_valid_link(self, link: Link) -> Optional[int]:
         # only needs to check whether the newly added operation is conflict with other operations.
         flow, operation = self.links_operations[link][-1]
-        safe_distance = link.safe_distance()
 
         for flow_rhs, operation_rhs in self.links_operations[link][:-1]:
             offset = check_operation_isolation(
