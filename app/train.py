@@ -8,11 +8,11 @@ import os
 from app.test import test
 from definitions import OUT_DIR
 from src.agent.encoder import FeaturesExtractor
+from src.app.drl_scheduler import DrlScheduler
 from src.env.env import NetEnv, TrainingNetEnv
 from src.lib.log_config import log_config
 from src.lib.timing_decorator import timing_decorator
-from src.app.drl_scheduler import DrlScheduler
-from src.network.net import generate_linear_5, generate_cev, generate_flows, Net
+from src.network.net import generate_linear_5, generate_cev, generate_flows, Net, generate_random_graph
 
 from stable_baselines3.common.callbacks import EvalCallback
 from stable_baselines3.common.results_plotter import load_results, ts2xy
@@ -23,7 +23,7 @@ TOPO = 'CEV'
 NUM_ENVS = multiprocessing.cpu_count()
 NUM_FLOWS = 50
 
-DRL_ALG = 'A2C'
+DRL_ALG = 'MaskablePPO'
 
 MONITOR_ROOT_DIR = os.path.join(OUT_DIR, "monitor")
 
@@ -38,6 +38,9 @@ def make_env(num_flows, rank: int, topo: str, training: bool = True, link_rate: 
             graph = generate_cev(link_rate)
         elif topo == "L5":
             graph = generate_linear_5(link_rate)
+        elif topo == "Random":
+            graph, graph_type = generate_random_graph(20, link_rate)
+            print(f"Graph type: {graph_type}")
         else:
             raise ValueError(f"Unknown topo {topo}")
 

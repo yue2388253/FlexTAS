@@ -1,9 +1,10 @@
+import logging
 import math
 import networkx as nx
 import numpy as np
 import random
 import typing
-
+from enum import Enum, auto
 
 PERIOD_SET = [2000, 4000, 8000, 16000, 32000, 64000, 128000]
 
@@ -306,6 +307,52 @@ def generate_cev(link_rate=100) -> nx.DiGraph:
         graph.edges[edge]['link_rate'] = link_rate
 
     return graph
+
+
+class RandomGraph(Enum):
+    RRG = auto()
+    ERG = auto()
+    BAG = auto()
+
+
+def generate_graph(graph_type: RandomGraph, link_rate=100, **kwargs):
+    graph = None
+    while graph is None:
+        if graph_type == RandomGraph.RRG:
+            graph = nx.random_regular_graph(**kwargs)
+        elif graph_type == RandomGraph.ERG:
+            graph = nx.erdos_renyi_graph(**kwargs)
+        elif graph_type == RandomGraph.BAG:
+            graph = nx.barabasi_albert_graph(**kwargs)
+        else:
+            assert False
+        if not nx.is_connected(graph):
+            graph = None
+
+    graph = nx.DiGraph(graph)
+
+    # all nodes can send traffic
+    nx.set_node_attributes(graph, 'ES', 'node_type')
+
+    # set link rate
+    nx.set_edge_attributes(graph, link_rate, 'link_rate')
+
+    return graph
+
+
+def generate_random_graph(num_nodes, link_rate):
+    graph_type = random.choice(list(RandomGraph))
+
+    if graph_type == RandomGraph.RRG:
+        graph = generate_graph(graph_type, link_rate, d=4, n=num_nodes)
+    elif graph_type == RandomGraph.ERG:
+        graph = generate_graph(graph_type, link_rate, n=num_nodes, p=0.25)
+    elif graph_type == RandomGraph.BAG:
+        graph = generate_graph(graph_type, link_rate, n=num_nodes, m=3)
+    else:
+        assert False
+
+    return graph, graph_type
 
 
 def transform_line_graph(graph) -> (nx.Graph, typing.Dict):

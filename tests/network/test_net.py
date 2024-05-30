@@ -3,6 +3,9 @@ import jsons
 import os.path
 import unittest
 
+import matplotlib.pyplot as plt
+import networkx as nx
+
 from definitions import ROOT_DIR, OUT_DIR
 from src.network.from_json import generate_net_flows_from_json
 from src.network.net import *
@@ -20,6 +23,34 @@ class TestCEV(unittest.TestCase):
 
         self.assertEqual(len(cev.nodes), 46)
         self.assertEqual(len(cev.edges), 2 * (31 + 24))
+
+
+class TestRandomGraph(unittest.TestCase):
+    def test_random_graph(self):
+        num_test = 10
+        num_nodes = 20
+        for i in range(num_test):
+            d = 4
+            graph = generate_graph(RandomGraph.RRG, d=d, n=num_nodes)
+            self.assertIsNotNone(graph)
+            self.assertTrue(len(graph.nodes) == num_nodes)
+            self.assertEqual(len(graph.edges), num_nodes * d)
+
+        for i in range(num_test):
+            graph = generate_graph(RandomGraph.ERG, n=num_nodes, p=0.25)
+            self.assertIsNotNone(graph)
+            self.assertTrue(len(graph.nodes) == num_nodes)
+
+        for i in range(num_test):
+            graph = generate_graph(RandomGraph.BAG, n=num_nodes, m=3)
+            self.assertIsNotNone(graph)
+            self.assertTrue(len(graph.nodes) == num_nodes)
+            self.assertEqual(len(graph.edges), (num_nodes - 3) * 3 * 2)
+
+        for i in range(num_test):
+            graph = generate_random_graph(num_nodes, 100)
+            self.assertIsNotNone(graph)
+            self.assertTrue(len(graph.nodes) == num_nodes)
 
 
 class TestDuration(unittest.TestCase):
@@ -130,6 +161,12 @@ class TestFlowGenerator(unittest.TestCase):
         # different seed, there must be at least a difference.
         flows3 = generate_flows(graph, num_flows, 2)
         self.assertTrue(any([str(flows1[i] != str(flows3[i]) for i in range(num_flows))]))
+
+    def test_random_graph(self):
+        graph = generate_graph(RandomGraph.RRG, n=10, d=4)
+        num_flows = 10
+        flows = generate_flows(graph, num_flows)
+        self.assertEqual(len(flows), num_flows)
 
 
 if __name__ == '__main__':
