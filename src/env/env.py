@@ -75,7 +75,7 @@ class _StateEncoder:
         assert link_utilization <= 1
 
         link_gcl_feature = np.array([
-            link_utilization,
+            math.sqrt(link_utilization),
             link.gcl_cycle / Net.GCL_CYCLE_MAX,
             link.gcl_length / Net.GCL_LENGTH_MAX
         ], dtype=np.float32)
