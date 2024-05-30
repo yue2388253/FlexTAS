@@ -143,7 +143,7 @@ class _StateEncoder:
         else:
             padded_edges = edges[:max_edges]  # Ensure it does not exceed max_edges
 
-        edge_index = torch.tensor(padded_edges, dtype=torch.long).t().contiguous()
+        edge_index = np.array(padded_edges, dtype=np.int64).T
 
         feature_matrix = np.array(feature_matrix, dtype=np.float32)
 
