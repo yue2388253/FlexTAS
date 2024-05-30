@@ -191,7 +191,7 @@ class SmtScheduler(BaseScheduler):
             path = flow.path
             for link_id in path:
                 link = self.links_dict[link_id]
-                hold_time = link.transmission_time(12 + 1522 + 8)  # inter-frame gap + mtu + preamble
+                hold_time = link.transmission_time(Net.MTU)
                 self.constraints_set.append(
                     z3.If(
                         self.z3_variables_flow_link[flow][link]['gc'],
@@ -297,7 +297,7 @@ class NoWaitSmtScheduler(SmtScheduler):
             path = flow.path
             for link_id in path:
                 link = self.links_dict[link_id]
-                hold_time = link.transmission_time(12 + 1522 + 8)  # inter-frame gap + mtu + preamble
+                hold_time = link.transmission_time(Net.MTU)
                 self.constraints_set.append(
                     z3.If(
                         self.z3_variables_flow_link[flow][link]['gc'],

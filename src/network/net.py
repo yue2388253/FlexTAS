@@ -9,7 +9,7 @@ PERIOD_SET = [2000, 4000, 8000, 16000, 32000, 64000, 128000]
 
 
 class Net:
-    PAYLOAD_MAX = 1522
+    MTU = 1522
     JITTER_MAX = 1.0
 
     SYNC_PRECISION = 0
@@ -113,14 +113,11 @@ class Link:
         self.reserved_binaries = Duration(None, None, Net.GCL_CYCLE_MAX)
 
     def interference_time(self) -> int:
-        return math.ceil((Net.PAYLOAD_MAX * 8 + 96 + 8 * 8) / self.link_rate)  # IFG + preamble + interference packet
+        return self.transmission_time(Net.MTU)
 
     def transmission_time(self, payload: int) -> int:
-        return math.ceil(payload * 8 / self.link_rate)
-
-    def safe_distance(self) -> int:
-        # inter-frame gap
-        return self.transmission_time(12)
+        # 12 for interframe gap and 8 for preamble
+        return math.ceil((payload + 12 + 8) * 8 / self.link_rate)
 
     def embedding(self) -> np.ndarray:
         return np.array([self.reserved_binaries.utilization(),
@@ -195,7 +192,7 @@ class Flow:
 
     def embedding(self) -> np.ndarray:
         return np.array([self.period / Net.PERIOD_MAX,
-                         self.payload / Net.PAYLOAD_MAX,
+                         self.payload / Net.MTU,
                          self.e2e_delay / self.period,
                          self.jitter / self.period])
 
