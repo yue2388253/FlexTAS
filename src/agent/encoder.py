@@ -23,7 +23,11 @@ class GinModel(nn.Module):
         x, edge_index, batch = data.x, data.edge_index, data.batch
 
         # Filter out padded edges if using negative indices for padding
-        valid_edge_mask = (edge_index >= 0).all(dim=0)
+        num_graphs = data.num_graphs
+        edge_mask = torch.tensor([[1], [1]]) * torch.tensor(
+            list(range(num_graphs))).repeat_interleave(
+            edge_index.shape[-1] // num_graphs) * data.num_nodes / num_graphs
+        valid_edge_mask = ((edge_index - edge_mask) >= 0).all(dim=0)
         edge_index = edge_index[:, valid_edge_mask]
 
         x = F.relu(self.conv1(x, edge_index))
