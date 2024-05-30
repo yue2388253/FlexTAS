@@ -10,14 +10,14 @@ import networkx as nx
 import os
 import pandas as pd
 from typing import SupportsFloat, Any, Optional
-import torch
 
 from definitions import ROOT_DIR, OUT_DIR, LOG_DIR
-from src.network.net import Duration, Flow, Link, transform_line_graph, Net, PERIOD_SET, generate_cev, generate_flows
+from src.lib.graph import neighbors_within_distance
 from src.lib.operation import Operation, check_operation_isolation
+from src.network.net import Duration, Flow, Link, transform_line_graph, Net, PERIOD_SET, generate_cev, generate_flows
 
 
-MAX_NEIGHBORS = 10
+MAX_NEIGHBORS = 20
 
 
 class ErrorType(Enum):
@@ -42,6 +42,7 @@ class _StateEncoder:
         flows = self.env.flows
         self.periods_list = PERIOD_SET
         self.periods_list.sort()
+        self.periods_one_hot_dict = pd.get_dummies(self.periods_list)
         self.periods_dict = {period: 0 for period in self.periods_list}
 
         link_dict = self.env.link_dict
@@ -100,18 +101,21 @@ class _StateEncoder:
             accum_jitter = operation.latest_time - operation.start_time
 
         hop_index = len(self.env.flows_operations[flow])
-        flow_feature = np.array([
-            flow.period / Net.GCL_CYCLE_MAX,
-            flow.payload / Net.MTU,
-            flow.jitter / flow.period,
-            min(1, accum_jitter / flow.jitter),
-            (hop_index + 1) / len(flow.path)
+        flow_feature = np.concatenate([
+            self.periods_one_hot_dict[flow.period],
+            [
+                flow.period / Net.GCL_CYCLE_MAX,
+                flow.payload / Net.MTU,
+                flow.jitter / flow.period,
+                min(1, accum_jitter / flow.jitter),
+                (hop_index + 1) / len(flow.path)
+            ]
         ], dtype=np.float32)
 
         current_link = flow.path[hop_index]
         link_feature = self._link_feature(current_link)
 
-        neighbors = list(self.env.line_graph.neighbors(current_link))
+        neighbors = neighbors_within_distance(self.env.line_graph, current_link, 2)
         neighbors.insert(0, current_link)
 
         if len(neighbors) > self.max_neighbors:
