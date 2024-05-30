@@ -58,11 +58,11 @@ class _StateEncoder:
 
         self.observation_space = spaces.Dict({
             "flow_feature": spaces.Box(low=0, high=1, shape=state['flow_feature'].shape, dtype=np.float32),
-            "link_feature": spaces.Box(low=-1, high=1, shape=state['link_feature'].shape, dtype=np.float32),
+            "link_feature": spaces.Box(low=0, high=1, shape=state['link_feature'].shape, dtype=np.float32),
             "adjacency_matrix": spaces.Box(low=-1, high=self.max_neighbors,
                                            shape=state['adjacency_matrix'].shape,
                                            dtype=np.int64),
-            "features_matrix": spaces.Box(low=-1, high=1, shape=state['features_matrix'].shape, dtype=np.float32)
+            "features_matrix": spaces.Box(low=0, high=1, shape=state['features_matrix'].shape, dtype=np.float32)
         })
 
     def _link_feature(self, link_id):

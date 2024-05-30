@@ -9,20 +9,20 @@ from torch_geometric.data import Data, Batch
 from stable_baselines3.common.torch_layers import BaseFeaturesExtractor
 
 
-class GinModel(torch.nn.Module):
+class GinModel(nn.Module):
     def __init__(self, num_features, dim1=32, dim2=64, embed_dim=64):
         super(GinModel, self).__init__()
         nn1 = Sequential(Linear(num_features, dim1), ReLU(), Linear(dim1, dim2))
         self.conv1 = GINConv(nn1)
-        self.bn1 = torch.nn.BatchNorm1d(dim2)
+        self.bn1 = nn.BatchNorm1d(dim2)
         nn2 = Sequential(Linear(dim2, dim2), ReLU(), Linear(dim2, embed_dim))
         self.conv2 = GINConv(nn2)
-        self.bn2 = torch.nn.BatchNorm1d(embed_dim)
+        self.bn2 = nn.BatchNorm1d(embed_dim)
 
     def forward(self, data):
         x, edge_index, batch = data.x, data.edge_index, data.batch
 
-        # Filter out padded edges
+        # Filter out padded edges if using negative indices for padding
         valid_edge_mask = (edge_index >= 0).all(dim=0)
         edge_index = edge_index[:, valid_edge_mask]
 
