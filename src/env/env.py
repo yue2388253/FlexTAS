@@ -9,6 +9,7 @@ import numpy as np
 import networkx as nx
 import os
 import pandas as pd
+import random
 from typing import SupportsFloat, Any, Optional
 
 from definitions import ROOT_DIR, OUT_DIR, LOG_DIR
@@ -271,6 +272,13 @@ class NetEnv(gym.Env):
         for link in self.link_dict.values():
             link.reset()
 
+        # shuffle the flows, thus
+        #  a) to avoid local minimum,
+        #  b) for generalization
+        #  c) for robustness
+        #  d) for learning efficiency,
+        #  etc.
+        random.shuffle(self.flows)
         self.flows_operations.clear()
         self.links_operations.clear()
 
