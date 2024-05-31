@@ -517,6 +517,7 @@ class TrainingNetEnv(NetEnv):
     Begin with an easy environment that contains a small set of flows for agent to learn,
     increase the number of flows gradually to make the env harder if the agent can easily
     pass the current env.
+    Once the agent has learnt how to schedule current flows, generate a new flow set for training.
     """
     def __init__(self, graph, flow_generator, num_flows,
                  initial_ratio=0.2, step_ratio=0.05, changing_freq=10):
