@@ -48,7 +48,7 @@ class TestRandomGraph(unittest.TestCase):
             self.assertEqual(len(graph.edges), (num_nodes - 3) * 3 * 2)
 
         for i in range(num_test):
-            graph = generate_random_graph(num_nodes, 100)
+            graph, _ = generate_random_graph(num_nodes, 100)
             self.assertIsNotNone(graph)
             self.assertTrue(len(graph.nodes) == num_nodes)
 

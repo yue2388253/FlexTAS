@@ -9,7 +9,7 @@ class TestDrl(unittest.TestCase):
         logging.basicConfig(level=logging.DEBUG)
         graph = generate_cev()
         flows = generate_flows(graph, 5)
-        scheduler = DrlScheduler(graph, flows, num_envs=4)
+        scheduler = DrlScheduler(graph, flows, num_envs=1)
         scheduler.schedule()
 
     def test_time_limit(self):
