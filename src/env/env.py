@@ -18,6 +18,7 @@ from src.network.net import Duration, Flow, Link, transform_line_graph, Net, PER
 
 
 MAX_NEIGHBORS = 20
+MAX_REMAIN_HOPS = 10
 
 
 class ErrorType(Enum):
@@ -38,6 +39,7 @@ class _StateEncoder:
     def __init__(self, env: 'NetEnv'):
         self.env = env
         self.max_neighbors = MAX_NEIGHBORS
+        self.max_remain_hops = MAX_NEIGHBORS
 
         flows = self.env.flows
         self.periods_list = PERIOD_SET
@@ -69,7 +71,8 @@ class _StateEncoder:
             "adjacency_matrix": spaces.Box(low=-1, high=self.max_neighbors,
                                            shape=state['adjacency_matrix'].shape,
                                            dtype=np.int64),
-            "features_matrix": spaces.Box(low=0, high=1, shape=state['features_matrix'].shape, dtype=np.float32)
+            "features_matrix": spaces.Box(low=0, high=1, shape=state['features_matrix'].shape, dtype=np.float32),
+            "remain_hops": spaces.Box(low=0, high=1, shape=state['remain_hops'].shape, dtype=np.float32)
         })
 
     def _link_feature(self, link_id):
@@ -156,25 +159,46 @@ class _StateEncoder:
         feature_matrix = np.array(feature_matrix, dtype=np.float32)
         return edge_index, feature_matrix
 
+    def _remain_nodes_features(self, flow, hop_index):
+        path = flow.path
+        features = []
+        for i, link in enumerate(path):
+            if i < hop_index:
+                continue
+            features.append(self._link_feature(link))
+
+        # features must not be empty
+        assert len(features) > 0
+
+        # padding
+        while len(features) < self.max_remain_hops:
+            features.append(np.zeros_like(features[-1]))
+
+        # truncate
+        if len(features) > self.max_remain_hops:
+            features = features[:self.max_remain_hops]
+
+        # flatten the features
+        features = np.array(features, dtype=np.float32).ravel()
+
+        return features
+
     def state(self):
         flow = self.env.flows[self.env.flow_index]
         hop_index = len(self.env.flows_operations[flow])
         current_link = flow.path[hop_index]
 
         flow_feature = self._flow_feature()
-
         link_feature = self._link_feature(current_link)
-
         edge_index, feature_matrix = self._neighbors_features(current_link)
+        remain_hops_feature = self._remain_nodes_features(flow, hop_index)
 
-        # todo: add node features along the flow:
-        #  only the remain link are considered
-        #  padding
         return {
             "flow_feature": flow_feature,
             "link_feature": link_feature,
             "adjacency_matrix": edge_index,
-            "features_matrix": feature_matrix
+            "features_matrix": feature_matrix,
+            "remain_hops": remain_hops_feature
         }
 
 

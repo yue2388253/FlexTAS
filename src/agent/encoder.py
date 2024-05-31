@@ -62,15 +62,23 @@ def dict_to_batch(obs):
 
 class FeaturesExtractor(BaseFeaturesExtractor):
     def __init__(self, observation_space: gym.spaces.Dict):
-        embedding_dim = 128
         array_embedding = 64
-        graph_embedding = embedding_dim - array_embedding
-        super().__init__(observation_space, features_dim=embedding_dim)
+        graph_embedding = 64
+        super().__init__(observation_space, features_dim=2*array_embedding+graph_embedding)
 
         self.array_encoder = nn.Sequential(
             nn.Linear(
                 observation_space['flow_feature'].shape[0] + observation_space['link_feature'].shape[0],
-                array_embedding),
+                array_embedding
+            ),
+            nn.ReLU()
+        )
+
+        self.remain_hops_encoder = nn.Sequential(
+            nn.Linear(
+                observation_space['remain_hops'].shape[0],
+                array_embedding
+            ),
             nn.ReLU()
         )
 
@@ -88,4 +96,13 @@ class FeaturesExtractor(BaseFeaturesExtractor):
         batch = dict_to_batch(observations)
         graph_encoded = self.graph_encoder(batch)
 
-        return torch.cat([array_encoded, graph_encoded], dim=1)
+        remain_hops_encoded = self.remain_hops_encoder(observations['remain_hops'])
+
+        return torch.cat(
+            [
+                array_encoded,
+                graph_encoded,
+                remain_hops_encoded
+            ],
+            dim=1
+        )
