@@ -73,6 +73,7 @@ class _StateEncoder:
         })
 
     def _link_feature(self, link_id):
+        # todo: link feature design consideration
         link = self.env.link_dict[link_id]
 
         link_utilization = 0
@@ -98,7 +99,7 @@ class _StateEncoder:
 
         return feature
 
-    def state(self):
+    def _flow_feature(self):
         flow = self.env.flows[self.env.flow_index]
 
         accum_jitter = 0
@@ -117,10 +118,9 @@ class _StateEncoder:
                 (hop_index + 1) / len(flow.path)
             ]
         ], dtype=np.float32)
+        return flow_feature
 
-        current_link = flow.path[hop_index]
-        link_feature = self._link_feature(current_link)
-
+    def _neighbors_features(self, current_link):
         neighbors = self.neighbors_dict[current_link]
 
         if len(neighbors) > self.max_neighbors:
@@ -153,9 +153,23 @@ class _StateEncoder:
             padded_edges = edges[:max_edges]  # Ensure it does not exceed max_edges
 
         edge_index = np.array(padded_edges, dtype=np.int64).T
-
         feature_matrix = np.array(feature_matrix, dtype=np.float32)
+        return edge_index, feature_matrix
 
+    def state(self):
+        flow = self.env.flows[self.env.flow_index]
+        hop_index = len(self.env.flows_operations[flow])
+        current_link = flow.path[hop_index]
+
+        flow_feature = self._flow_feature()
+
+        link_feature = self._link_feature(current_link)
+
+        edge_index, feature_matrix = self._neighbors_features(current_link)
+
+        # todo: add node features along the flow:
+        #  only the remain link are considered
+        #  padding
         return {
             "flow_feature": flow_feature,
             "link_feature": link_feature,
