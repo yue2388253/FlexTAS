@@ -51,10 +51,12 @@ class _StateEncoder:
 
         # [link, [period, num_flows]]
         self.link_flow_period_dict: dict = defaultdict(Counter)
+        self.link_num_flows = defaultdict(int)
         for flow in flows:
             path = flow.path
             for link_id in path:
                 link = link_dict[link_id]
+                self.link_num_flows[link] += 1
                 self.link_flow_period_dict[link][flow.period] += 1
 
         # pre-compute the neighbors for all links, to avoid heavy and duplicate computation during training
@@ -76,7 +78,6 @@ class _StateEncoder:
         })
 
     def _link_feature(self, link_id):
-        # todo: link feature design consideration
         link = self.env.link_dict[link_id]
 
         link_utilization = 0
@@ -85,10 +86,20 @@ class _StateEncoder:
                 link_utilization += (operation.end_time - operation.start_time) / flow.period
         assert link_utilization <= 1
 
+        if self.link_num_flows[link] == 0:
+            # no flow in this link
+            num_flows_schedueld = 1
+        else:
+            num_flows_schedueld = len(self.env.links_operations[link])
+            # normalized
+            num_flows_schedueld /= self.link_num_flows[link]
+        assert 0 <= num_flows_schedueld <= 1
+
         link_gcl_feature = np.array([
-            math.sqrt(link_utilization),
+            math.sqrt(link_utilization),    # do sqrt operation since this value is always very small
             link.gcl_cycle / Net.GCL_CYCLE_MAX,
-            link.gcl_length / Net.GCL_LENGTH_MAX
+            link.gcl_length / Net.GCL_LENGTH_MAX,
+            num_flows_schedueld
         ], dtype=np.float32)
 
         link_flow_periods_feature = np.array([
