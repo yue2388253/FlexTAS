@@ -295,37 +295,63 @@ class NetEnv(gym.Env):
 
             link = self.link_dict[flow.path[hop_index]]
 
-            wait_time = 0
             if hop_index == 0:
+                wait_time = 0   # we assume no wait time at the first link
                 operation = Operation(0, 0 if gating else None, 0, link.transmission_time(flow.payload))
             else:
                 last_link, last_operation = self.flows_operations[flow][hop_index - 1]
-                last_link_earliest, last_link_latest = last_operation.earliest_time, last_operation.latest_time
-                last_link_earliest + last_link.transmission_time(flow.payload) + Net.DELAY_PROP + Net.DELAY_PROC_MIN,
-                earliest_time = last_link_earliest + last_link.transmission_time(
-                    flow.payload) + Net.DELAY_PROP + Net.DELAY_PROC_MIN
-                latest_time = last_link_latest + last_link.transmission_time(
-                    flow.payload) + Net.SYNC_PRECISION + Net.DELAY_PROP + Net.DELAY_PROC_MAX
 
-                if not gating:
+                is_gating_last_link = (last_operation.gating_time is not None)
+                if is_gating_last_link:
+                    earliest_trans_time_last_link = last_operation.gating_time
+                    latest_trans_time_last_link = last_operation.gating_time
+                else:
+                    earliest_trans_time_last_link = last_operation.earliest_time
+                    latest_trans_time_last_link = last_operation.latest_time
+
+                earliest_enqueue_time = (earliest_trans_time_last_link
+                                         + last_link.transmission_time(flow.payload)
+                                         + Net.DELAY_PROP
+                                         + Net.SYNC_PRECISION
+                                         + Net.DELAY_PROC_MIN)
+
+                latest_enqueue_time = (latest_trans_time_last_link
+                                       + last_link.transmission_time(flow.payload)
+                                       + Net.DELAY_PROP
+                                       + Net.SYNC_PRECISION
+                                       + Net.DELAY_PROC_MAX)
+
+                if gating:
+                    wait_time = 0
+                else:
                     wait_time = link.interference_time()
-                    latest_time += wait_time
+                latest_trans_time = latest_enqueue_time + wait_time
 
-                if (not gating) and (hop_index == len(flow.path) - 1):
+                if hop_index == len(flow.path) - 1:
                     # reach the dst, check jitter constraint.
-                    accumulated_jitter = latest_time - earliest_time
-                    if accumulated_jitter > flow.jitter:
-                        raise SchedulingError(ErrorType.JitterExceed,
-                                              "jitter constraint unsatisfied.")
+                    if not gating:
+                        # don't need to check if gating, since gating reset the jitter.
+                        accumulated_jitter = latest_enqueue_time - earliest_enqueue_time
+                        if accumulated_jitter > flow.jitter:
+                            raise SchedulingError(ErrorType.JitterExceed,
+                                                  "jitter constraint unsatisfied.")
 
-                gating_time = latest_time if gating else None
-                end_time = latest_time + link.transmission_time(flow.payload)
+                end_time = latest_trans_time + link.transmission_time(flow.payload)
 
                 if end_time > flow.period:
                     raise SchedulingError(ErrorType.PeriodExceed,
                                           "injection time is too late")
 
-                operation = Operation(earliest_time, gating_time, latest_time, end_time)
+                if gating:
+                    operation = Operation(earliest_enqueue_time,
+                                          latest_enqueue_time,
+                                          latest_enqueue_time,
+                                          end_time)
+                else:
+                    operation = Operation(earliest_enqueue_time,
+                                          None,
+                                          latest_trans_time,
+                                          end_time)
 
             self.flows_operations[flow].append((link, operation))
             self.links_operations[link].append((flow, operation))
@@ -357,7 +383,9 @@ class NetEnv(gym.Env):
                                           "gating constraint unsatisfied.")
 
             # self.reward += 0.1
-            self.reward = 1 - self.alpha * gcl_added / link.max_gcl_length - self.beta * wait_time / flow.e2e_delay
+            self.reward = (1
+                           - self.alpha * gcl_added / link.max_gcl_length
+                           - self.beta * wait_time / flow.e2e_delay)
 
         except SchedulingError as e:
             self.logger.info(f"end of episode, reason: [{e.error_type}: {e.msg}]\tScheduled flows: {sum(self.flows_scheduled)}")
@@ -377,7 +405,7 @@ class NetEnv(gym.Env):
             return self.observation_space.sample(), self.reward, done, False, {'success': False, 'msg': e.__str__()}
 
         done = False
-        # successfully scheduling
+        # successfully scheduling a flow
         if len(flow.path) == hop_index + 1:
             # reach the dst
             self.flows_scheduled[self.flow_index] = 1

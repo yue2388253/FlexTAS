@@ -53,7 +53,7 @@ class TimeTablingScheduler(BaseScheduler):
 
             operations[link] = Operation(
                 earliest_enqueue_time,
-                latest_enqueue_time,
+                latest_enqueue_time,    # always enable gating right after the latest enqueue time.
                 latest_enqueue_time,
                 end_trans_time
             )
