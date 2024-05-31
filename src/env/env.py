@@ -55,6 +55,12 @@ class _StateEncoder:
                 link = link_dict[link_id]
                 self.link_flow_period_dict[link][flow.period] += 1
 
+        # pre-compute the neighbors for all links, to avoid heavy and duplicate computation during training
+        self.neighbors_dict = {
+            link: [link] + neighbors_within_distance(self.env.line_graph, link, 2)
+            for link in link_dict
+        }
+
         state = self.state()
 
         self.observation_space = spaces.Dict({
@@ -115,8 +121,7 @@ class _StateEncoder:
         current_link = flow.path[hop_index]
         link_feature = self._link_feature(current_link)
 
-        neighbors = neighbors_within_distance(self.env.line_graph, current_link, 2)
-        neighbors.insert(0, current_link)
+        neighbors = self.neighbors_dict[current_link]
 
         if len(neighbors) > self.max_neighbors:
             neighbors = neighbors[:self.max_neighbors]  # Truncate to max_neighbors
