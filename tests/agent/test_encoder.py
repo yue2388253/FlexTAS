@@ -44,7 +44,7 @@ class TestFeaturesEncoder(unittest.TestCase):
         # convert to tensor
         obs = {k: torch.from_numpy(v).unsqueeze(0) for k, v in obs.items()}
         out = self.features_extractor(obs)
-        self.assertEqual(out.shape, (1, 128))
+        self.assertEqual(out.shape, (1, 192))
 
     def test_integration(self):
         policy_kwargs = dict(
