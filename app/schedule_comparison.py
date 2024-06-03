@@ -9,6 +9,7 @@ import time
 
 from definitions import OUT_DIR
 from src.app.smt_scheduler import SmtScheduler, NoWaitSmtScheduler
+from src.app.no_wait_tabu_scheduler import NoWaitTabuScheduler
 from src.app.drl_scheduler import DrlScheduler
 from src.lib.log_config import log_config
 from src.lib.execute import execute_from_command_line
@@ -38,6 +39,7 @@ class SchedulerManager:
     scheduler_dict = {
         'smt': SmtScheduler,
         'smt_no_wait': NoWaitSmtScheduler,
+        'Tabu': NoWaitTabuScheduler,
         'drl': DrlScheduler
     }
     

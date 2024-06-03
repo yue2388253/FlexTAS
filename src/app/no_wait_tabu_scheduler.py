@@ -1,3 +1,4 @@
+import math
 from enum import Enum, auto
 import random
 import sys
@@ -29,9 +30,24 @@ class TimeTablingScheduler(BaseScheduler):
     def schedule(self) -> bool:
         # time-tabling
         for flow in self.flows:
-            ok = self._try_schedule_flow(flow)
+            ok = (self._try_schedule_flow(flow) and self._check_gcl_limit())
             if not ok:
                 return False
+        return True
+
+    def _check_gcl_limit(self) -> bool:
+        for link, flow_operations in self.links_operations.items():
+            gcl_cycle = math.lcm(*[flow.period for flow, _ in flow_operations])
+            num_entries = 0
+            for flow, _ in flow_operations:
+                # one for open and one for close
+                num_entries += 2 * (gcl_cycle // flow.period)
+
+                if num_entries > link.max_gcl_length:
+                    # exceed the limit
+                    return False
+
+        # all good
         return True
 
     def _try_schedule_flow(self, flow) -> bool:
