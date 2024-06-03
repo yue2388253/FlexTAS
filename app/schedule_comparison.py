@@ -12,11 +12,11 @@ from src.app.smt_scheduler import SmtScheduler, NoWaitSmtScheduler
 from src.app.drl_scheduler import DrlScheduler
 from src.lib.log_config import log_config
 from src.lib.execute import execute_from_command_line
-from src.network.net import generate_linear_5, generate_cev, generate_flows
+from src.network.net import generate_flows, generate_graph
 
 
 def run_test(topo, num_flows, scheduler_str, scheduler_cls, seed, timeout, link_rate, best_model=None):
-    graph = get_graph(topo, link_rate)
+    graph = generate_graph(topo, link_rate)
     flows = generate_flows(graph, num_flows, seed=seed)
 
     scheduler = scheduler_cls(graph, flows, timeout_s=timeout)
@@ -114,14 +114,6 @@ def schedule(scheduler):
     return is_scheduled, elapsed_time
 
 
-def get_graph(topo, link_rate):
-    if topo == 'L5':
-        return generate_linear_5(link_rate)
-    elif topo == 'CEV':
-        return generate_cev(link_rate)
-    raise ValueError(f"Unknown graph type {topo}")
-
-
 def main(num_flows: str, num_tests: int, best_model: str, seed: int = None,
          link_rate: int = None, time_limit: int = 300, topo: str = 'L5', test_time: bool = False,
          schedulers: str = None):
@@ -131,7 +123,11 @@ def main(num_flows: str, num_tests: int, best_model: str, seed: int = None,
     if schedulers is not None:
         schedulers = schedulers.split(',')
 
-    scheduler_manager = SchedulerManager(topo, best_model, time_limit, num_flows, seed, num_tests, link_rate, schedulers)
+    scheduler_manager = SchedulerManager(
+        topo, best_model, time_limit, num_flows,
+        seed, num_tests, link_rate, schedulers
+    )
+
     if test_time:
         logging.info("test time consumed.")
         scheduler_manager.run_normally()
