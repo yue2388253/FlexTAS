@@ -340,35 +340,20 @@ def _generate_graph(graph_type: RandomGraph, link_rate=100, **kwargs):
     return graph
 
 
-def generate_random_graph(num_nodes, link_rate):
-    graph_type = random.choice(list(RandomGraph))
-
-    if graph_type == RandomGraph.RRG:
-        graph = _generate_graph(graph_type, link_rate, d=4, n=num_nodes)
-    elif graph_type == RandomGraph.ERG:
-        graph = _generate_graph(graph_type, link_rate, n=num_nodes, p=0.25)
-    elif graph_type == RandomGraph.BAG:
-        graph = _generate_graph(graph_type, link_rate, n=num_nodes, m=3)
-    else:
-        assert False
-
-    return graph, graph_type
-
-
 def generate_graph(topo: str, link_rate):
     if topo == "CEV":
         graph = generate_cev(link_rate)
     elif topo == "L5":
         graph = generate_linear_5(link_rate)
-    elif topo == "Random":
-        graph, graph_type = generate_random_graph(20, link_rate)
-        print(f"Graph type: {graph_type}")
     elif topo == "RRG":
         graph = _generate_graph(RandomGraph.RRG, link_rate, d=4, n=20)
     elif topo == "ERG":
         graph = _generate_graph(RandomGraph.ERG, link_rate, n=20, p=0.25)
     elif topo == "BAG":
         graph = _generate_graph(RandomGraph.BAG, link_rate, n=20, m=3)
+    elif topo == "Random":
+        topo = random.choice(["RRG", "ERG", "BAG"])
+        return generate_graph(topo, link_rate)
     else:
         raise ValueError(f"Unknown topo {topo}")
 
