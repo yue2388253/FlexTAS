@@ -368,7 +368,7 @@ def generate_graph(topo: str, link_rate):
     elif topo == "ERG":
         graph = _generate_graph(RandomGraph.ERG, link_rate, n=20, p=0.25)
     elif topo == "BAG":
-        graph = _generate_graph(RandomGraph.ERG, link_rate, n=20, m=3)
+        graph = _generate_graph(RandomGraph.BAG, link_rate, n=20, m=3)
     else:
         raise ValueError(f"Unknown topo {topo}")
 
