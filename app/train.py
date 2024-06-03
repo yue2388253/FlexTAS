@@ -12,8 +12,7 @@ from src.app.drl_scheduler import DrlScheduler
 from src.env.env import NetEnv, TrainingNetEnv
 from src.lib.log_config import log_config
 from src.lib.timing_decorator import timing_decorator
-from src.network.net import generate_linear_5, generate_cev, generate_flows, Net, generate_random_graph, generate_graph, \
-    RandomGraph
+from src.network.net import generate_flows, generate_graph
 
 from stable_baselines3.common.callbacks import EvalCallback
 from stable_baselines3.common.results_plotter import load_results, ts2xy
@@ -35,21 +34,7 @@ def get_best_model_path():
 
 def make_env(num_flows, rank: int, topo: str, training: bool = True, link_rate: int = 100):
     def _init():
-        if topo == "CEV":
-            graph = generate_cev(link_rate)
-        elif topo == "L5":
-            graph = generate_linear_5(link_rate)
-        elif topo == "Random":
-            graph, graph_type = generate_random_graph(20, link_rate)
-            print(f"Graph type: {graph_type}")
-        elif topo == "RRG":
-            graph = generate_graph(RandomGraph.RRG, link_rate, d=4, n=20)
-        elif topo == "ERG":
-            graph = generate_graph(RandomGraph.ERG, link_rate, n=20, p=0.25)
-        elif topo == "BAG":
-            graph = generate_graph(RandomGraph.ERG, link_rate, n=20, m=3)
-        else:
-            raise ValueError(f"Unknown topo {topo}")
+        graph = generate_graph(topo, link_rate)
 
         if training:
             env = TrainingNetEnv(graph, generate_flows, num_flows, 1.0, 0.0)
