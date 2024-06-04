@@ -27,6 +27,8 @@ class TimeTablingScheduler(BaseScheduler):
         self.makespan = 0
         self.critical_flow = None
 
+        self.is_gcl_exceed = False
+
     def schedule(self) -> bool:
         # time-tabling
         for flow in self.flows:
@@ -45,6 +47,7 @@ class TimeTablingScheduler(BaseScheduler):
 
                 if num_entries > link.max_gcl_length:
                     # exceed the limit
+                    self.is_gcl_exceed = True
                     return False
 
         # all good
@@ -220,6 +223,11 @@ class NoWaitTabuScheduler(BaseScheduler):
                 ok = scheduler.schedule()
                 if ok:
                     list_slns.append(scheduler)
+                else:
+                    if scheduler.is_gcl_exceed:
+                        # cannot schedule the flows due to gcl limit
+                        #  no need to run anymore, immediately break the loop
+                        break
 
             # solution selection
             # sort the scheduelr based on makespan first
