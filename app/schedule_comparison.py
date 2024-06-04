@@ -1,4 +1,5 @@
 from collections import defaultdict
+import datetime
 import itertools
 import logging
 import os
@@ -60,9 +61,13 @@ class SchedulerManager:
         column_names = ['topo', 'num_flows', 'seed',
                         'scheduler', 'is_scheduled', 'consuming_time']
         results = []
-        filename = os.path.join(OUT_DIR, f'schedule_stat_{self.link_rate}_{self.seed}_{self.time_limit}.csv')
+        now = datetime.datetime.now().strftime("%m-%d %H-%M")
+        filename = os.path.join(OUT_DIR, f'schedule_stat_{now}_{self.link_rate}_{self.seed}_{self.time_limit}.csv')
         for topo, scheduler_str, num_flows, seed in \
-                itertools.product(self.topos, self.schedulers, self.num_flows, range(self.seed, self.seed + self.num_tests)):
+                itertools.product(self.topos,
+                                  self.schedulers,
+                                  self.num_flows,
+                                  range(self.seed, self.seed + self.num_tests)):
             result = run_test(
                 topo, num_flows, scheduler_str, self.scheduler_dict[scheduler_str], seed,
                 self.time_limit, self.link_rate, self.best_model
