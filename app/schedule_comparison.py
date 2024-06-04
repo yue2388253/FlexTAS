@@ -41,7 +41,7 @@ def run_test(topo, num_flows, scheduler_str, scheduler_cls, seed, timeout, link_
 
     elapsed_time = time.time() - start_time
 
-    result = [topo, num_flows, seed, str(scheduler_str), is_scheduled, elapsed_time]
+    result = [topo, num_flows, seed, str(scheduler_str), is_scheduled, elapsed_time, num_gcl_max]
     return result
 
 
@@ -68,7 +68,7 @@ class SchedulerManager:
 
     def run(self):
         column_names = ['topo', 'num_flows', 'seed',
-                        'scheduler', 'is_scheduled', 'consuming_time']
+                        'scheduler', 'is_scheduled', 'consuming_time', 'num_gcl_max']
         results = []
         now = datetime.datetime.now().strftime("%m-%d %H-%M")
         filename = os.path.join(OUT_DIR, f'schedule_stat_{now}_{self.link_rate}_{self.seed}_{self.time_limit}.csv')
