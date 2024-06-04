@@ -232,8 +232,8 @@ class NoWaitTabuScheduler(BaseScheduler):
                 else:
                     if scheduler.is_gcl_exceed:
                         # cannot schedule the flows due to gcl limit
-                        #  no need to run anymore, immediately break the loop
-                        break
+                        #  no need to run anymore, immediately return
+                        return None
 
             # solution selection
             # sort the scheduelr based on makespan first
