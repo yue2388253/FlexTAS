@@ -21,8 +21,13 @@ def run_test(topo, num_flows, scheduler_str, scheduler_cls, seed, timeout, link_
     graph = generate_graph(topo, link_rate)
     flows = generate_flows(graph, num_flows, seed=seed)
 
-    scheduler = scheduler_cls(graph, flows, timeout_s=timeout)
+    if scheduler_str == 'Tabu':
+        scheduler = scheduler_cls(graph, flows, stop_upon_valid=True, timeout_s=timeout)
+    else:
+        scheduler = scheduler_cls(graph, flows, timeout_s=timeout)
+
     if isinstance(scheduler, DrlScheduler):
+        # Should train DrlScheduler first
         assert best_model is not None
         scheduler.load_model(best_model, 'MaskablePPO')
 

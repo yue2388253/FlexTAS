@@ -178,9 +178,11 @@ class NoWaitTabuScheduler(BaseScheduler):
         LongestDec = auto()
         Random = auto()
 
-    def __init__(self, graph: nx.DiGraph, flows: list[Flow], **kwargs):
+    def __init__(self, graph: nx.DiGraph, flows: list[Flow], stop_upon_valid=True, **kwargs):
+        # stop_upon_valid: if True, stop upon a valid schedule is found
         super().__init__(graph, flows, **kwargs)
         self.best_scheduler = None
+        self.stop_upon_valid = stop_upon_valid
 
     def _generate_initial_sln(self, heur: InitialHeuristic):
         def sort_by_sum(flow):
@@ -222,6 +224,10 @@ class NoWaitTabuScheduler(BaseScheduler):
                 scheduler = TimeTablingScheduler(self.graph, soln)
                 ok = scheduler.schedule()
                 if ok:
+                    if self.stop_upon_valid:
+                        # only need to find a valid schedule
+                        return scheduler
+
                     list_slns.append(scheduler)
                 else:
                     if scheduler.is_gcl_exceed:
@@ -269,6 +275,12 @@ class NoWaitTabuScheduler(BaseScheduler):
             flows = self._generate_initial_sln(initial_heur)
             logging.info("Sequencing alg...")
             scheduler = self._sequencing_alg(flows)
+
+            if self.stop_upon_valid and (scheduler is not None):
+                # only need to find a valid schedule
+                self.best_scheduler = scheduler
+                return True
+
             list_res.append(scheduler)
 
         if all(v is None for v in list_res):
