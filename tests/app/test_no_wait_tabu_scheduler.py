@@ -26,9 +26,17 @@ class TestTimeTablingScheduler(unittest.TestCase):
         self.scheduler = TimeTablingScheduler(graph, [flow1, flow2])
 
     def test_gcl_limit_true(self):
-        Net.GCL_LENGTH_MAX = 6
         self._construct_scheduler()
         self.assertTrue(self.scheduler.schedule())
+
+        num_link = 18
+        self.assertEqual(len(self.scheduler.get_gcl_length()), num_link)
+
+        num_gcl_max = 6
+        self.assertEqual(max(self.scheduler.get_gcl_length()), num_gcl_max)
+
+        num_gcl_avg = 1
+        self.assertEqual(self.scheduler.get_gcl_length().mean(), num_gcl_avg)
 
     def test_gcl_limit_false(self):
         Net.GCL_LENGTH_MAX = 5
