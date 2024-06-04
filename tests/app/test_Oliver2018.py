@@ -6,6 +6,12 @@ from src.app.Oliver2018_scheduler import Oliver2018Scheduler
 
 
 class TestOliver2018(unittest.TestCase):
+    def setUp(self):
+        self.old_gcl = Net.GCL_LENGTH_MAX
+
+    def tearDown(self):
+        Net.GCL_LENGTH_MAX = self.old_gcl
+
     def test_another_schedule(self):
         logging.basicConfig(level=logging.DEBUG)  # Overwrite the log file on each run
         Net.GCL_LENGTH_MAX = 10

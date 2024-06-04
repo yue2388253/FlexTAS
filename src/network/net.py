@@ -88,11 +88,11 @@ class Link:
 
     def __init__(self, link_id, link_rate):
         self.link_id = link_id
-        self.gcl_cycle = 1
-        self.gcl_length = 0
         self.max_gcl_length = Net.GCL_LENGTH_MAX
         self.link_rate = link_rate
 
+        self.gcl_cycle = 1
+        self.gcl_length = 0
         self.reserved_durations: list[Duration] = []
         self.reserved_binaries = Duration(None, None, Net.GCL_CYCLE_MAX)
 

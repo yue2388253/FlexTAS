@@ -35,6 +35,10 @@ def run_test(topo, num_flows, scheduler_str, scheduler_cls, seed, timeout, link_
     logging.info(f"Use [{scheduler_str}] Scheduling {num_flows} flows, seed {seed}")
     is_scheduled = scheduler.schedule()
 
+    num_gcl_max = None
+    if is_scheduled:
+        num_gcl_max = scheduler.get_num_gcl_max()
+
     elapsed_time = time.time() - start_time
 
     result = [topo, num_flows, seed, str(scheduler_str), is_scheduled, elapsed_time]

@@ -54,14 +54,14 @@ class TimeTablingScheduler(BaseScheduler):
         # all good
         return True
 
-    def get_gcl_length(self) -> np.ndarray:
+    def get_num_gcl_max(self):
         res = []
         for link in self.link_dict.values():
             flow_operations = self.links_operations[link]
             gcl_cycle = math.lcm(*[flow.period for flow, _ in flow_operations])
             gcl = sum([2 * gcl_cycle // flow.period for flow, _ in flow_operations])
             res.append(gcl)
-        return np.array(res)
+        return max(res)
 
     def _try_schedule_flow(self, flow) -> bool:
         """

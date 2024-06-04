@@ -478,7 +478,10 @@ class NetEnv(gym.Env):
                 self.save_results(filename)
                 self.logger.info(f"Good job! Finish scheduling! Scheduling result is saved at {filename}.")
 
-                return self.observation_space.sample(), self.reward, True, False, {'success': True}
+                # return self.observation_space.sample(), self.reward, True, False, {'success': True}
+                num_gcl_max = max([link.gcl_length for link in self.link_dict.values()])
+                return (self.observation_space.sample(), self.reward, True, False,
+                        {'success': True, 'num_gcl_max': num_gcl_max})
 
         self.render()
         return self._generate_state(), self.reward, done, False, {'success': done}

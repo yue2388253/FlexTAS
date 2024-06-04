@@ -14,3 +14,6 @@ class BaseScheduler:
             True means successfully scheduled.
         """
         pass
+
+    def get_num_gcl_max(self):
+        pass

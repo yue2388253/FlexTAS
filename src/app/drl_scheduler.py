@@ -29,6 +29,8 @@ class SuccessCallback(BaseCallback):
         self.time_limit = time_limit
         self.is_scheduled = False
 
+        self.num_gcl_max = None
+
     def _on_step(self) -> bool:
         """
         This method will be called by the model after each call to `env.step()`.
@@ -36,10 +38,13 @@ class SuccessCallback(BaseCallback):
         # Check if game is done and game was a success
         dones = self.locals.get('dones')
         infos = self.locals.get('infos')
-        if any([infos[i].get('success') if done else False for i, done in enumerate(dones)]):
-            logging.info("Game successfully completed, stopping training...")
-            self.is_scheduled = True
-            return False  # False means "stop training"
+        if any(dones):
+            for i, done in enumerate(dones):
+                if done and infos[i].get('success'):
+                    logging.info("Game successfully completed, stopping training...")
+                    self.is_scheduled = True
+                    self.num_gcl_max = infos[i].get('num_gcl_max')
+                    return False  # False means "stop training"
 
         # Check if time limit has been reached
         elapsed_time = time.time() - self.start_time
@@ -73,6 +78,8 @@ class DrlScheduler(BaseScheduler):
         )
         self.model = MaskablePPO("MultiInputPolicy", self.env, policy_kwargs=policy_kwargs, verbose=1)
 
+        self.num_gcl_max = None
+
     def load_model(self, filepath: str, alg: str = 'PPO'):
         del self.model
         if filepath.endswith(r".zip"):
@@ -90,8 +97,12 @@ class DrlScheduler(BaseScheduler):
 
         is_scheduled = callback.get_result()
         if is_scheduled:
+            self.num_gcl_max = callback.num_gcl_max
             logging.info("Successfully scheduling the flows.")
         else:
             logging.error("Fail to find a valid solution.")
 
         return is_scheduled
+
+    def get_num_gcl_max(self):
+        return self.num_gcl_max
