@@ -14,7 +14,7 @@ from src.app.no_wait_tabu_scheduler import NoWaitTabuScheduler
 from src.app.drl_scheduler import DrlScheduler
 from src.lib.log_config import log_config
 from src.lib.execute import execute_from_command_line
-from src.network.net import generate_flows, generate_graph
+from src.network.net import generate_flows, generate_graph, Net
 
 
 def run_test(topo, num_flows, scheduler_str, scheduler_cls, seed, timeout, link_rate, best_model=None):
@@ -90,9 +90,13 @@ class SchedulerManager:
 
 def main(num_flows: str, num_tests: int, best_model: str, seed: int = None,
          link_rate: int = None, time_limit: int = 300, topos: str = 'L5',
-         schedulers: str = None):
+         schedulers: str = None, gcl_capacity: int = None):
     seed = seed or random.randint(0, 10000)
     num_flows = map(int, num_flows.split(',')) if isinstance(num_flows, str) else num_flows
+
+    if gcl_capacity is not None:
+        assert isinstance(gcl_capacity, int) and gcl_capacity > 0
+        Net.GCL_LENGTH_MAX = gcl_capacity
 
     if schedulers is not None:
         schedulers = schedulers.split(',')
