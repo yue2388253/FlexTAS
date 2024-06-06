@@ -1,12 +1,12 @@
-import math
+from collections import defaultdict
 from enum import Enum, auto
+import logging
+import math
+import networkx as nx
+import pandas as pd
 import random
 import sys
 from typing import Optional
-from collections import defaultdict
-import logging
-import networkx as nx
-import numpy as np
 
 from src.network.net import Net, Flow, Link, transform_line_graph
 from src.app.scheduler import BaseScheduler
@@ -28,40 +28,41 @@ class TimeTablingScheduler(BaseScheduler):
         self.makespan = 0
         self.critical_flow = None
 
-        self.is_gcl_exceed = False
+        self.num_gcl_max = 0
 
     def schedule(self) -> bool:
+        # check gcl limit first
+        self._check_gcl_limit()
+
         # time-tabling
         for flow in self.flows:
-            ok = (self._try_schedule_flow(flow) and self._check_gcl_limit())
+            ok = self._try_schedule_flow(flow)
             if not ok:
+                logging.info("Error: Isolation unsatisfied.")
                 return False
         return True
 
     def _check_gcl_limit(self) -> bool:
-        for link, flow_operations in self.links_operations.items():
-            gcl_cycle = math.lcm(*[flow.period for flow, _ in flow_operations])
-            num_entries = 0
-            for flow, _ in flow_operations:
-                # one for open and one for close
-                num_entries += 2 * (gcl_cycle // flow.period)
+        link_flows = defaultdict(list)
+        for flow in self.flows:
+            for link in flow.path:
+                link_flows[link].append(flow.period)
 
-                if num_entries > link.max_gcl_length:
-                    # exceed the limit
-                    self.is_gcl_exceed = True
-                    return False
+        for link, flow_periods in link_flows.items():
+            gcl_cycle = math.lcm(*flow_periods)
+            gcl_length = sum([2 * gcl_cycle // period for period in flow_periods])
+            if gcl_length > self.link_dict[link].max_gcl_length:
+                df = pd.Series(flow_periods).value_counts()
+                raise RuntimeError(f"GCL limit exceed, don't need to try scheduling. {df}")
+
+            if gcl_length > self.num_gcl_max:
+                self.num_gcl_max = gcl_length
 
         # all good
         return True
 
     def get_num_gcl_max(self):
-        res = []
-        for link in self.link_dict.values():
-            flow_operations = self.links_operations[link]
-            gcl_cycle = math.lcm(*[flow.period for flow, _ in flow_operations])
-            gcl = sum([2 * gcl_cycle // flow.period for flow, _ in flow_operations])
-            res.append(gcl)
-        return max(res)
+        return self.num_gcl_max
 
     def _try_schedule_flow(self, flow) -> bool:
         """
@@ -239,11 +240,6 @@ class NoWaitTabuScheduler(BaseScheduler):
                         return scheduler
 
                     list_slns.append(scheduler)
-                else:
-                    if scheduler.is_gcl_exceed:
-                        # cannot schedule the flows due to gcl limit
-                        #  no need to run anymore, immediately return
-                        return None
 
             # solution selection
             # sort the scheduelr based on makespan first
@@ -280,24 +276,28 @@ class NoWaitTabuScheduler(BaseScheduler):
 
     def schedule(self):
         list_res = []
-        for initial_heur in self.InitialHeuristic:
-            logging.info("Heuristic: {}".format(initial_heur))
-            flows = self._generate_initial_sln(initial_heur)
-            logging.info("Sequencing alg...")
-            scheduler = self._sequencing_alg(flows)
+        try:
+            for initial_heur in self.InitialHeuristic:
+                logging.info("Heuristic: {}".format(initial_heur))
+                flows = self._generate_initial_sln(initial_heur)
+                logging.info("Sequencing alg...")
+                scheduler = self._sequencing_alg(flows)
 
-            if self.stop_upon_valid and (scheduler is not None):
-                # only need to find a valid schedule
-                self.best_scheduler = scheduler
-                return True
+                if scheduler is not None:
+                    list_res.append(scheduler)
+                    if self.stop_upon_valid:
+                        break
 
-            list_res.append(scheduler)
+        except RuntimeError as e:
+            logging.info(f"Fail to schedule: {e}")
+            return False
 
-        if all(v is None for v in list_res):
-            logging.info("Fail to schedule")
+        if len(list_res) == 0:
+            logging.info("Fail to schedule: isolation unsatisfied.")
             return False
 
         self.best_scheduler = min(list_res, key=lambda x: x.get_makespan())
+        logging.info("Success to schedule.")
         return True
 
     def dump_res(self):
