@@ -176,7 +176,7 @@ def stress_test(topos: list[str], list_num_flows: list[int],
     list_df = []
     test_gcl = "gcl" in list_obj
     test_uti = "uti" in list_obj
-    for topo, num_flow, obj in itertools.product(topos, list_num_flows, list_obj):
+    for topo, num_flow in itertools.product(topos, list_num_flows):
         settings = StressTestSettings(
             topo, test_gcl, test_uti, num_flow, link_rate
         )
