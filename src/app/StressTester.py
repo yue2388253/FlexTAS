@@ -1,3 +1,4 @@
+import os.path
 import sys
 from collections import defaultdict
 from dataclasses import dataclass, asdict
@@ -8,6 +9,7 @@ import numpy as np
 import pandas as pd
 from typing import Optional
 
+from definitions import OUT_DIR
 from src.app.no_wait_tabu_scheduler import TimeTablingScheduler
 from src.lib.execute import execute_from_command_line
 from src.network.net import Flow, transform_line_graph, generate_graph, generate_flows
@@ -187,4 +189,7 @@ def stress_test(topos: list[str], list_num_flows: list[int],
 
 
 if __name__ == '__main__':
-    execute_from_command_line(stress_test)
+    df = execute_from_command_line(stress_test)
+    filename = os.path.join(OUT_DIR, "stress_test.csv")
+    df.to_csv(filename)
+    print(f"results saved to {filename}")
