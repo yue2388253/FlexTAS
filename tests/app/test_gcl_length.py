@@ -36,7 +36,8 @@ class TestTimeTablingScheduler(unittest.TestCase):
             # expected pass
             self.assertTrue(scheduler.schedule())
         else:
-            self.assertFalse(scheduler.schedule())
+            with self.assertRaises(RuntimeError):
+                scheduler.schedule()
 
     def test_gcl(self):
         list_scheduler_cls = [

@@ -102,36 +102,36 @@ class TimeTablingScheduler(BaseScheduler):
             else:
                 assert False
 
-            if (not gating) and i != 0:
-                # we assume the first hop always have no interference.
-                latest_enqueue_time += link.interference_time()
+            if gating:
+                latest_dequeue_time = latest_enqueue_time
+            else:
+                latest_dequeue_time = latest_enqueue_time + link.interference_time()
 
-            end_trans_time = latest_enqueue_time + trans_time
+            end_trans_time = latest_dequeue_time + trans_time
 
             oper = Operation(
                 earliest_enqueue_time,
                 None,
-                latest_enqueue_time,
+                latest_dequeue_time,
                 end_trans_time
             )
             if gating:
-                oper.gating_time = latest_enqueue_time    # always enable gating right after the latest enqueue time.
+                oper.gating_time = latest_dequeue_time    # always enable gating right after the latest enqueue time.
             operations[link] = oper
 
             if end_trans_time > self.makespan:
                 self.makespan = end_trans_time
                 self.critical_flow = flow
 
+            # compute for next hop
             if gating:
                 earliest_dequeue_time = oper.gating_time
                 latest_dequeue_time = oper.gating_time
             else:
                 earliest_dequeue_time = earliest_enqueue_time
                 latest_dequeue_time = latest_enqueue_time
-
-            # for next hop
-            earliest_enqueue_time = earliest_dequeue_time + trans_time + Net.DELAY_PROP + Net.DELAY_PROC_MIN
-            latest_enqueue_time = latest_dequeue_time + trans_time + Net.DELAY_PROP + Net.DELAY_PROC_MAX
+            earliest_enqueue_time = earliest_dequeue_time + trans_time + Net.DELAY_PROP - Net.SYNC_PRECISION + Net.DELAY_PROC_MIN
+            latest_enqueue_time = latest_dequeue_time + trans_time + Net.DELAY_PROP + Net.SYNC_PRECISION + Net.DELAY_PROC_MAX
 
         # find the earliest possible operations
         while True:
