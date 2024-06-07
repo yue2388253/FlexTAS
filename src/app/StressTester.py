@@ -3,11 +3,11 @@ import sys
 from collections import defaultdict
 from dataclasses import dataclass, asdict
 import itertools
+import logging
 import math
 import networkx as nx
 import numpy as np
 import pandas as pd
-from typing import Optional
 
 from definitions import OUT_DIR
 from src.app.no_wait_tabu_scheduler import TimeTablingScheduler
@@ -178,12 +178,17 @@ def stress_test(topos: list[str], list_num_flows: list[int],
     list_df = []
     test_gcl = "gcl" in list_obj
     test_uti = "uti" in list_obj
+    logging.info("Starting stress tests.")
+
     for topo, num_flow in itertools.product(topos, list_num_flows):
+        logging.info(f"Testing topology: {topo} with {num_flow} flows, GCL: {test_gcl}, UTI: {test_uti}, Link rate: {link_rate}")
         settings = StressTestSettings(
             topo, test_gcl, test_uti, num_flow, link_rate
         )
         df = stress_test_single(settings, num_tests)
         list_df.append(df)
+        logging.info(f"Completed test for topology: {topo} with {num_flow} flows.")
+
     df = pd.concat(list_df, ignore_index=True)
     return df
 
