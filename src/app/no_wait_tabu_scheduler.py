@@ -13,11 +13,18 @@ from src.app.scheduler import BaseScheduler
 from src.lib.operation import Operation, check_operation_isolation
 
 
+class GatingStrategy(Enum):
+    AllGate = auto()
+    NoGate = auto()
+
+
 class TimeTablingScheduler(BaseScheduler):
     """
     schedule the flows in order
     """
-    def __init__(self, graph: nx.DiGraph, flows: list[Flow], **kwargs):
+    def __init__(self, graph: nx.DiGraph, flows: list[Flow],
+                 gating_strategy: GatingStrategy = GatingStrategy.AllGate,
+                 **kwargs):
         super().__init__(graph, flows, **kwargs)
 
         _, self.link_dict = transform_line_graph(graph)
@@ -27,6 +34,8 @@ class TimeTablingScheduler(BaseScheduler):
 
         self.makespan = 0
         self.critical_flow = None
+
+        self.gating_strategy = gating_strategy
 
         self.num_gcl_max = 0
 
@@ -43,6 +52,10 @@ class TimeTablingScheduler(BaseScheduler):
         return True
 
     def _check_gcl_limit(self) -> bool:
+        if self.gating_strategy == GatingStrategy.NoGate:
+            # no gate, thus no need to check
+            return True
+
         link_flows = defaultdict(list)
         for flow in self.flows:
             for link in flow.path:
@@ -75,25 +88,43 @@ class TimeTablingScheduler(BaseScheduler):
         operations = {}
 
         # construct operations
-        for link_id in path:
+        for i, link_id in enumerate(path):
             link = self.link_dict[link_id]
             trans_time = link.transmission_time(flow.payload)
 
+            if self.gating_strategy == GatingStrategy.NoGate and i != 0:
+                latest_enqueue_time += link.interference_time()
+
             end_trans_time = latest_enqueue_time + trans_time
 
-            operations[link] = Operation(
+            oper = Operation(
                 earliest_enqueue_time,
-                latest_enqueue_time,    # always enable gating right after the latest enqueue time.
+                None,
                 latest_enqueue_time,
                 end_trans_time
             )
+
+            if self.gating_strategy == GatingStrategy.AllGate:
+                oper.gating_time = latest_enqueue_time    # always enable gating right after the latest enqueue time.
+
+            operations[link] = oper
 
             if end_trans_time > self.makespan:
                 self.makespan = end_trans_time
                 self.critical_flow = flow
 
-            earliest_enqueue_time = end_trans_time + Net.DELAY_PROP + Net.DELAY_PROC_MIN
-            latest_enqueue_time = earliest_enqueue_time + Net.DELAY_PROC_JITTER
+            # earliest_enqueue_time = end_trans_time + Net.DELAY_PROP + Net.DELAY_PROC_MIN
+            if self.gating_strategy == GatingStrategy.AllGate:
+                earliest_dequeue_time = oper.gating_time
+                latest_dequeue_time = oper.gating_time
+            elif self.gating_strategy == GatingStrategy.NoGate:
+                earliest_dequeue_time = earliest_enqueue_time
+                latest_dequeue_time = latest_enqueue_time
+            else:
+                assert False
+
+            earliest_enqueue_time = earliest_dequeue_time + trans_time + Net.DELAY_PROP + Net.DELAY_PROC_MIN
+            latest_enqueue_time = latest_dequeue_time + trans_time + Net.DELAY_PROP + Net.DELAY_PROC_MAX
 
         # find the earliest possible operations
         while True:

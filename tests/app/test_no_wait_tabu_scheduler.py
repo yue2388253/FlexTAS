@@ -5,12 +5,23 @@ from src.network.net import generate_cev, generate_flows, generate_linear_5
 
 
 class TestTimeTablingScheduler(unittest.TestCase):
-    def test_schedule(self):
+    def setUp(self):
         logging.basicConfig(level=logging.DEBUG)
+        self.old_gcl_limit = Net.GCL_LENGTH_MAX
         Net.GCL_LENGTH_MAX = sys.maxsize
-        graph = generate_cev()
-        flows = generate_flows(graph,  100)
-        scheduler = TimeTablingScheduler(graph, flows)
+        self.graph = generate_cev()
+        self.flows = generate_flows(self.graph,  10)
+
+    def tearDown(self):
+        Net.GCL_LENGTH_MAX = self.old_gcl_limit
+
+    def test_schedule(self):
+        scheduler = TimeTablingScheduler(self.graph, self.flows)
+        self.assertTrue(scheduler.schedule())
+        scheduler.dump_res()
+
+    def test_no_gate(self):
+        scheduler = TimeTablingScheduler(self.graph, self.flows, GatingStrategy.NoGate)
         self.assertTrue(scheduler.schedule())
         scheduler.dump_res()
 
