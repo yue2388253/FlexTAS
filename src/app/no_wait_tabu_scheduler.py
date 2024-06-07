@@ -16,6 +16,7 @@ from src.lib.operation import Operation, check_operation_isolation
 class GatingStrategy(Enum):
     AllGate = auto()
     NoGate = auto()
+    RandomGate = auto()
 
 
 class TimeTablingScheduler(BaseScheduler):
@@ -92,7 +93,17 @@ class TimeTablingScheduler(BaseScheduler):
             link = self.link_dict[link_id]
             trans_time = link.transmission_time(flow.payload)
 
-            if self.gating_strategy == GatingStrategy.NoGate and i != 0:
+            if self.gating_strategy == GatingStrategy.AllGate:
+                gating = True
+            elif self.gating_strategy == GatingStrategy.NoGate:
+                gating = False
+            elif self.gating_strategy == GatingStrategy.RandomGate:
+                gating = random.random() > 0.5
+            else:
+                assert False
+
+            if (not gating) and i != 0:
+                # we assume the first hop always have no interference.
                 latest_enqueue_time += link.interference_time()
 
             end_trans_time = latest_enqueue_time + trans_time
@@ -103,26 +114,22 @@ class TimeTablingScheduler(BaseScheduler):
                 latest_enqueue_time,
                 end_trans_time
             )
-
-            if self.gating_strategy == GatingStrategy.AllGate:
+            if gating:
                 oper.gating_time = latest_enqueue_time    # always enable gating right after the latest enqueue time.
-
             operations[link] = oper
 
             if end_trans_time > self.makespan:
                 self.makespan = end_trans_time
                 self.critical_flow = flow
 
-            # earliest_enqueue_time = end_trans_time + Net.DELAY_PROP + Net.DELAY_PROC_MIN
-            if self.gating_strategy == GatingStrategy.AllGate:
+            if gating:
                 earliest_dequeue_time = oper.gating_time
                 latest_dequeue_time = oper.gating_time
-            elif self.gating_strategy == GatingStrategy.NoGate:
+            else:
                 earliest_dequeue_time = earliest_enqueue_time
                 latest_dequeue_time = latest_enqueue_time
-            else:
-                assert False
 
+            # for next hop
             earliest_enqueue_time = earliest_dequeue_time + trans_time + Net.DELAY_PROP + Net.DELAY_PROC_MIN
             latest_enqueue_time = latest_dequeue_time + trans_time + Net.DELAY_PROP + Net.DELAY_PROC_MAX
 

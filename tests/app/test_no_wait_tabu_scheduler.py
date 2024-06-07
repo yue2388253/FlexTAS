@@ -25,6 +25,11 @@ class TestTimeTablingScheduler(unittest.TestCase):
         self.assertTrue(scheduler.schedule())
         scheduler.dump_res()
 
+    def test_random_gating(self):
+        scheduler = TimeTablingScheduler(self.graph, self.flows, GatingStrategy.RandomGate)
+        self.assertTrue(scheduler.schedule())
+        scheduler.dump_res()
+
 
 class TestNoWaitTabuScheduler(unittest.TestCase):
     def test_generate_neighbourhood(self):
