@@ -368,34 +368,62 @@ def transform_line_graph(graph) -> (nx.Graph, typing.Dict):
     return line_graph, links_dict
 
 
-def generate_flows(graph, num_flows: int = 50, seed: int = None,
-                   period_set=None) -> list[Flow]:
-    if period_set is None:
-        period_set = [2000, 4000, 8000, 16000, 32000, 64000, 128000]
-    else:
+class FlowGenerator:
+    def __init__(self, graph, seed:int=None, period_set=None, jitters=None) -> None:
+        self.graph = graph
+
+        if seed is not None:
+            random.seed(seed)
+
+        if period_set is None:
+            period_set = [2000, 4000, 8000, 16000, 32000, 64000, 128000]
         for period in period_set:
             assert isinstance(period, int) and period > 0
+        self.period_set = period_set
 
-    if seed is not None:
-        random.seed(seed)
+        self.jitters = jitters
 
-    # get the nodes whose node_type is 'ES'
-    es_nodes = [n for n, d in graph.nodes(data=True) if d['node_type'] == 'ES']
+        # get the nodes whose node_type is 'ES'
+        self.es_nodes = [n for n, d in graph.nodes(data=True) if d['node_type'] == 'ES']
+        self.num_generated_flows = 0
 
-    res = []
-
-    for i in range(num_flows):
+    def _generate_flow(self):
         # Select two random nodes from the es_nodes list
-        random_nodes = random.sample(es_nodes, 2)
+        random_nodes = random.sample(self.es_nodes, 2)
         src_id, dst_id = random_nodes[0], random_nodes[1]
 
         # calculate the shortest path
-        path = nx.shortest_path(graph, src_id, dst_id)
+        path = nx.shortest_path(self.graph, src_id, dst_id)
         path = [(path[i], path[i + 1]) for i in range(len(path) - 1)]
 
-        res.append(
-            Flow(f"F{i}", src_id, dst_id,
-                 path, payload=random.randint(64, 1518), period=random.choice(period_set))
+        period=random.choice(self.period_set)
+
+        if self.jitters:
+            jitter_percentage = None
+            if isinstance(self.jitters, float):
+                jitter_percentage = self.jitters
+            else:
+                jitter_percentage = random.choice(self.jitters)
+            assert 0 <= jitter_percentage <= 1
+            jitter = jitter_percentage * period
+        else:
+            jitter = None
+
+        res = Flow(
+            f"F{self.num_generated_flows}", src_id, dst_id, path, 
+            payload=random.randint(64, 1518), 
+            period=period, 
+            jitter=jitter
         )
 
-    return res
+        self.num_generated_flows += 1
+        return res
+
+    def __call__(self, num_flows=1):
+        return [self._generate_flow() for _ in range(num_flows)]
+
+
+def generate_flows(graph, num_flows: int = 50, seed: int = None,
+                   period_set=None, jitters=None) -> list[Flow]:
+    generator = FlowGenerator(graph, seed, period_set, jitters)
+    return generator(num_flows)
