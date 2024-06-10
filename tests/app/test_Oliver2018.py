@@ -1,4 +1,5 @@
 import logging
+import os
 import unittest
 from src.network.net import generate_cev, generate_flows
 from src.network.net import Net
@@ -20,6 +21,7 @@ class TestOliver2018(unittest.TestCase):
         scheduler = Oliver2018Scheduler(graph, flows)
         self.assertTrue(scheduler.schedule())
 
+    @unittest.skipIf(os.getenv('RUN_LONG_TESTS') != '1', "Skipping long running test")
     def test_time_limit(self):
         logging.basicConfig(level=logging.DEBUG)
         graph = generate_cev()
