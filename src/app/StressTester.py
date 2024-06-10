@@ -10,7 +10,7 @@ import numpy as np
 import pandas as pd
 
 from definitions import OUT_DIR
-from src.app.no_wait_tabu_scheduler import TimeTablingScheduler
+from src.app.no_wait_tabu_scheduler import TimeTablingScheduler, GatingStrategy
 from src.lib.execute import execute_from_command_line
 from src.network.net import Flow, transform_line_graph, generate_graph, generate_flows
 
@@ -96,20 +96,21 @@ class LinkTester(IStressTester):
     A stress tester that tests how much link_utilization can achieve.
     """
 
-    def __init__(self, graph: nx.DiGraph, flows: list[Flow]):
+    def __init__(self, graph: nx.DiGraph, flows: list[Flow], gating_strategy: GatingStrategy=GatingStrategy.AllGate):
         super().__init__(graph, flows)
+        self.scheduler = TimeTablingScheduler(self.graph, self.flows, gating_strategy)
+        if gating_strategy == GatingStrategy.AllGate:
+            # we only test link utilization, thus ignore the gcl limit
+            for link in self.scheduler.link_dict.values():
+                link.max_gcl_length = sys.maxsize
 
     def stress_test(self) -> dict:
-        scheduler = TimeTablingScheduler(self.graph, self.flows)
-        for link in scheduler.link_dict.values():
-            # we only test link utilization, thus ignore the gcl limit
-            link.max_gcl_length = sys.maxsize
-        ok = scheduler.schedule()
+        ok = self.scheduler.schedule()
         if not ok:
             return {}
 
         list_link_utilization = []
-        links_operations = scheduler.links_operations
+        links_operations = self.scheduler.links_operations
         for link in self.link_dict.values():
             if link not in links_operations:
                 list_link_utilization.append(0)
@@ -163,6 +164,10 @@ def stress_test_single(settings: StressTestSettings,
         if settings.test_uti:
             tester = LinkTester(graph, flows)
             stat |= tester.stress_test()
+
+            tester = LinkTester(graph, flows, GatingStrategy.NoGate)
+            stat_no_gate = tester.stress_test()
+            stat |= {f"{k}_no_gate": v for k, v in stat_no_gate.items()}
 
         assert len(stat) > 0
         list_stats.append(stat)
