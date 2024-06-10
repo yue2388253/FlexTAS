@@ -23,7 +23,6 @@ MAX_REMAIN_HOPS = 10
 
 
 class ErrorType(Enum):
-    AlreadyScheduled = auto()
     JitterExceed = auto()
     PeriodExceed = auto()
     GatingExceed = auto()
@@ -446,9 +445,7 @@ class NetEnv(gym.Env):
 
         except SchedulingError as e:
             self.logger.info(f"end of episode, reason: [{e.error_type}: {e.msg}]\tScheduled flows: {sum(self.flows_scheduled)}")
-            if e.error_type == ErrorType.AlreadyScheduled:
-                done = False
-            elif e.error_type == ErrorType.JitterExceed:
+            if e.error_type == ErrorType.JitterExceed:
                 # self.reward -= 100
                 done = True
             elif e.error_type == ErrorType.GatingExceed:
