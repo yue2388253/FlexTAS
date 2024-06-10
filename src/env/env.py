@@ -536,7 +536,7 @@ class TrainingNetEnv(NetEnv):
 
         # start with half of the target num_flows and incrementally add flows if agent has learnt to schedule.
         num_flows_initial = math.ceil(num_flows * initial_ratio)
-        flows = flow_generator(graph, num_flows_initial)
+        flows = flow_generator(num_flows_initial)
 
         super().__init__(graph, flows)
 
@@ -567,7 +567,7 @@ class TrainingNetEnv(NetEnv):
 
             if self.num_passed == self.changing_freq:
                 num_flows = min(self.num_flows_target, self.num_flows + self.num_flows_step)
-                flows = self.flow_generator(self.graph, num_flows)
+                flows = self.flow_generator(num_flows)
                 super().__init__(self.graph, flows)
                 self.logger.info(f"Great! The agent has already learnt how to solve the problem. "
                                  f"Change the flows to train the agent. num_flows: {num_flows}")
