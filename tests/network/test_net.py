@@ -154,6 +154,23 @@ class TestFlowGenerator(unittest.TestCase):
         flows3 = generate_flows(graph, num_flows, 2)
         self.assertTrue(any([str(flows1[i] != str(flows3[i]) for i in range(num_flows))]))
 
+    def test_flow_jitter(self):
+        graph = generate_linear_5()
+        num_flows = 100
+
+        flow_generator = FlowGenerator(graph, jitters=0, period_set=[2000])
+        flows = flow_generator(num_flows)
+        [self.assertEqual(flow.jitter, 0) for flow in flows]
+
+        flow_generator = FlowGenerator(graph, jitters=0.1, period_set=[2000])
+        flows = flow_generator(num_flows)
+        [self.assertEqual(flow.jitter, 200) for flow in flows]
+
+        flow_generator = FlowGenerator(graph, jitters=[0.1, 0.2], period_set=[2000])
+        flows = flow_generator(num_flows)
+        [self.assertIn(flow.jitter, [200, 400]) for flow in flows]
+
+
     def test_random_graph(self):
         graph = generate_graph("RRG", 100)
         num_flows = 10

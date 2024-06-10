@@ -398,14 +398,14 @@ class FlowGenerator:
 
         period=random.choice(self.period_set)
 
-        if self.jitters:
+        if self.jitters is not None:
             jitter_percentage = None
-            if isinstance(self.jitters, float):
+            if isinstance(self.jitters, float) or isinstance(self.jitters, int):
                 jitter_percentage = self.jitters
             else:
                 jitter_percentage = random.choice(self.jitters)
             assert 0 <= jitter_percentage <= 1
-            jitter = jitter_percentage * period
+            jitter = math.ceil(jitter_percentage * period)
         else:
             jitter = None
 
