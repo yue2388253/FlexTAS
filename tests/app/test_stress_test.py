@@ -1,6 +1,8 @@
 import logging
+import os.path
 import unittest
 
+from definitions import ROOT_DIR
 from src.app.StressTester import GCLTester, SchedulerTester, stress_test
 from src.network.net import generate_cev, generate_flows, Network
 from src.app.no_wait_tabu_scheduler import TimeTablingScheduler
@@ -26,7 +28,14 @@ class TestStressTest(unittest.TestCase):
 class TestBatch(unittest.TestCase):
     def test_batch(self):
         logging.basicConfig(level=logging.DEBUG)
-        df = stress_test(["RRG", "ERG"], [10], 100, 5, ['gcl', 'uti'])
+        df = stress_test(
+            ["RRG", "ERG"],
+            [10],
+            100,
+            5,
+            ['gcl', 'uti', 'drl'],
+            os.path.join(ROOT_DIR, r'model/best_model_general.zip')
+        )
         has_nan = df.isnull().any().any()
         # an easy scheduling task, all tests should pass
         self.assertFalse(has_nan)

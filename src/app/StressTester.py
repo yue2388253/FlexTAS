@@ -1,14 +1,17 @@
-import os.path
-import sys
+import time
 from collections import defaultdict
 from dataclasses import dataclass, asdict
 import itertools
 import logging
 import math
 import numpy as np
+import os.path
 import pandas as pd
+import random
+from typing import Optional
 
 from definitions import OUT_DIR
+from src.app.drl_scheduler import DrlScheduler
 from src.app.no_wait_tabu_scheduler import TimeTablingScheduler, GatingStrategy
 from src.app.scheduler import BaseScheduler, ResAnalyzer
 from src.lib.execute import execute_from_command_line
@@ -104,7 +107,9 @@ class SchedulerTester(IStressTester):
 
     def stress_test(self) -> dict:
         try:
+            start_time = time.time()
             ok = self.scheduler.schedule()
+            scheduling_time = time.time() - start_time
         except RuntimeError as e:
             logging.info(e)
             ok = False
@@ -112,7 +117,9 @@ class SchedulerTester(IStressTester):
         if not ok:
             return {}
 
-        return ResAnalyzer(self.network, self.scheduler.get_res()).analyze()
+        res = ResAnalyzer(self.network, self.scheduler.get_res()).analyze()
+        res['scheduling_time'] = scheduling_time
+        return res
 
 
 @dataclass
@@ -120,18 +127,18 @@ class StressTestSettings:
     topo: str
     num_flows: int
     link_rate: int
+    timeout: int = 5
     test_gcl: bool = False              # test how many GCLs needed, ignoring the scheduling
     # the following flags involves the corresponding scheduler to schedule
     # and give an analysis of the schedule, e.g., GCLs needed, link_utilization, etc.
     test_all_gate: bool = False
     test_no_gate: bool = False
     test_random_gate: bool = False
-    # todo
-    test_drl: bool = False
+    test_drl: Optional[str] = None
 
 
 def stress_test_single(settings: StressTestSettings,
-                       num_tests: int):
+                       num_tests: int, seed: int):
     list_stats = []
     topo, num_flows, link_rate = settings.topo, settings.num_flows, settings.link_rate
     dict_settings = asdict(settings)
@@ -141,7 +148,7 @@ def stress_test_single(settings: StressTestSettings,
         network = Network(graph, flows)
 
         stat = dict_settings.copy()
-        stat['test_id'] = i
+        stat['test_id'] = seed + i
 
         if settings.test_gcl:
             tester = GCLTester(network)
@@ -150,19 +157,27 @@ def stress_test_single(settings: StressTestSettings,
         list_schedulers = []
 
         if settings.test_all_gate:
-            scheduler = TimeTablingScheduler(network, GatingStrategy.AllGate)
+            scheduler = TimeTablingScheduler(network, GatingStrategy.AllGate, timeout_s=settings.timeout)
             list_schedulers.append(("all_gate", scheduler))
 
         if settings.test_no_gate:
-            scheduler = TimeTablingScheduler(network, GatingStrategy.NoGate)
+            scheduler = TimeTablingScheduler(network, GatingStrategy.NoGate, timeout_s=settings.timeout)
             list_schedulers.append(("no_gate", scheduler))
 
         if settings.test_random_gate:
-            scheduler = TimeTablingScheduler(network, GatingStrategy.RandomGate)
+            scheduler = TimeTablingScheduler(network, GatingStrategy.RandomGate, timeout_s=settings.timeout)
             list_schedulers.append(("random_gate", scheduler))
+
+        if settings.test_drl is not None:
+            scheduler = DrlScheduler(network, timeout_s=settings.timeout)
+            best_model_path = settings.test_drl
+            assert os.path.isfile(best_model_path), "Cannot find the best model"
+            scheduler.load_model(best_model_path, "MaskablePPO")
+            list_schedulers.append(("drl", scheduler))
 
         for name, scheduler in list_schedulers:
             tester = SchedulerTester(network, scheduler)
+            logging.info(f"Testing {name} scheduler... Settings: {settings}")
             res = tester.stress_test()
             stat |= {f"{k}_{name}": v for k, v in res.items()}
 
@@ -176,10 +191,21 @@ def stress_test_single(settings: StressTestSettings,
 
 def stress_test(topos: list[str], list_num_flows: list[int],
                 link_rate: int, num_tests: int,
-                list_obj: list[str]):
+                list_obj: list[str],
+                drl_model: str=None,
+                seed=None):
+    """
+    Args:
+        list_obj: valid options: "gcl", "uti", "drl"
+    """
     list_df = []
     test_gcl = "gcl" in list_obj
     test_uti = "uti" in list_obj
+
+    test_drl = "drl" in list_obj
+    if test_drl:
+        assert drl_model is not None, "Should specify the drl model"
+        assert os.path.isfile(drl_model), "Cannot find the drl model"
 
     list_settings = [
         StressTestSettings(
@@ -188,17 +214,27 @@ def stress_test(topos: list[str], list_num_flows: list[int],
             test_all_gate=test_uti,
             test_no_gate=test_uti,
             test_random_gate=test_uti,
+            test_drl=drl_model,
         )
         for topo, num_flow in itertools.product(topos, list_num_flows)
     ]
 
     logging.info("Starting stress tests.")
+
+    if seed is not None:
+        assert isinstance(seed, int), "Seed must be an integer"
+    else:
+        seed = random.randint(1, 10000)
+
+    df = None
     for i, settings in enumerate(list_settings):
         logging.info(f"Progress: {i/len(list_settings)*100:.2f}%\t{settings}")
-        df = stress_test_single(settings, num_tests)
+        df = stress_test_single(settings, num_tests, seed)
         list_df.append(df)
 
-    df = pd.concat(list_df, ignore_index=True)
+        # save the results each time
+        df = pd.concat(list_df, ignore_index=True)
+
     return df
 
 

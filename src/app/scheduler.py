@@ -28,9 +28,6 @@ class BaseScheduler:
     def get_res(self) -> ScheduleRes:
         pass
 
-    def get_num_gcl_max(self):
-        pass
-
 
 class ResAnalyzer:
     def __init__(self, network: Network, links_operations: ScheduleRes):
@@ -58,15 +55,18 @@ class ResAnalyzer:
                 continue
 
             operations = links_operations[link]
-            gcl_cycle = math.lcm(*[f.period for f, _ in operations])
-            expansion = np.array([gcl_cycle // f.period for f, _ in operations])
-            trans_time = np.array([
-                operation.end_time - operation.start_time
-                for _, operation in operations
-            ])
-            link_utilization = np.dot(expansion, trans_time) / gcl_cycle
-            assert link_utilization <= 1
-            assert link_utilization != 0
+            if len(operations) == 0:
+                link_utilization = 0
+            else:
+                gcl_cycle = math.lcm(*[f.period for f, _ in operations])
+                expansion = np.array([gcl_cycle // f.period for f, _ in operations])
+                trans_time = np.array([
+                    operation.end_time - operation.start_time
+                    for _, operation in operations
+                ])
+                link_utilization = np.dot(expansion, trans_time) / gcl_cycle
+
+            assert 0 <= link_utilization <= 1
             list_link_utilization.append(link_utilization)
 
         list_link_utilization = np.array(list_link_utilization)
@@ -94,9 +94,13 @@ class ResAnalyzer:
                 continue
 
             operations = links_operations[link]
-            gcl_cycle = math.lcm(*[f.period for f, _ in operations])
-            expansion = np.array([gcl_cycle // f.period for f, _ in operations])
-            gcl_length = sum(expansion) * 2
+            if len(operations) == 0:
+                gcl_length = 0
+            else:
+                gcl_cycle = math.lcm(*[f.period for f, _ in operations])
+                expansion = np.array([gcl_cycle // f.period for f, _ in operations])
+                gcl_length = sum(expansion) * 2
+            assert 0 <= gcl_length <= link.gcl_capacity
             list_gcl.append(gcl_length)
 
         list_gcl = np.array(list_gcl)

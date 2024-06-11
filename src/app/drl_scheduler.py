@@ -10,7 +10,7 @@ from src.agent.encoder import FeaturesExtractor
 from src.env.env import NetEnv
 from src.lib.timing_decorator import timing_decorator
 from src.network.net import Flow, Network
-from src.app.scheduler import BaseScheduler
+from src.app.scheduler import BaseScheduler, ScheduleRes
 
 
 class SuccessCallback(BaseCallback):
@@ -28,7 +28,7 @@ class SuccessCallback(BaseCallback):
         self.time_limit = time_limit
         self.is_scheduled = False
 
-        self.num_gcl_max = None
+        self.res = None
 
     def _on_step(self) -> bool:
         """
@@ -42,7 +42,7 @@ class SuccessCallback(BaseCallback):
                 if done and infos[i].get('success'):
                     logging.info("Game successfully completed, stopping training...")
                     self.is_scheduled = True
-                    self.num_gcl_max = infos[i].get('num_gcl_max')
+                    self.res = infos[i].get('ScheduleRes')
                     return False  # False means "stop training"
 
         # Check if time limit has been reached
@@ -77,7 +77,7 @@ class DrlScheduler(BaseScheduler):
         )
         self.model = MaskablePPO("MultiInputPolicy", self.env, policy_kwargs=policy_kwargs, verbose=1)
 
-        self.num_gcl_max = None
+        self.res = None
 
     def load_model(self, filepath: str, alg: str = 'PPO'):
         del self.model
@@ -96,12 +96,12 @@ class DrlScheduler(BaseScheduler):
 
         is_scheduled = callback.get_result()
         if is_scheduled:
-            self.num_gcl_max = callback.num_gcl_max
+            self.res = callback.res
             logging.info("Successfully scheduling the flows.")
         else:
             logging.error("Fail to find a valid solution.")
 
         return is_scheduled
 
-    def get_num_gcl_max(self):
-        return self.num_gcl_max
+    def get_res(self) -> ScheduleRes:
+        return self.res
