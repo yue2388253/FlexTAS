@@ -2,19 +2,20 @@ import logging
 import unittest
 
 from src.app.StressTester import GCLTester, LinkTester
-from src.network.net import generate_cev, generate_flows
+from src.network.net import generate_cev, generate_flows, Network
 
 
 class TestStressTest(unittest.TestCase):
     def setUp(self):
         logging.basicConfig(level=logging.DEBUG)
-        self.graph = generate_cev()
-        self.flows = generate_flows(self.graph, 100)
+        graph = generate_cev()
+        flows = generate_flows(graph, 100)
+        self.network = Network(graph, flows)
 
     def test_gcl(self):
-        tester = GCLTester(self.graph, self.flows)
+        tester = GCLTester(self.network)
         logging.info(tester.stress_test())
 
     def test_link(self):
-        tester = LinkTester(self.graph, self.flows)
+        tester = LinkTester(self.network)
         logging.info(tester.stress_test())

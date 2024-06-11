@@ -7,7 +7,7 @@ import unittest
 
 from definitions import ROOT_DIR, OUT_DIR
 from src.env.env import NetEnv
-from src.network.net import generate_linear_5, Flow
+from src.network.net import generate_linear_5, Flow, Network
 
 
 class TestEnvState(unittest.TestCase):
@@ -48,6 +48,7 @@ class TestEnv(unittest.TestCase):
         self.assertTrue(self.env.observation_space.contains(obs))
         self.assertFalse(done)
 
+    @unittest.skipIf(os.getenv('RUN_LONG_TESTS') != '1', "Skipping long running test")
     def test_action_masks(self):
         model = MaskablePPO("MultiInputPolicy", self.env, verbose=1)
         model.learn(5000)
@@ -59,7 +60,8 @@ class TestEnvInfo(unittest.TestCase):
         path = [("E1", "S1"), ("S1", "S2"), ("S2", "E2")]
         flow = Flow(f"F0", "E1", "E2", path, payload=64, period=2000)
         flows = [flow]
-        env = NetEnv(graph, flows)
+        network = Network(graph, flows)
+        env = NetEnv(network)
         for i in range(3):
             _, _, done, _, info = env.step(1)
             if i == 2:

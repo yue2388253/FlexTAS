@@ -1,5 +1,4 @@
 import logging
-import networkx as nx
 import os
 from sb3_contrib import MaskablePPO
 from stable_baselines3 import A2C, DQN, PPO
@@ -10,7 +9,7 @@ import time
 from src.agent.encoder import FeaturesExtractor
 from src.env.env import NetEnv
 from src.lib.timing_decorator import timing_decorator
-from src.network.net import Flow
+from src.network.net import Flow, Network
 from src.app.scheduler import BaseScheduler
 
 
@@ -66,13 +65,13 @@ class DrlScheduler(BaseScheduler):
         'MaskablePPO': MaskablePPO
     }
 
-    def __init__(self, graph: nx.DiGraph, flows: list[Flow],
+    def __init__(self, network: Network,
                  num_envs: int = 1, time_steps=100000, **kwargs):
-        super().__init__(graph, flows,  **kwargs)
+        super().__init__(network,  **kwargs)
         self.num_envs = num_envs
         self.time_steps = time_steps
 
-        self.env = SubprocVecEnv([lambda: NetEnv(self.graph, self.flows) for _ in range(self.num_envs)])
+        self.env = SubprocVecEnv([lambda: NetEnv(network) for _ in range(self.num_envs)])
         policy_kwargs = dict(
             features_extractor_class=FeaturesExtractor,
         )

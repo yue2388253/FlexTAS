@@ -5,7 +5,6 @@ from dataclasses import dataclass, asdict
 import itertools
 import logging
 import math
-import networkx as nx
 import numpy as np
 import pandas as pd
 
@@ -101,7 +100,7 @@ class LinkTester(IStressTester):
         self.scheduler = TimeTablingScheduler(network, gating_strategy)
         if gating_strategy == GatingStrategy.AllGate:
             # we only test link utilization, thus ignore the gcl limit
-            for link in self.scheduler.link_dict.values():
+            for link in self.scheduler.links_dict.values():
                 link.max_gcl_length = sys.maxsize
 
     def stress_test(self) -> dict:

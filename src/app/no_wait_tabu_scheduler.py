@@ -63,7 +63,7 @@ class TimeTablingScheduler(BaseScheduler):
         for link, flow_periods in link_flows.items():
             gcl_cycle = math.lcm(*flow_periods)
             gcl_length = sum([2 * gcl_cycle // period for period in flow_periods])
-            if gcl_length > self.link_dict[link].max_gcl_length:
+            if gcl_length > self.links_dict[link].max_gcl_length:
                 df = pd.Series(flow_periods).value_counts()
                 raise RuntimeError(f"GCL limit exceed, don't need to try scheduling. {df}")
 
@@ -88,7 +88,7 @@ class TimeTablingScheduler(BaseScheduler):
 
         # construct operations
         for i, link_id in enumerate(path):
-            link = self.link_dict[link_id]
+            link = self.links_dict[link_id]
             trans_time = link.transmission_time(flow.payload)
 
             if self.gating_strategy == GatingStrategy.AllGate:
@@ -225,9 +225,9 @@ class NoWaitTabuScheduler(BaseScheduler):
         LongestDec = auto()
         Random = auto()
 
-    def __init__(self, graph: nx.DiGraph, flows: list[Flow], stop_upon_valid=True, **kwargs):
+    def __init__(self, network: Network, stop_upon_valid=True, **kwargs):
         # stop_upon_valid: if True, stop upon a valid schedule is found
-        super().__init__(graph, flows, **kwargs)
+        super().__init__(network, **kwargs)
         self.best_scheduler = None
         self.stop_upon_valid = stop_upon_valid
 
@@ -268,7 +268,7 @@ class NoWaitTabuScheduler(BaseScheduler):
             nhd = generate_neighbourhood(flows, flows.index(current_critical_flow))
             list_slns = []
             for soln in nhd:
-                scheduler = TimeTablingScheduler(self.graph, soln)
+                scheduler = TimeTablingScheduler(Network(self.graph, soln))
                 ok = scheduler.schedule()
                 if ok:
                     if self.stop_upon_valid:
@@ -332,6 +332,7 @@ class NoWaitTabuScheduler(BaseScheduler):
             logging.info("Fail to schedule: isolation unsatisfied.")
             return False
 
+        # may have bug, since it do not change links_dict accordingly.
         self.best_scheduler = min(list_res, key=lambda x: x.get_makespan())
         logging.info("Success to schedule.")
         return True
