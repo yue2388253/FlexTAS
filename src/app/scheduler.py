@@ -28,8 +28,12 @@ class BaseScheduler:
         pass
 
 
+LinkOperations = List[Tuple[Flow, Operation]]
+ScheduleRes = Dict[Link, LinkOperations]
+
+
 class ResAnalyzer:
-    def __init__(self, network: Network, links_operations: Dict[Link, List[Tuple[Flow, Operation]]]):
+    def __init__(self, network: Network, links_operations: ScheduleRes):
         self.graph = network.graph
         self.flows = network.flows
         self.network = network
