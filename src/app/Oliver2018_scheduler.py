@@ -89,14 +89,14 @@ class Oliver2018Scheduler(BaseScheduler):
         for link_id, link in self.links_dict.items():
             if link in self.links_streams:
                 phi = self.links_variable[link].phi_array[0]
-                tau = self.links_variable[link].tau_array[link.max_gcl_length - 1]
+                tau = self.links_variable[link].tau_array[link.gcl_capacity - 1]
                 constraint_1 = z3.And(phi >= 0, tau < self.hyper_period)
                 # print(constraint_1)
                 self.constraints_set.append(constraint_1)
 
         for link_id, link in self.links_dict.items():
             if link in self.links_streams:
-                for k in range(link.max_gcl_length):
+                for k in range(link.gcl_capacity):
                     kappa = self.links_variable[link].kappa_array[k]
                     constraint_1 = z3.And(kappa >= 0, kappa < Net.ST_QUEUES)
                     self.constraints_set.append(constraint_1)
@@ -118,7 +118,7 @@ class Oliver2018Scheduler(BaseScheduler):
 
         # 3. ordered windows constraint
         for link_id, link in self.links_dict.items():
-            gcl_len = link.max_gcl_length
+            gcl_len = link.gcl_capacity
             for i in range(gcl_len - 1):
                 phi = self.links_variable[link].phi_array[i+1]
                 tau = self.links_variable[link].tau_array[i]
@@ -129,14 +129,14 @@ class Oliver2018Scheduler(BaseScheduler):
         for flow, flow_instances in self.streams_instances.items():
             for link, flow_link_instances in flow_instances.items():
                 for instance_obj in flow_link_instances:
-                    gcl_len = link.max_gcl_length
+                    gcl_len = link.gcl_capacity
                     omega = instance_obj.omega
                     constraint_4 = z3.And(omega >= 0, omega <= gcl_len - 1)
                     self.constraints_set.append(constraint_4)
 
         # 5. window size constraint
         for link_id, link in self.links_dict.items():
-            gcl_len = link.max_gcl_length
+            gcl_len = link.gcl_capacity
             phi_array = self.links_variable[link].phi_array
             tau_0_array = self.links_variable[link].tau_0_array
             if link not in self.links_streams:
@@ -153,7 +153,7 @@ class Oliver2018Scheduler(BaseScheduler):
 
         # 将tau_1所有元素初始化成0
         for link_id, link in self.links_dict.items():
-            gcl_len = self.links_dict[link_id].max_gcl_length
+            gcl_len = self.links_dict[link_id].gcl_capacity
             tau_1_array = self.links_variable[link].tau_1_array
             if link not in self.links_streams:
                 continue
@@ -173,7 +173,7 @@ class Oliver2018Scheduler(BaseScheduler):
 
         # 给tau添加约束
         for link in self.links_dict.values():
-            gcl_len = link.max_gcl_length
+            gcl_len = link.gcl_capacity
             tau_array = self.links_variable[link].tau_array
             tau_0_array = self.links_variable[link].tau_0_array
             tau_1_array = self.links_variable[link].tau_1_array

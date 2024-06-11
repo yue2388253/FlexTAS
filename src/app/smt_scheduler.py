@@ -242,7 +242,7 @@ class SmtScheduler(BaseScheduler):
                     self.z3_variables_links[link]['gcl_length']
                 )
                 self.constraints_set.append(
-                    self.z3_variables_links[link]['gcl_length'] <= link.max_gcl_length
+                    self.z3_variables_links[link]['gcl_length'] <= link.gcl_capacity
                 )
 
     def _solve_constraints(self) -> bool:

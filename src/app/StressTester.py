@@ -103,7 +103,7 @@ class LinkTester(IStressTester):
         if gating_strategy == GatingStrategy.AllGate:
             # we only test link utilization, thus ignore the gcl limit
             for link in self.scheduler.links_dict.values():
-                link.max_gcl_length = sys.maxsize
+                link.gcl_capacity = sys.maxsize
 
     def stress_test(self) -> dict:
         ok = self.scheduler.schedule()

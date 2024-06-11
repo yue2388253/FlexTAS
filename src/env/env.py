@@ -438,7 +438,7 @@ class NetEnv(gym.Env):
 
             # self.reward += 0.1
             self.reward = (1
-                           - self.alpha * gcl_added / link.max_gcl_length
+                           - self.alpha * gcl_added / link.gcl_capacity
                            - self.beta * wait_time / flow.e2e_delay)
 
         except SchedulingError as e:

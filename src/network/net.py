@@ -38,7 +38,7 @@ class Link:
 
     def __init__(self, link_id, link_rate):
         self.link_id = link_id
-        self.max_gcl_length = Net.GCL_LENGTH_MAX
+        self.gcl_capacity = Net.GCL_LENGTH_MAX
         self.link_rate = link_rate
 
         self.gcl_cycle = 1
@@ -75,7 +75,7 @@ class Link:
         new_cycle = math.lcm(self.gcl_cycle, period)
         new_length = self.gcl_length * (new_cycle // self.gcl_cycle)
         new_length += ((new_cycle // period) * 2)
-        if new_length > self.max_gcl_length:
+        if new_length > self.gcl_capacity:
             if attempt:
                 return False
             else:
