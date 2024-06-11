@@ -8,18 +8,16 @@ import z3
 
 from definitions import OUT_DIR
 from src.lib.timing_decorator import timing_decorator
-from src.network.net import Flow, Link, Net, transform_line_graph
+from src.network.net import Flow, Link, Net, Network
 from src.app.scheduler import BaseScheduler
 
 
 class Oliver2018Scheduler(BaseScheduler):
-    def __init__(self, graph: nx.DiGraph, flows: list[Flow], **kwargs):
-        super().__init__(graph, flows, **kwargs)
+    def __init__(self, network: Network, **kwargs):
+        super().__init__(network, **kwargs)
 
         self.hyper_period = math.lcm(*[flow.period for flow in self.flows])
         assert self.hyper_period <= Net.GCL_CYCLE_MAX
-
-        _, self.links_dict = transform_line_graph(self.graph)
 
         self.links_variable = {link: self.LinkVariables(link) for link in self.links_dict.values()}
 

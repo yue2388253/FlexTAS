@@ -8,7 +8,7 @@ import random
 import sys
 from typing import Optional
 
-from src.network.net import Net, Flow, Link, transform_line_graph
+from src.network.net import Net, Flow, Link, Network
 from src.app.scheduler import BaseScheduler
 from src.lib.operation import Operation, check_operation_isolation
 
@@ -23,12 +23,10 @@ class TimeTablingScheduler(BaseScheduler):
     """
     schedule the flows in order
     """
-    def __init__(self, graph: nx.DiGraph, flows: list[Flow],
+    def __init__(self, network: Network,
                  gating_strategy: GatingStrategy = GatingStrategy.AllGate,
                  **kwargs):
-        super().__init__(graph, flows, **kwargs)
-
-        _, self.link_dict = transform_line_graph(graph)
+        super().__init__(network, **kwargs)
 
         self.flows_operations = {}
         self.links_operations = defaultdict(list)

@@ -12,7 +12,7 @@ import pandas as pd
 from definitions import OUT_DIR
 from src.app.no_wait_tabu_scheduler import TimeTablingScheduler, GatingStrategy
 from src.lib.execute import execute_from_command_line
-from src.network.net import Flow, transform_line_graph, generate_graph, generate_flows
+from src.network.net import Flow, generate_graph, generate_flows, Network
 
 
 class IStressTester:
@@ -21,10 +21,10 @@ class IStressTester:
     Note that this is not a scheduler!
     """
 
-    def __init__(self, graph: nx.DiGraph, flows: list[Flow]):
-        self.graph = graph
-        self.flows = flows
-        _, self.link_dict = transform_line_graph(graph)
+    def __init__(self, network: Network):
+        self.graph = network.graph
+        self.flows = network.flows
+        self.link_dict = network.links_dict
 
     def stress_test(self) -> dict:
         pass
@@ -45,8 +45,8 @@ class GCLTester(IStressTester):
     """
     A GCL Tester that tests how many GCLs are needed for the input.
     """
-    def __init__(self, graph: nx.DiGraph, flows: list[Flow]):
-        super().__init__(graph, flows)
+    def __init__(self, network: Network):
+        super().__init__(network)
 
     def stress_test(self) -> dict:
         """
@@ -96,9 +96,9 @@ class LinkTester(IStressTester):
     A stress tester that tests how much link_utilization can achieve.
     """
 
-    def __init__(self, graph: nx.DiGraph, flows: list[Flow], gating_strategy: GatingStrategy=GatingStrategy.AllGate):
-        super().__init__(graph, flows)
-        self.scheduler = TimeTablingScheduler(self.graph, self.flows, gating_strategy)
+    def __init__(self, network: Network, gating_strategy: GatingStrategy=GatingStrategy.AllGate):
+        super().__init__(network)
+        self.scheduler = TimeTablingScheduler(network, gating_strategy)
         if gating_strategy == GatingStrategy.AllGate:
             # we only test link utilization, thus ignore the gcl limit
             for link in self.scheduler.link_dict.values():
@@ -155,17 +155,18 @@ def stress_test_single(settings: StressTestSettings,
     for _ in range(num_tests):
         graph = generate_graph(topo, link_rate)
         flows = generate_flows(graph, num_flows)
+        network = Network(graph, flows)
 
         stat = dict_settings.copy()
         if settings.test_gcl:
-            tester = GCLTester(graph, flows)
+            tester = GCLTester(network)
             stat |= tester.stress_test()
 
         if settings.test_uti:
-            tester = LinkTester(graph, flows)
+            tester = LinkTester(network)
             stat |= tester.stress_test()
 
-            tester = LinkTester(graph, flows, GatingStrategy.NoGate)
+            tester = LinkTester(network, GatingStrategy.NoGate)
             stat_no_gate = tester.stress_test()
             stat |= {f"{k}_no_gate": v for k, v in stat_no_gate.items()}
 

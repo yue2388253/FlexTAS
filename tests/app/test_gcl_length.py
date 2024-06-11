@@ -30,7 +30,8 @@ class TestTimeTablingScheduler(unittest.TestCase):
     def _test_single_cls(self, scheduler_cls, num_gcl_max, expected_res):
         Net.GCL_LENGTH_MAX = num_gcl_max
         self._construct_scheduler()
-        scheduler = scheduler_cls(self.graph, self.flows)
+        network = Network(self.graph, self.flows)
+        scheduler = scheduler_cls(network)
 
         if expected_res:
             # expected pass

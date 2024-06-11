@@ -360,12 +360,20 @@ def generate_graph(topo: str, link_rate):
     return graph
 
 
-def transform_line_graph(graph) -> (nx.Graph, typing.Dict):
+def _transform_line_graph(graph) -> (nx.Graph, typing.Dict):
     line_graph = nx.line_graph(graph)
     links_dict = {}
     for node in line_graph.nodes:
         links_dict[node] = Link(node, graph.edges[node]['link_rate'])
     return line_graph, links_dict
+
+
+class Network:
+    def __init__(self, graph, flows) -> None:
+        self.graph = graph
+        self.flows = flows
+        # construct links
+        self.line_graph, self.links_dict = _transform_line_graph(graph)
 
 
 class FlowGenerator:

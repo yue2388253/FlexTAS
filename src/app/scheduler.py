@@ -1,11 +1,12 @@
 import networkx as nx
-from src.network.net import Flow
+from src.network.net import Flow, Network
 
 
 class BaseScheduler:
-    def __init__(self, graph: nx.DiGraph, flows: list[Flow], timeout_s: int = 300):
-        self.graph = graph
-        self.flows = flows
+    def __init__(self, network: Network, timeout_s: int = 300):
+        self.graph = network.graph
+        self.flows = network.flows
+        self.links_dict = network.links_dict
         self.timeout_s = timeout_s
 
     def schedule(self) -> bool:

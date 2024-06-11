@@ -88,32 +88,6 @@ class TestLink(unittest.TestCase):
         self.assertTrue(np.all((embedding >= 0) & (embedding <= 1)))
 
 
-class TestLineGraph(unittest.TestCase):
-    def setUp(self) -> None:
-        self.G = generate_linear_5()
-        self.line_graph, self.links_dict = transform_line_graph(self.G)
-
-    def test_name(self):
-        for node in self.line_graph.nodes:
-            print(node)
-
-    def test_links_dict(self):
-        for link_id, link in self.links_dict.items():
-            print(link_id, link)
-
-    def test_export(self):
-        os.makedirs(OUT_DIR, exist_ok=True)
-
-        # nx.write_graphml(self.line_graph, os.path.join(OUT_DIR, 'line_graph.graphml'))
-        # nx.write_gexf(self.line_graph, os.path.join(OUT_DIR, 'line_graph.gexf'))
-        # nx.write_gpickle(self.line_graph, os.path.join(OUT_DIR, 'line_graph.gpickle'))
-        # with open(os.path.join(OUT_DIR, 'line_graph.json'), 'w') as f:
-        #     f.write(json.dumps(nx.node_link_data(self.line_graph), indent=4))
-
-        with open(os.path.join(OUT_DIR, 'graph.json'), 'w') as f:
-            f.write(json.dumps(nx.node_link_data(nx.Graph(self.G)), indent=4))
-
-
 class TestFlow(unittest.TestCase):
     def setUp(self) -> None:
         self.G, self.flows = generate_net_flows_from_json(os.path.join(ROOT_DIR, 'data/input/smt_output.json'))

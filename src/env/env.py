@@ -15,7 +15,7 @@ from typing import SupportsFloat, Any, Optional
 from definitions import ROOT_DIR, OUT_DIR, LOG_DIR
 from src.lib.graph import neighbors_within_distance
 from src.lib.operation import Operation, check_operation_isolation
-from src.network.net import Duration, Flow, Link, transform_line_graph, Net, PERIOD_SET, generate_cev, generate_flows
+from src.network.net import Duration, Flow, Link, Net, PERIOD_SET, generate_cev, generate_flows, Network
 
 
 MAX_NEIGHBORS = 20
@@ -218,22 +218,20 @@ class NetEnv(gym.Env):
     beta: float = 10
     gamma: float = 0.1
 
-    def __init__(self, graph: nx.DiGraph = None, flows: list[Flow] = None):
+    def __init__(self, network:Network=None):
         super().__init__()
 
-        if graph is None and flows is None:
-            self.graph = generate_cev()
-            self.flows = generate_flows(self.graph, 10)
-        elif graph is not None and flows is not None:
-            self.graph: nx.DiGraph = graph
-            self.flows: list[Flow] = flows
+        if network is None:
+            graph = generate_cev()
+            network = Network(graph, generate_flows(graph, 10))
+        
+        self.graph = network.graph
+        self.flows = network.flows
+        self.line_graph, self.link_dict = network.line_graph, network.links_dict
 
         assert self.graph is not None and self.flows is not None, "fail to init env, invalid graph or flows"
 
         self.num_flows: int = len(self.flows)
-        self.line_graph: nx.Graph
-        self.link_dict: dict[str, Link]
-        self.line_graph, self.link_dict = transform_line_graph(self.graph)
 
         self.flows_operations: dict[Flow, list[tuple[Link, Operation]]] = defaultdict(list)
         self.links_operations: dict[Link, list[tuple[Flow, Operation]]] = defaultdict(list)

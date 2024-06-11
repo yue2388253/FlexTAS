@@ -8,15 +8,13 @@ import z3
 
 from definitions import OUT_DIR
 from src.lib.timing_decorator import timing_decorator
-from src.network.net import Flow, Link, Net, transform_line_graph
+from src.network.net import Flow, Link, Net, Network
 from src.app.scheduler import BaseScheduler
 
 
 class SmtScheduler(BaseScheduler):
-    def __init__(self, graph: nx.DiGraph, flows: list[Flow], **kwargs):
-        super().__init__(graph, flows, **kwargs)
-
-        _, self.links_dict = transform_line_graph(self.graph)
+    def __init__(self, network: Network, **kwargs):
+        super().__init__(network, **kwargs)
 
         self.num_queues = 1
 
