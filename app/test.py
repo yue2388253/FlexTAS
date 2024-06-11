@@ -2,7 +2,7 @@ import logging
 
 from src.lib.timing_decorator import timing_decorator
 from src.lib.execute import execute_from_command_line
-from src.network.net import generate_flows, generate_graph
+from src.network.net import generate_flows, generate_graph, Network
 from src.app.drl_scheduler import DrlScheduler
 
 
@@ -14,7 +14,7 @@ def test(topo: str, num_flows: int, num_envs: int,
     graph = generate_graph(topo, link_rate)
 
     flows = generate_flows(graph, num_flows)
-    scheduler = DrlScheduler(graph, flows, num_envs=num_envs)
+    scheduler = DrlScheduler(Network(graph, flows), num_envs=num_envs)
 
     if best_model_path is not None:
         scheduler.load_model(best_model_path, alg=alg)
