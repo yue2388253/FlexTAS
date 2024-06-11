@@ -33,56 +33,6 @@ class Net:
     ST_QUEUES = 2
 
 
-class Duration:
-    PRECISION = 1000  # 1ms
-    LENGTH_EMBEDDING = int(Net.GCL_CYCLE_MAX / PRECISION)
-
-    def __init__(self, start, end, cycle):
-        if start is None and end is None:
-            # an empty duration.
-            if cycle != Net.GCL_CYCLE_MAX:
-                raise RuntimeError("Empty duration should have a cycle of GCL_CYCLE_MAX.")
-
-            self._time_slot = np.zeros(cycle, dtype=np.uint8)
-            return
-
-        if start > end:
-            raise RuntimeError(f"start is greater than end. ({start} > {end})")
-
-        if end >= cycle:
-            raise RuntimeError(f"end is greater than or equal to cycle. ({end} >= {cycle})")
-
-        if Net.GCL_CYCLE_MAX % cycle != 0:
-            raise RuntimeError(f"GCL_CYCLE_MAX ({Net.GCL_CYCLE_MAX}) is not divisible by cycle ({cycle}).")
-
-        self.start = start
-        self.end = end
-        self.cycle = cycle
-
-        _extend_times = Net.GCL_CYCLE_MAX // cycle
-
-        uint8_arr = np.zeros(cycle, dtype=np.uint8)
-        uint8_arr[start: end + 1] = 1
-
-        self._time_slot = np.tile(uint8_arr, _extend_times)
-
-        assert len(self._time_slot) == Net.GCL_CYCLE_MAX
-
-    def is_conflict(self, other: 'Duration') -> bool:
-        return np.any(np.bitwise_and(self._time_slot, other._time_slot) == 1)
-
-    def add_duration(self, other: 'Duration'):
-        self._time_slot = np.bitwise_or(self._time_slot, other._time_slot)
-
-    def utilization(self):
-        return np.sum(self._time_slot) / Net.GCL_CYCLE_MAX
-
-    def embedding(self):
-        reshaped_arr = self._time_slot.reshape(-1, self.PRECISION)
-        percentage_arr = reshaped_arr.mean(axis=1).astype(np.float32)
-        return percentage_arr
-
-
 class Link:
     embedding_length = 3
 
@@ -93,8 +43,6 @@ class Link:
 
         self.gcl_cycle = 1
         self.gcl_length = 0
-        self.reserved_durations: list[Duration] = []
-        self.reserved_binaries = Duration(None, None, Net.GCL_CYCLE_MAX)
 
     def __hash__(self):
         return hash(self.link_id)
@@ -110,8 +58,6 @@ class Link:
     def reset(self):
         self.gcl_cycle = 1
         self.gcl_length = 0
-        self.reserved_durations = []
-        self.reserved_binaries = Duration(None, None, Net.GCL_CYCLE_MAX)
 
     def interference_time(self) -> int:
         return self.transmission_time(Net.MTU)
@@ -119,25 +65,6 @@ class Link:
     def transmission_time(self, payload: int) -> int:
         # 12 for interframe gap and 8 for preamble
         return math.ceil((payload + 12 + 8) * 8 / self.link_rate)
-
-    def embedding(self) -> np.ndarray:
-        return np.array([self.reserved_binaries.utilization(),
-                         self.gcl_cycle / Net.GCL_CYCLE_MAX,
-                         self.gcl_length / self.max_gcl_length])
-
-    def add_reserved_duration(self, duration: Duration, check=True):
-        if check and not self.check_isolation(duration):
-            raise RuntimeError("Frame isolation conflict.")
-
-        self.reserved_durations.append(duration)
-        self.reserved_binaries.add_duration(duration)
-
-    def check_isolation(self, duration: Duration):
-        """
-        :param duration: Duration.
-        :return: True if not conflict.
-        """
-        return not self.reserved_binaries.is_conflict(duration)
 
     def add_gating(self, period: int, attempt=False) -> bool:
         """

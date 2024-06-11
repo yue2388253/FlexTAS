@@ -15,7 +15,7 @@ from typing import SupportsFloat, Any, Optional
 from definitions import ROOT_DIR, OUT_DIR, LOG_DIR
 from src.lib.graph import neighbors_within_distance
 from src.lib.operation import Operation, check_operation_isolation
-from src.network.net import Duration, Flow, Link, Net, PERIOD_SET, generate_cev, generate_flows, Network
+from src.network.net import Flow, Link, Net, PERIOD_SET, generate_cev, generate_flows, Network
 
 
 MAX_NEIGHBORS = 20

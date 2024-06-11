@@ -45,49 +45,6 @@ class TestRandomGraph(unittest.TestCase):
             self.assertEqual(len(graph.edges), (num_nodes - 3) * 3 * 2)
 
 
-class TestDuration(unittest.TestCase):
-    def test_conflict(self):
-        d1 = Duration(0, 0, 4)
-        d2 = Duration(2, 2, 4)
-        d3 = Duration(1, 1, 2)
-        self.assertFalse(d1.is_conflict(d2))
-        self.assertFalse(d1.is_conflict(d3))
-        self.assertFalse(d2.is_conflict(d3))
-
-        d4 = Duration(0, 0, 5)
-        self.assertTrue(d1.is_conflict(d4))
-        self.assertTrue(d2.is_conflict(d4))
-        self.assertTrue(d3.is_conflict(d4))
-
-
-class TestLink(unittest.TestCase):
-    def test_conflict(self):
-        d1 = Duration(0, 0, 4)
-        d2 = Duration(2, 2, 4)
-        d3 = Duration(1, 1, 2)
-        link = Link('link0', 100)
-        link.add_reserved_duration(d1, check=True)
-        link.add_reserved_duration(d2, check=True)
-        link.add_reserved_duration(d3, check=True)
-
-        link = Link('link1', 100)
-        d4 = Duration(0, 0, 5)
-        link.add_reserved_duration(d4, check=True)
-        with self.assertRaises(RuntimeError) as _:
-            link.add_reserved_duration(d1, check=True)
-        with self.assertRaises(RuntimeError) as _:
-            link.add_reserved_duration(d2, check=True)
-        with self.assertRaises(RuntimeError) as _:
-            link.add_reserved_duration(d3, check=True)
-
-    def test_embedding(self):
-        link = Link('link', 100)
-        link.add_reserved_duration(Duration(0, 0, 4))
-        link.add_reserved_duration(Duration(1, 1, 8))
-        embedding = link.embedding()
-        self.assertTrue(np.all((embedding >= 0) & (embedding <= 1)))
-
-
 class TestFlow(unittest.TestCase):
     def setUp(self) -> None:
         self.G, self.flows = generate_net_flows_from_json(os.path.join(ROOT_DIR, 'data/input/smt_output.json'))
