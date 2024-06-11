@@ -1,7 +1,7 @@
 import logging
 import unittest
 
-from src.app.StressTester import GCLTester, LinkTester
+from src.app.StressTester import GCLTester, SchedulerTester
 from src.network.net import generate_cev, generate_flows, Network
 
 
@@ -17,5 +17,5 @@ class TestStressTest(unittest.TestCase):
         logging.info(tester.stress_test())
 
     def test_link(self):
-        tester = LinkTester(self.network)
+        tester = SchedulerTester(self.network)
         logging.info(tester.stress_test())

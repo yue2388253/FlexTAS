@@ -31,6 +31,10 @@ class IStressTester:
 
 
 class GCLTester(IStressTester):
+    """
+    A GCL Tester that tests how many GCLs are needed for the input.
+    """
+
     @dataclass
     class GCLStat:
         num_links: int
@@ -42,9 +46,6 @@ class GCLTester(IStressTester):
         gcl_min: int
         num_hops_per_flow: float
 
-    """
-    A GCL Tester that tests how many GCLs are needed for the input.
-    """
     def __init__(self, network: Network):
         super().__init__(network)
 
@@ -84,17 +85,17 @@ class GCLTester(IStressTester):
         ))
 
 
-class LinkTester(IStressTester):
+class SchedulerTester(IStressTester):
+    """
+    A tester that use a scheduler to schedule and then analyze the schedule res if success.
+    """
+
     @dataclass
     class UtilizationStat:
         link_utilization_min: float
         link_utilization_max: float
         link_utilization_avg: float
         link_utilization_std: float
-
-    """
-    A stress tester that tests how much link_utilization can achieve.
-    """
 
     def __init__(self, network: Network, gating_strategy: GatingStrategy=GatingStrategy.AllGate):
         super().__init__(network)
@@ -146,17 +147,17 @@ def stress_test_single(settings: StressTestSettings,
             stat |= tester.stress_test()
 
         if settings.test_all_gate:
-            tester = LinkTester(network)
+            tester = SchedulerTester(network)
             res = tester.stress_test()
             stat |= {f"{k}_all_gate": v for k, v in res.items()}
 
         if settings.test_no_gate:
-            tester = LinkTester(network, GatingStrategy.NoGate)
+            tester = SchedulerTester(network, GatingStrategy.NoGate)
             res = tester.stress_test()
             stat |= {f"{k}_no_gate": v for k, v in res.items()}
 
         if settings.test_random_gate:
-            tester = LinkTester(network, GatingStrategy.RandomGate)
+            tester = SchedulerTester(network, GatingStrategy.RandomGate)
             res = tester.stress_test()
             stat |= {f"{k}_random": v for k, v in res.items()}
 
