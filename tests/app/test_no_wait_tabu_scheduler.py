@@ -1,6 +1,7 @@
 import unittest
 
 from src.app.no_wait_tabu_scheduler import *
+from src.app.scheduler import ResAnalyzer
 from src.network.net import generate_cev, generate_flows, generate_linear_5
 
 
@@ -20,6 +21,9 @@ class TestTimeTablingScheduler(unittest.TestCase):
         scheduler = TimeTablingScheduler(self.network)
         self.assertTrue(scheduler.schedule())
         scheduler.dump_res()
+        res = scheduler.get_res()
+        analyzer = ResAnalyzer(self.graph, self.flows, res)
+        analyzer.analyze_link_utilization()
 
     def test_no_gate(self):
         scheduler = TimeTablingScheduler(self.network, GatingStrategy.NoGate)

@@ -50,6 +50,9 @@ class TimeTablingScheduler(BaseScheduler):
                 return False
         return True
 
+    def get_res(self):
+        return self.links_operations
+
     def _check_gcl_limit(self) -> bool:
         if self.gating_strategy == GatingStrategy.NoGate:
             # no gate, thus no need to check
@@ -336,6 +339,10 @@ class NoWaitTabuScheduler(BaseScheduler):
         self.best_scheduler = min(list_res, key=lambda x: x.get_makespan())
         logging.info("Success to schedule.")
         return True
+
+    def get_res(self):
+        assert self.best_scheduler is not None, "No best scheduler found."
+        return self.best_scheduler.get_res()
 
     def dump_res(self):
         if self.best_scheduler is None:
