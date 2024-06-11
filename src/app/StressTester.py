@@ -10,6 +10,7 @@ import pandas as pd
 
 from definitions import OUT_DIR
 from src.app.no_wait_tabu_scheduler import TimeTablingScheduler, GatingStrategy
+from src.app.scheduler import ResAnalyzer
 from src.lib.execute import execute_from_command_line
 from src.network.net import Flow, generate_graph, generate_flows, Network
 
@@ -97,6 +98,7 @@ class LinkTester(IStressTester):
 
     def __init__(self, network: Network, gating_strategy: GatingStrategy=GatingStrategy.AllGate):
         super().__init__(network)
+        self.network = network
         self.scheduler = TimeTablingScheduler(network, gating_strategy)
         if gating_strategy == GatingStrategy.AllGate:
             # we only test link utilization, thus ignore the gcl limit
@@ -108,33 +110,7 @@ class LinkTester(IStressTester):
         if not ok:
             return {}
 
-        list_link_utilization = []
-        links_operations = self.scheduler.links_operations
-        for link in self.link_dict.values():
-            if link not in links_operations:
-                list_link_utilization.append(0)
-                continue
-
-            operations = links_operations[link]
-            gcl_cycle = math.lcm(*[f.period for f, _ in operations])
-            expansion = np.array([gcl_cycle // f.period for f, _ in operations])
-            trans_time = np.array([
-                operation.end_time - operation.start_time
-                for _, operation in operations
-            ])
-            link_utilization = np.dot(expansion, trans_time) / gcl_cycle
-            assert link_utilization <= 1
-            assert link_utilization != 0
-            list_link_utilization.append(link_utilization)
-
-        list_link_utilization = np.array(list_link_utilization)
-
-        return asdict(self.UtilizationStat(
-            list_link_utilization.min(),
-            list_link_utilization.max(),
-            list_link_utilization.mean(),
-            list_link_utilization.std()
-        ))
+        return ResAnalyzer(self.network, self.scheduler.links_operations).analyze_link_utilization()
 
 
 @dataclass

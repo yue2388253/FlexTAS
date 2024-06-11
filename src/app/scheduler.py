@@ -1,6 +1,5 @@
 from dataclasses import dataclass, asdict
 import math
-import networkx as nx
 import numpy as np
 from typing import List, Dict, Tuple
 
@@ -30,9 +29,10 @@ class BaseScheduler:
 
 
 class ResAnalyzer:
-    def __init__(self, graph, flows, links_operations: Dict[Link, List[Tuple[Flow, Operation]]]):
-        self.graph = graph
-        self.flows = flows
+    def __init__(self, network: Network, links_operations: Dict[Link, List[Tuple[Flow, Operation]]]):
+        self.graph = network.graph
+        self.flows = network.flows
+        self.network = network
         self.links_operations = links_operations
 
     @dataclass
@@ -45,7 +45,7 @@ class ResAnalyzer:
     def analyze_link_utilization(self):
         list_link_utilization = []
         links_operations = self.links_operations
-        for link in self.link_dict.values():
+        for link in self.network.links_dict.values():
             if link not in links_operations:
                 list_link_utilization.append(0)
                 continue
