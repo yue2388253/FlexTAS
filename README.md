@@ -38,6 +38,14 @@ You might need to reinstall pytorch if you have a GPU-enabled machine.
 conda env create -f conda_env.yml
 ```
 
-# TODO
+# Known issues
 
-* format logging
+Issue 1. After installing conda env, it may still have problems.
+
+How to fix: reinstall the package using pip. e.g.: 
+
+```shell
+pip install --force-reinstall numpy
+```
+
+---
