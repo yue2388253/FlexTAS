@@ -46,6 +46,7 @@ class ResAnalyzer:
         link_utilization_avg: float
         link_utilization_std: float
 
+    # todo: add gcl analyze
     def analyze_link_utilization(self):
         list_link_utilization = []
         links_operations = self.links_operations

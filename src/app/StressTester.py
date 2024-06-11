@@ -116,10 +116,16 @@ class LinkTester(IStressTester):
 @dataclass
 class StressTestSettings:
     topo: str
-    test_gcl: bool
-    test_uti: bool
     num_flows: int
     link_rate: int
+    test_gcl: bool = False              # test how many GCLs needed, ignoring the scheduling
+    # the following flags involves the corresponding scheduler to schedule
+    # and give an analysis of the schedule, e.g., GCLs needed, link_utilization, etc.
+    test_all_gate: bool = False
+    test_no_gate: bool = False
+    test_random_gate: bool = False
+    # todo
+    test_drl: bool = False
 
 
 def stress_test_single(settings: StressTestSettings,
@@ -127,23 +133,32 @@ def stress_test_single(settings: StressTestSettings,
     list_stats = []
     topo, num_flows, link_rate = settings.topo, settings.num_flows, settings.link_rate
     dict_settings = asdict(settings)
-    for _ in range(num_tests):
+    for i in range(num_tests):
         graph = generate_graph(topo, link_rate)
         flows = generate_flows(graph, num_flows)
         network = Network(graph, flows)
 
         stat = dict_settings.copy()
+        stat['test_id'] = i
+
         if settings.test_gcl:
             tester = GCLTester(network)
             stat |= tester.stress_test()
 
-        if settings.test_uti:
+        if settings.test_all_gate:
             tester = LinkTester(network)
-            stat |= tester.stress_test()
+            res = tester.stress_test()
+            stat |= {f"{k}_all_gate": v for k, v in res.items()}
 
+        if settings.test_no_gate:
             tester = LinkTester(network, GatingStrategy.NoGate)
-            stat_no_gate = tester.stress_test()
-            stat |= {f"{k}_no_gate": v for k, v in stat_no_gate.items()}
+            res = tester.stress_test()
+            stat |= {f"{k}_no_gate": v for k, v in res.items()}
+
+        if settings.test_random_gate:
+            tester = LinkTester(network, GatingStrategy.RandomGate)
+            res = tester.stress_test()
+            stat |= {f"{k}_random": v for k, v in res.items()}
 
         assert len(stat) > 0
         list_stats.append(stat)
@@ -162,7 +177,11 @@ def stress_test(topos: list[str], list_num_flows: list[int],
 
     list_settings = [
         StressTestSettings(
-            topo, test_gcl, test_uti, num_flow, link_rate
+            topo, num_flow, link_rate,
+            test_gcl=test_gcl,
+            test_all_gate=test_uti,
+            test_no_gate=test_uti,
+            test_random_gate=test_uti,
         )
         for topo, num_flow in itertools.product(topos, list_num_flows)
     ]
