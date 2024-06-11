@@ -5,6 +5,7 @@ from stable_baselines3 import A2C, DQN, PPO
 from stable_baselines3.common.callbacks import BaseCallback
 from stable_baselines3.common.vec_env import SubprocVecEnv
 import time
+import torch
 
 from src.agent.encoder import FeaturesExtractor
 from src.env.env import NetEnv
@@ -71,11 +72,14 @@ class DrlScheduler(BaseScheduler):
         self.num_envs = num_envs
         self.time_steps = time_steps
 
+        # Choose the device based on availability
+        self.device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
+
         self.env = SubprocVecEnv([lambda: NetEnv(network) for _ in range(self.num_envs)])
         policy_kwargs = dict(
             features_extractor_class=FeaturesExtractor,
         )
-        self.model = MaskablePPO("MultiInputPolicy", self.env, policy_kwargs=policy_kwargs, verbose=1)
+        self.model = MaskablePPO("MultiInputPolicy", self.env, policy_kwargs=policy_kwargs, verbose=1, device=self.device)
 
         self.res = None
 
@@ -85,7 +89,7 @@ class DrlScheduler(BaseScheduler):
             filepath = filepath[:-4]
         assert os.path.isfile(f"{filepath}.zip"), f"No such file {filepath}"
         logging.info(f"loading model at {filepath}.zip")
-        self.model = self.SUPPORTING_ALG[alg].load(filepath, self.env)
+        self.model = self.SUPPORTING_ALG[alg].load(filepath, self.env, device=self.device)  # Specify device
 
     @timing_decorator(logging.info)
     def schedule(self):

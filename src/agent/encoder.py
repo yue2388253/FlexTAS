@@ -27,6 +27,7 @@ class GinModel(nn.Module):
         edge_mask = torch.tensor([[1], [1]]) * torch.tensor(
             list(range(num_graphs))).repeat_interleave(
             edge_index.shape[-1] // num_graphs) * data.num_nodes / num_graphs
+        edge_mask = edge_mask.to(x.device)
         valid_edge_mask = ((edge_index - edge_mask) >= 0).all(dim=0)
         edge_index = edge_index[:, valid_edge_mask]
 
