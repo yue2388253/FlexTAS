@@ -66,8 +66,10 @@ class TimeTablingScheduler(BaseScheduler):
         for link, flow_periods in link_flows.items():
             gcl_cycle = math.lcm(*flow_periods)
             gcl_length = sum([2 * gcl_cycle // period for period in flow_periods])
-            if gcl_length > self.links_dict[link].gcl_capacity:
-                raise RuntimeError(f"GCL limit exceed, don't need to try scheduling. {gcl_length}")
+            gcl_capacity = self.links_dict[link].gcl_capacity
+
+            if gcl_length > gcl_capacity:
+                raise RuntimeError(f"GCL limit exceed, don't need to try scheduling. {gcl_length} > {gcl_capacity}")
 
             if gcl_length > self.num_gcl_max:
                 self.num_gcl_max = gcl_length

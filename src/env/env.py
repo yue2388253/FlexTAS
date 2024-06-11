@@ -128,7 +128,7 @@ class _StateEncoder:
                 flow.period / Net.GCL_CYCLE_MAX,
                 flow.payload / Net.MTU,
                 flow.jitter / flow.period,
-                min(1, accum_jitter / flow.jitter),
+                min(1, accum_jitter / flow.jitter) if flow.jitter != 0 else int(accum_jitter > 0),
                 (hop_index + 1) / len(flow.path)
             ]
         ], dtype=np.float32)

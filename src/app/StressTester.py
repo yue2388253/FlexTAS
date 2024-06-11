@@ -1,6 +1,6 @@
 import time
 from collections import defaultdict
-from dataclasses import dataclass, asdict
+from dataclasses import dataclass, asdict, field
 import itertools
 import logging
 import math
@@ -8,14 +8,14 @@ import numpy as np
 import os.path
 import pandas as pd
 import random
-from typing import Optional
+from typing import Optional, List
 
 from definitions import OUT_DIR
 from src.app.drl_scheduler import DrlScheduler
 from src.app.no_wait_tabu_scheduler import TimeTablingScheduler, GatingStrategy
 from src.app.scheduler import BaseScheduler, ResAnalyzer
 from src.lib.execute import execute_from_command_line
-from src.network.net import Flow, generate_graph, generate_flows, Network
+from src.network.net import generate_graph, Network, FlowGenerator
 
 
 class IStressTester:
@@ -127,6 +127,8 @@ class StressTestSettings:
     topo: str
     num_flows: int
     link_rate: int
+    jitters: List[float] = field(default_factory=lambda: [0.1])
+    periods: List[int] = field(default_factory=lambda: [2000, 4000, 8000, 16000, 32000, 64000, 128000])
     timeout: int = 5
     test_gcl: bool = False              # test how many GCLs needed, ignoring the scheduling
     # the following flags involves the corresponding scheduler to schedule
@@ -142,9 +144,15 @@ def stress_test_single(settings: StressTestSettings,
     list_stats = []
     topo, num_flows, link_rate = settings.topo, settings.num_flows, settings.link_rate
     dict_settings = asdict(settings)
-    for i in range(num_tests):
+    for i in range(seed, seed+num_tests):
         graph = generate_graph(topo, link_rate)
-        flows = generate_flows(graph, num_flows)
+        flow_generator = FlowGenerator(
+            graph,
+            seed=i,
+            period_set=settings.periods,
+            jitters=settings.jitters
+        )
+        flows = flow_generator(num_flows)
         network = Network(graph, flows)
 
         stat = dict_settings.copy()
@@ -189,10 +197,13 @@ def stress_test_single(settings: StressTestSettings,
     return df
 
 
-def stress_test(topos: list[str], list_num_flows: list[int],
+def stress_test(topos: List[str], list_num_flows: List[int],
                 link_rate: int, num_tests: int,
-                list_obj: list[str],
+                list_obj: List[str],
                 drl_model: str=None,
+                jitters: List[float]=None,
+                periods: List[int]=None,
+                to_csv: str=None,
                 seed=None):
     """
     Args:
@@ -219,6 +230,14 @@ def stress_test(topos: list[str], list_num_flows: list[int],
         for topo, num_flow in itertools.product(topos, list_num_flows)
     ]
 
+    if jitters is not None:
+        for s in list_settings:
+            s.jitters = jitters
+
+    if periods is not None:
+        for s in list_settings:
+            s.periods = periods
+
     logging.info("Starting stress tests.")
 
     if seed is not None:
@@ -232,9 +251,12 @@ def stress_test(topos: list[str], list_num_flows: list[int],
         df = stress_test_single(settings, num_tests, seed)
         list_df.append(df)
 
-        # save the results each time
-        df = pd.concat(list_df, ignore_index=True)
+        if to_csv:
+            # save the results each time
+            df = pd.concat(list_df, ignore_index=True)
+            df.to_csv(to_csv)
 
+    df = pd.concat(list_df, ignore_index=True)
     return df
 
 
