@@ -23,7 +23,7 @@ class TestTimeTablingScheduler(unittest.TestCase):
         scheduler.dump_res()
         res = scheduler.get_res()
         analyzer = ResAnalyzer(self.network, res)
-        analyzer.analyze_link_utilization()
+        analyzer.analyze()
 
     def test_no_gate(self):
         scheduler = TimeTablingScheduler(self.network, GatingStrategy.NoGate)

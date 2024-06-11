@@ -112,7 +112,7 @@ class SchedulerTester(IStressTester):
         if not ok:
             return {}
 
-        return ResAnalyzer(self.network, self.scheduler.get_res()).analyze_link_utilization()
+        return ResAnalyzer(self.network, self.scheduler.get_res()).analyze()
 
 
 @dataclass

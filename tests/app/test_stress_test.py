@@ -30,3 +30,4 @@ class TestBatch(unittest.TestCase):
         has_nan = df.isnull().any().any()
         # an easy scheduling task, all tests should pass
         self.assertFalse(has_nan)
+        # df.to_csv("tmp.csv")
