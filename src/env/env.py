@@ -533,7 +533,7 @@ class TrainingNetEnv(NetEnv):
         num_flows_initial = math.ceil(num_flows * initial_ratio)
         flows = flow_generator(num_flows_initial)
 
-        super().__init__(graph, flows)
+        super().__init__(Network(graph, flows))
 
         self.num_passed = 0
         self.changing_freq = changing_freq
@@ -563,7 +563,7 @@ class TrainingNetEnv(NetEnv):
             if self.num_passed == self.changing_freq:
                 num_flows = min(self.num_flows_target, self.num_flows + self.num_flows_step)
                 flows = self.flow_generator(num_flows)
-                super().__init__(self.graph, flows)
+                super().__init__(Network(self.graph, flows))
                 self.logger.info(f"Great! The agent has already learnt how to solve the problem. "
                                  f"Change the flows to train the agent. num_flows: {num_flows}")
 

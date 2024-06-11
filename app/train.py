@@ -12,7 +12,7 @@ from src.app.drl_scheduler import DrlScheduler
 from src.env.env import NetEnv, TrainingNetEnv
 from src.lib.log_config import log_config
 from src.lib.timing_decorator import timing_decorator
-from src.network.net import FlowGenerator, generate_graph
+from src.network.net import FlowGenerator, generate_graph, Network
 
 from stable_baselines3.common.callbacks import EvalCallback
 from stable_baselines3.common.results_plotter import load_results, ts2xy
@@ -42,7 +42,7 @@ def make_env(num_flows, rank: int, topo: str, training: bool = True, link_rate: 
             env = TrainingNetEnv(graph, flow_generator, num_flows, 0.2, 0.1)
         else:
             flows = flow_generator(num_flows)
-            env = NetEnv(graph, flows)
+            env = NetEnv(Network(graph, flows))
 
         # Wrap the environment with Monitor
         env = Monitor(env, os.path.join(MONITOR_DIR, f'{"train" if training else "eval"}_{rank}'))

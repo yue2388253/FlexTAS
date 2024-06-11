@@ -22,7 +22,7 @@ class TestTimeTablingScheduler(unittest.TestCase):
         self.assertTrue(scheduler.schedule())
         scheduler.dump_res()
         res = scheduler.get_res()
-        analyzer = ResAnalyzer(self.graph, self.flows, res)
+        analyzer = ResAnalyzer(self.network, res)
         analyzer.analyze_link_utilization()
 
     def test_no_gate(self):

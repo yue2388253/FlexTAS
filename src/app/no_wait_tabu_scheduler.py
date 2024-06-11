@@ -172,9 +172,6 @@ class TimeTablingScheduler(BaseScheduler):
                 return offset
         return None
 
-    def get_res(self):
-        return self.flows_operations
-
     def dump_res(self):
         for flow, operations in self.flows_operations.items():
             logging.debug(flow)
