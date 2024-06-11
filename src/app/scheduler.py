@@ -7,6 +7,10 @@ from src.network.net import Flow, Link, Network
 from src.lib.operation import Operation
 
 
+LinkOperations = List[Tuple[Flow, Operation]]
+ScheduleRes = Dict[Link, LinkOperations]
+
+
 class BaseScheduler:
     def __init__(self, network: Network, timeout_s: int = 300):
         self.graph = network.graph
@@ -21,15 +25,11 @@ class BaseScheduler:
         """
         pass
 
-    def get_res(self):
+    def get_res(self) -> ScheduleRes:
         pass
 
     def get_num_gcl_max(self):
         pass
-
-
-LinkOperations = List[Tuple[Flow, Operation]]
-ScheduleRes = Dict[Link, LinkOperations]
 
 
 class ResAnalyzer:

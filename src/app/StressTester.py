@@ -10,7 +10,7 @@ import pandas as pd
 
 from definitions import OUT_DIR
 from src.app.no_wait_tabu_scheduler import TimeTablingScheduler, GatingStrategy
-from src.app.scheduler import ResAnalyzer
+from src.app.scheduler import BaseScheduler, ResAnalyzer
 from src.lib.execute import execute_from_command_line
 from src.network.net import Flow, generate_graph, generate_flows, Network
 
@@ -97,21 +97,22 @@ class SchedulerTester(IStressTester):
         link_utilization_avg: float
         link_utilization_std: float
 
-    def __init__(self, network: Network, gating_strategy: GatingStrategy=GatingStrategy.AllGate):
+    def __init__(self, network: Network, scheduler: BaseScheduler):
         super().__init__(network)
         self.network = network
-        self.scheduler = TimeTablingScheduler(network, gating_strategy)
-        if gating_strategy == GatingStrategy.AllGate:
-            # we only test link utilization, thus ignore the gcl limit
-            for link in self.scheduler.links_dict.values():
-                link.gcl_capacity = sys.maxsize
+        self.scheduler = scheduler
 
     def stress_test(self) -> dict:
-        ok = self.scheduler.schedule()
+        try:
+            ok = self.scheduler.schedule()
+        except RuntimeError as e:
+            logging.info(e)
+            ok = False
+
         if not ok:
             return {}
 
-        return ResAnalyzer(self.network, self.scheduler.links_operations).analyze_link_utilization()
+        return ResAnalyzer(self.network, self.scheduler.get_res()).analyze_link_utilization()
 
 
 @dataclass
@@ -146,20 +147,24 @@ def stress_test_single(settings: StressTestSettings,
             tester = GCLTester(network)
             stat |= tester.stress_test()
 
+        list_schedulers = []
+
         if settings.test_all_gate:
-            tester = SchedulerTester(network)
-            res = tester.stress_test()
-            stat |= {f"{k}_all_gate": v for k, v in res.items()}
+            scheduler = TimeTablingScheduler(network, GatingStrategy.AllGate)
+            list_schedulers.append(("all_gate", scheduler))
 
         if settings.test_no_gate:
-            tester = SchedulerTester(network, GatingStrategy.NoGate)
-            res = tester.stress_test()
-            stat |= {f"{k}_no_gate": v for k, v in res.items()}
+            scheduler = TimeTablingScheduler(network, GatingStrategy.NoGate)
+            list_schedulers.append(("no_gate", scheduler))
 
         if settings.test_random_gate:
-            tester = SchedulerTester(network, GatingStrategy.RandomGate)
+            scheduler = TimeTablingScheduler(network, GatingStrategy.RandomGate)
+            list_schedulers.append(("random_gate", scheduler))
+
+        for name, scheduler in list_schedulers:
+            tester = SchedulerTester(network, scheduler)
             res = tester.stress_test()
-            stat |= {f"{k}_random": v for k, v in res.items()}
+            stat |= {f"{k}_{name}": v for k, v in res.items()}
 
         assert len(stat) > 0
         list_stats.append(stat)
