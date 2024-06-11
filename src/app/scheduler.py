@@ -94,6 +94,8 @@ class ResAnalyzer:
                 continue
 
             operations = links_operations[link]
+            operations = [fo for fo in operations if fo[1].gating_time is not None]
+
             if len(operations) == 0:
                 gcl_length = 0
             else:
