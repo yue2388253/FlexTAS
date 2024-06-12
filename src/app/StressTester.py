@@ -211,7 +211,8 @@ def stress_test(topos: List[str], list_num_flows: List[int],
                 jitters: List[float]=None,
                 periods: List[int]=None,
                 to_csv: str=None,
-                seed: int=None):
+                seed: int=None,
+                timeout: int=None):
     """
     Args:
         list_obj: valid options: "gcl", "uti", "drl", "smt"
@@ -249,6 +250,11 @@ def stress_test(topos: List[str], list_num_flows: List[int],
     if periods is not None:
         for s in list_settings:
             s.periods = periods
+
+    if timeout is not None:
+        assert isinstance(timeout, int), "timeout must be an integer"
+        for s in list_settings:
+            s.timeout = timeout
 
     logging.info("Starting stress tests.")
 
