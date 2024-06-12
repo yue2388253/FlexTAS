@@ -3,7 +3,7 @@ import math
 import numpy as np
 from typing import List, Dict, Tuple
 
-from src.network.net import Flow, Link, Network
+from src.network.net import Flow, Link, Network, Net
 from src.lib.operation import Operation
 
 
@@ -37,7 +37,7 @@ class ResAnalyzer:
         self.links_operations = links_operations
 
     def analyze(self) -> Dict:
-        return self._analyze_link_uti() | self._analyze_gcl()
+        return self._analyze_link_uti() | self._analyze_gcl() | self._analyze_flows()
 
     @dataclass
     class UtilizationStat:
@@ -111,4 +111,70 @@ class ResAnalyzer:
             list_gcl.max(),
             list_gcl.mean(),
             list_gcl.std()
+        ))
+
+    @dataclass
+    class FlowStat:
+        e2e_delay_min: int
+        e2e_delay_max: int
+        e2e_delay_avg: float
+        e2e_delay_std: float
+        jitter_min: int
+        jitter_max: int
+        jitter_avg: float
+        jitter_std: float
+        jitter_ratio_min: float
+        jitter_ratio_max: float
+        jitter_ratio_avg: float
+        jitter_ratio_std: float
+
+    def _analyze_flows(self):
+        def _get_operation(_l, _f):
+            return next(o for f, o in self.links_operations[_l] if f == _f)
+
+        list_e2e_delay = []
+        list_jitter = []
+        list_jitter_req = []
+
+        for flow in self.network.flows:
+            path = flow.path
+            first_link = path[0]
+            last_link = path[-1]
+            first_link = self.network.links_dict[first_link]
+            last_link = self.network.links_dict[last_link]
+            first_link_oper = _get_operation(first_link, flow)
+            last_link_oper = _get_operation(last_link, flow)
+            last_link_t4_max = last_link_oper.latest_time
+
+            e2e_delay = last_link_t4_max - first_link_oper.start_time + Net.DELAY_PROP + last_link.transmission_time(flow.payload)
+            list_e2e_delay.append(e2e_delay)
+
+            last_link_t4_min = last_link_oper.start_time
+            jitter = last_link_t4_max - last_link_t4_min if last_link_oper.gating_time is None else 0
+            list_jitter.append(jitter)
+
+            jitter_req = flow.jitter
+            list_jitter_req.append(jitter_req)
+
+        list_e2e_delay = np.array(list_e2e_delay)
+        list_jitter = np.array(list_jitter)
+        list_jitter_req = np.array(list_jitter_req)
+
+        # set ratio to 0 if the divisor (jitter_req) is 0
+        list_jitter_ratio = np.zeros_like(list_jitter, dtype=float)
+        np.divide(list_jitter, list_jitter_req, out=list_jitter_ratio, where=list_jitter_req!= 0)
+
+        return asdict(self.FlowStat(
+            list_e2e_delay.min(),
+            list_e2e_delay.max(),
+            list_e2e_delay.mean(),
+            list_e2e_delay.std(),
+            list_jitter.min(),
+            list_jitter.max(),
+            list_jitter.mean(),
+            list_jitter.max(),
+            list_jitter_ratio.min(),
+            list_jitter_ratio.max(),
+            list_jitter_ratio.mean(),
+            list_jitter_ratio.std()
         ))
