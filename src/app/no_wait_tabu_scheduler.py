@@ -1,9 +1,6 @@
 from collections import defaultdict
 from enum import Enum, auto
 import logging
-import math
-import networkx as nx
-import pandas as pd
 import random
 import sys
 from typing import Optional
@@ -21,7 +18,9 @@ class GatingStrategy(Enum):
 
 class TimeTablingScheduler(BaseScheduler):
     """
-    schedule the flows in order
+    This scheduler schedules the flows in order with time-tabling algorithm
+    Note that it does not check the GCL constraint.
+    Users need to check GCL constraint manually.
     """
     def __init__(self, network: Network,
                  gating_strategy: GatingStrategy = GatingStrategy.AllGate,
@@ -35,8 +34,6 @@ class TimeTablingScheduler(BaseScheduler):
         self.critical_flow = None
 
         self.gating_strategy = gating_strategy
-
-        self.num_gcl_max = 0
 
     def schedule(self) -> bool:
         # time-tabling
