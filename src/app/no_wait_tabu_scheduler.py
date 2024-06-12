@@ -27,6 +27,7 @@ class TimeTablingScheduler(BaseScheduler):
                  **kwargs):
         super().__init__(network, **kwargs)
 
+        # todo: flows operations is not needed. consider remove it
         self.flows_operations = {}
         self.links_operations = defaultdict(list)
 

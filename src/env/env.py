@@ -233,6 +233,8 @@ class NetEnv(gym.Env):
 
         self.num_flows: int = len(self.flows)
 
+        # todo: flows operations is not needed. consider remove it.
+        #  use temp_operations instead to present the operations that have not been confirmed.
         self.flows_operations: dict[Flow, list[tuple[Link, Operation]]] = defaultdict(list)
         self.links_operations: dict[Link, list[tuple[Flow, Operation]]] = defaultdict(list)
 
