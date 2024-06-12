@@ -103,6 +103,16 @@ class TimeTablingScheduler(BaseScheduler):
             earliest_enqueue_time = earliest_dequeue_time + trans_time + Net.DELAY_PROP - Net.SYNC_PRECISION + Net.DELAY_PROC_MIN
             latest_enqueue_time = latest_dequeue_time + trans_time + Net.DELAY_PROP + Net.SYNC_PRECISION + Net.DELAY_PROC_MAX
 
+        last_link = self.links_dict[flow.path[-1]]
+        last_operation = operations[last_link]
+        jitter = last_operation.latest_time - last_operation.earliest_time \
+            if last_operation.gating_time is None \
+            else 0
+
+        if jitter > flow.jitter:
+            # cannot satisfy flow jitter.
+            return False
+
         # find the earliest possible operations
         while True:
             offset = self._check_operations(operations, flow)
