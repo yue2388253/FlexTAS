@@ -39,7 +39,6 @@ def make_env(num_flows, rank: int, topo: str, list_jitters, training: bool = Tru
 
         assert list_jitters.ndim == 2
         list_flow_generators = []
-        print(list_jitters)
         for jitters in list_jitters:
             flow_generator = FlowGenerator(graph, jitters=jitters)
             list_flow_generators.append(flow_generator)

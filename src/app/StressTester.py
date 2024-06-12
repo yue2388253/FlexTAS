@@ -15,6 +15,7 @@ from src.app.drl_scheduler import DrlScheduler
 from src.app.no_wait_tabu_scheduler import TimeTablingScheduler, GatingStrategy
 from src.app.scheduler import BaseScheduler, ResAnalyzer
 from src.lib.execute import execute_from_command_line
+from src.lib.log_config import log_config
 from src.network.net import generate_graph, Network, FlowGenerator
 
 
@@ -261,8 +262,14 @@ def stress_test(topos: List[str], list_num_flows: List[int],
 
 
 if __name__ == '__main__':
-    logging.basicConfig(level=logging.INFO)
+    logging.basicConfig(level=logging.INFO, format='%(asctime)s - %(name)s - %(levelname)s - %(message)s')
+    log_file = os.path.join(OUT_DIR, 'test.log')
+    print(f"Log file: {log_file}")
+    log_config(log_file, level=logging.INFO)
+
+    # run the tests
     df = execute_from_command_line(stress_test)
+
     filename = os.path.join(OUT_DIR, "stress_test.csv")
     df.to_csv(filename)
-    print(f"results saved to {filename}")
+    logging.info(f"results saved to {filename}")
