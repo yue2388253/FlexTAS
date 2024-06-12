@@ -14,6 +14,7 @@ from definitions import OUT_DIR
 from src.app.drl_scheduler import DrlScheduler
 from src.app.no_wait_tabu_scheduler import TimeTablingScheduler, GatingStrategy
 from src.app.scheduler import BaseScheduler, ResAnalyzer
+from src.app.smt_scheduler import SmtScheduler
 from src.lib.execute import execute_from_command_line
 from src.lib.log_config import log_config
 from src.network.net import generate_graph, Network, FlowGenerator
@@ -138,6 +139,7 @@ class StressTestSettings:
     test_no_gate: bool = False
     test_random_gate: bool = False
     test_drl: Optional[str] = None
+    test_smt: bool = False
 
 
 def stress_test_single(settings: StressTestSettings,
@@ -184,6 +186,10 @@ def stress_test_single(settings: StressTestSettings,
             scheduler.load_model(best_model_path, "MaskablePPO")
             list_schedulers.append(("drl", scheduler))
 
+        if settings.test_smt:
+            scheduler = SmtScheduler(network, timeout_s=settings.timeout)
+            list_schedulers.append(("smt", scheduler))
+
         for name, scheduler in list_schedulers:
             tester = SchedulerTester(network, scheduler)
             logging.info(f"Testing {name} scheduler... Settings: {settings}")
@@ -208,7 +214,7 @@ def stress_test(topos: List[str], list_num_flows: List[int],
                 seed: int=None):
     """
     Args:
-        list_obj: valid options: "gcl", "uti", "drl"
+        list_obj: valid options: "gcl", "uti", "drl", "smt"
     """
     list_df = []
     test_gcl = "gcl" in list_obj
@@ -221,6 +227,8 @@ def stress_test(topos: List[str], list_num_flows: List[int],
     else:
         drl_model = None
 
+    test_smt = "smt" in list_obj
+
     list_settings = [
         StressTestSettings(
             topo, num_flow, link_rate,
@@ -229,6 +237,7 @@ def stress_test(topos: List[str], list_num_flows: List[int],
             test_no_gate=test_uti,
             test_random_gate=test_uti,
             test_drl=drl_model,
+            test_smt=test_smt,
         )
         for topo, num_flow in itertools.product(topos, list_num_flows)
     ]

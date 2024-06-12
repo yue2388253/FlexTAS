@@ -1,15 +1,15 @@
 from collections import defaultdict
 import logging
 import math
-import networkx as nx
 import os.path
 from typing import Optional
 import z3
 
 from definitions import OUT_DIR
+from src.app.scheduler import BaseScheduler, ScheduleRes
+from src.lib.operation import Operation
 from src.lib.timing_decorator import timing_decorator
 from src.network.net import Flow, Link, Net, Network
-from src.app.scheduler import BaseScheduler
 
 
 class SmtScheduler(BaseScheduler):
@@ -38,8 +38,9 @@ class SmtScheduler(BaseScheduler):
         self._construct_constraints()
         is_scheduled = self._solve_constraints()
         if is_scheduled:
+            self._resolve_results()
             filename = os.path.join(OUT_DIR, f'smt_schedule_{id(self)}.log')
-            self.save_results(filename)
+            self._save_results(filename)
             logging.info(f"The scheduling result is save at {filename}")
         return is_scheduled
 
@@ -119,12 +120,14 @@ class SmtScheduler(BaseScheduler):
                 link_xb = self.links_dict[path[hop + 1]]
                 # flow transmission constraint
                 self.constraints_set.append(
-                    self.z3_variables_flow_link[flow][link_ax]['t5_min'] + Net.DELAY_PROP + Net.DELAY_PROC_MIN ==
-                    self.z3_variables_flow_link[flow][link_xb]['t3_min']
+                    self.z3_variables_flow_link[flow][link_ax]['t5_min']
+                    + Net.DELAY_PROP + Net.DELAY_PROC_MIN - Net.SYNC_PRECISION
+                    == self.z3_variables_flow_link[flow][link_xb]['t3_min']
                 )
                 self.constraints_set.append(
-                    self.z3_variables_flow_link[flow][link_ax]['t5_max'] + Net.DELAY_PROP + Net.DELAY_PROC_MAX ==
-                    self.z3_variables_flow_link[flow][link_xb]['t3_max']
+                    self.z3_variables_flow_link[flow][link_ax]['t5_max']
+                    + Net.DELAY_PROP + Net.DELAY_PROC_MAX + Net.SYNC_PRECISION
+                    == self.z3_variables_flow_link[flow][link_xb]['t3_max']
                 )
 
             for link_id in path:
@@ -189,8 +192,10 @@ class SmtScheduler(BaseScheduler):
             path = flow.path
             for link_id in path:
                 link = self.links_dict[link_id]
-                hold_time = link.transmission_time(Net.MTU)
+                interfere_time = link.interference_time()
                 self.constraints_set.append(
+                    # if enable gating:     t4_min == t4_max, and, t4_min >= t3_max
+                    # else:                 t4_min == t3_min, and, t4_max == t3_max + t_if
                     z3.If(
                         self.z3_variables_flow_link[flow][link]['gc'],
                         z3.And(
@@ -203,7 +208,7 @@ class SmtScheduler(BaseScheduler):
                             self.z3_variables_flow_link[flow][link]['t4_min'] ==
                             self.z3_variables_flow_link[flow][link]['t3_min'],
                             self.z3_variables_flow_link[flow][link]['t4_max'] ==
-                            self.z3_variables_flow_link[flow][link]['t3_max'] + hold_time
+                            self.z3_variables_flow_link[flow][link]['t3_max'] + interfere_time
                         )
                     )
                 )
@@ -264,7 +269,23 @@ class SmtScheduler(BaseScheduler):
             raise NotImplementedError
         return False
 
-    def save_results(self, filename):
+    def _resolve_results(self):
+        assert self.model is not None, "Not yet scheduled."
+        self.links_operations = defaultdict(list)
+        for i, flow in enumerate(self.flows):
+            path = flow.path
+            for link_id in path:
+                link = self.links_dict[link_id]
+                variables = self.z3_variables_flow_link[flow][link]
+                operation = Operation(
+                    (self.model[variables['t3_min']]).as_long(),
+                    (self.model[variables['t4_min']]).as_long() if self.model[variables['gc']] else None,
+                    (self.model[variables['t4_max']]).as_long(),
+                    (self.model[variables['t5_max']]).as_long()
+                )
+                self.links_operations[link].append((flow, operation))
+
+    def _save_results(self, filename):
         assert self.model is not None, "Not yet scheduled."
         res = []
         for i, flow in enumerate(self.flows):
@@ -282,6 +303,9 @@ class SmtScheduler(BaseScheduler):
                [f"\t{declare.name()}: {self.model[declare]}\n" for declare in self.model.decls()]
         with open(filename, 'w') as f:
             f.writelines(res)
+
+    def get_res(self) -> ScheduleRes:
+        return self.links_operations
 
 
 class NoWaitSmtScheduler(SmtScheduler):
