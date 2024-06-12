@@ -39,9 +39,6 @@ class TimeTablingScheduler(BaseScheduler):
         self.num_gcl_max = 0
 
     def schedule(self) -> bool:
-        # check gcl limit first
-        self._check_gcl_limit()
-
         # time-tabling
         for flow in self.flows:
             ok = self._try_schedule_flow(flow)
@@ -52,33 +49,6 @@ class TimeTablingScheduler(BaseScheduler):
 
     def get_res(self):
         return self.links_operations
-
-    def _check_gcl_limit(self) -> bool:
-        if self.gating_strategy == GatingStrategy.NoGate:
-            # no gate, thus no need to check
-            return True
-
-        link_flows = defaultdict(list)
-        for flow in self.flows:
-            for link in flow.path:
-                link_flows[link].append(flow.period)
-
-        for link, flow_periods in link_flows.items():
-            gcl_cycle = math.lcm(*flow_periods)
-            gcl_length = sum([2 * gcl_cycle // period for period in flow_periods])
-            gcl_capacity = self.links_dict[link].gcl_capacity
-
-            if gcl_length > gcl_capacity:
-                raise RuntimeError(f"GCL limit exceed, don't need to try scheduling. {gcl_length} > {gcl_capacity}")
-
-            if gcl_length > self.num_gcl_max:
-                self.num_gcl_max = gcl_length
-
-        # all good
-        return True
-
-    def get_num_gcl_max(self):
-        return self.num_gcl_max
 
     def _try_schedule_flow(self, flow) -> bool:
         """

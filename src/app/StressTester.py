@@ -205,7 +205,7 @@ def stress_test(topos: List[str], list_num_flows: List[int],
                 jitters: List[float]=None,
                 periods: List[int]=None,
                 to_csv: str=None,
-                seed=None):
+                seed: int=None):
     """
     Args:
         list_obj: valid options: "gcl", "uti", "drl"
@@ -218,6 +218,8 @@ def stress_test(topos: List[str], list_num_flows: List[int],
     if test_drl:
         assert drl_model is not None, "Should specify the drl model"
         assert os.path.isfile(drl_model), "Cannot find the drl model"
+    else:
+        drl_model = None
 
     list_settings = [
         StressTestSettings(

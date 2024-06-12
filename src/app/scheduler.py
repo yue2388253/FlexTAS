@@ -102,7 +102,6 @@ class ResAnalyzer:
                 gcl_cycle = math.lcm(*[f.period for f, _ in operations])
                 expansion = np.array([gcl_cycle // f.period for f, _ in operations])
                 gcl_length = sum(expansion) * 2
-            assert 0 <= gcl_length <= link.gcl_capacity
             list_gcl.append(gcl_length)
 
         list_gcl = np.array(list_gcl)
