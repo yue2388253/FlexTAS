@@ -69,7 +69,7 @@ class _StateEncoder:
 
         self.observation_space = spaces.Dict({
             "flow_feature": spaces.Box(low=0, high=1, shape=state['flow_feature'].shape, dtype=np.float32),
-            "link_feature": spaces.Box(low=0, high=1, shape=state['link_feature'].shape, dtype=np.float32),
+            "link_feature": spaces.Box(low=0, high=5, shape=state['link_feature'].shape, dtype=np.float32),
             "adjacency_matrix": spaces.Box(low=-1, high=self.max_neighbors,
                                            shape=state['adjacency_matrix'].shape,
                                            dtype=np.int64),
@@ -102,10 +102,16 @@ class _StateEncoder:
             num_flows_schedueld
         ], dtype=np.float32)
 
-        link_flow_periods_feature = np.array([
-            self.link_flow_period_dict[link][period] / len(self.env.flows)
-            for period in self.periods_list
-        ])
+        if link.gcl_capacity != 0:
+            link_flow_periods_feature = np.array([
+                # num of flows of each period
+                self.link_flow_period_dict[link][period] / link.gcl_capacity
+                for period in self.periods_list
+            ])
+        else:
+            link_flow_periods_feature = np.array([
+                0 for _ in self.periods_list
+            ])
 
         feature = np.concatenate((
             link_flow_periods_feature, link_gcl_feature
