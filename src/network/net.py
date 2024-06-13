@@ -104,7 +104,6 @@ class Flow:
         else:
             self.jitter = jitter
         assert type(self.jitter) is int, f"jitter ({self.jitter}) must be an integer."
-        assert self.jitter <= self.period, f"jitter ({self.jitter}) must be not greater than period ({self.period})."
 
     def __hash__(self):
         return hash(self.flow_id)
@@ -339,7 +338,7 @@ class FlowGenerator:
                 jitter_percentage = self.jitters
             else:
                 jitter_percentage = random.choice(self.jitters)
-            assert 0 <= jitter_percentage <= 1
+            assert 0 <= jitter_percentage
             jitter = math.ceil(jitter_percentage * period)
         else:
             jitter = None
