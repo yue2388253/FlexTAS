@@ -44,7 +44,6 @@ class _StateEncoder:
         self.periods_list = PERIOD_SET
         self.periods_list.sort()
         self.periods_one_hot_dict = pd.get_dummies(self.periods_list)
-        self.periods_dict = {period: 0 for period in self.periods_list}
 
         link_dict = self.env.link_dict
 
@@ -88,13 +87,19 @@ class _StateEncoder:
         num_flows_to_schedule = self.link_num_flows[link] - len(self.env.links_operations[link])
 
         gcl_info = self.env.links_gcl[link]
+        gcl_cycle = gcl_info.gcl_cycle
+        gcl_length = gcl_info.gcl_length
         gcl_capacity = link.gcl_capacity
 
-        link_gcl_feature = np.array([
-            math.sqrt(link_utilization),  # do sqrt operation since this value is always quite small
-            gcl_info.gcl_cycle / Net.GCL_CYCLE_MAX,
-            gcl_info.gcl_length / gcl_capacity if gcl_capacity != 0 else 1,
-            num_flows_to_schedule
+        link_gcl_feature = np.concatenate([
+            self.periods_one_hot_dict[gcl_cycle]
+            if gcl_cycle != 1 else np.zeros_like(self.periods_one_hot_dict.values[0]),
+            [
+                math.sqrt(link_utilization),  # do sqrt operation since this value is always quite small
+                gcl_cycle / Net.GCL_CYCLE_MAX,
+                gcl_length / gcl_capacity if gcl_capacity != 0 else 1,
+                num_flows_to_schedule
+            ]
         ], dtype=np.float32)
 
         if gcl_capacity != 0:
@@ -269,8 +274,6 @@ class NetEnv(gym.Env):
         logger = logging.getLogger(f"{__name__}.{os.getpid()}")
         logger.setLevel(logging.INFO)
         self.logger = logger
-
-        self.reset()
 
     def reset(
             self,
