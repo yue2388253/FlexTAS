@@ -1,4 +1,5 @@
 from collections import defaultdict, Counter
+from dataclasses import dataclass
 from enum import Enum, auto
 import gymnasium as gym
 from gymnasium import spaces
@@ -6,7 +7,6 @@ from gymnasium.core import ActType, ObsType, RenderFrame
 import logging
 import math
 import numpy as np
-import networkx as nx
 import os
 import pandas as pd
 import random
@@ -16,7 +16,6 @@ from definitions import ROOT_DIR, OUT_DIR, LOG_DIR
 from src.lib.graph import neighbors_within_distance
 from src.lib.operation import Operation, check_operation_isolation
 from src.network.net import Flow, Link, Net, PERIOD_SET, generate_cev, generate_flows, Network
-
 
 MAX_NEIGHBORS = 20
 MAX_REMAIN_HOPS = 10
@@ -68,13 +67,13 @@ class _StateEncoder:
         state = self.state()
 
         self.observation_space = spaces.Dict({
-            "flow_feature": spaces.Box(low=0, high=1, shape=state['flow_feature'].shape, dtype=np.float32),
-            "link_feature": spaces.Box(low=0, high=5, shape=state['link_feature'].shape, dtype=np.float32),
+            "flow_feature": spaces.Box(low=0, high=np.inf, shape=state['flow_feature'].shape, dtype=np.float32),
+            "link_feature": spaces.Box(low=0, high=np.inf, shape=state['link_feature'].shape, dtype=np.float32),
             "adjacency_matrix": spaces.Box(low=-1, high=self.max_neighbors,
                                            shape=state['adjacency_matrix'].shape,
                                            dtype=np.int64),
-            "features_matrix": spaces.Box(low=0, high=1, shape=state['features_matrix'].shape, dtype=np.float32),
-            "remain_hops": spaces.Box(low=0, high=1, shape=state['remain_hops'].shape, dtype=np.float32)
+            "features_matrix": spaces.Box(low=0, high=np.inf, shape=state['features_matrix'].shape, dtype=np.float32),
+            "remain_hops": spaces.Box(low=0, high=np.inf, shape=state['remain_hops'].shape, dtype=np.float32)
         })
 
     def _link_feature(self, link_id):
@@ -84,28 +83,24 @@ class _StateEncoder:
         if len(self.env.links_operations[link]) != 0:
             for flow, operation in self.env.links_operations[link]:
                 link_utilization += (operation.end_time - operation.start_time) / flow.period
-        assert link_utilization <= 1
+        assert 0 <= link_utilization <= 1
 
-        if self.link_num_flows[link] == 0:
-            # no flow in this link
-            num_flows_schedueld = 1
-        else:
-            num_flows_schedueld = len(self.env.links_operations[link])
-            # normalized
-            num_flows_schedueld /= self.link_num_flows[link]
-        assert 0 <= num_flows_schedueld <= 1
+        num_flows_to_schedule = self.link_num_flows[link] - len(self.env.links_operations[link])
+
+        gcl_info = self.env.links_gcl[link]
+        gcl_capacity = link.gcl_capacity
 
         link_gcl_feature = np.array([
-            math.sqrt(link_utilization),    # do sqrt operation since this value is always very small
-            link.gcl_cycle / Net.GCL_CYCLE_MAX,
-            link.gcl_length / Net.GCL_LENGTH_MAX,
-            num_flows_schedueld
+            math.sqrt(link_utilization),  # do sqrt operation since this value is always quite small
+            gcl_info.gcl_cycle / Net.GCL_CYCLE_MAX,
+            gcl_info.gcl_length / gcl_capacity if gcl_capacity != 0 else 1,
+            num_flows_to_schedule
         ], dtype=np.float32)
 
-        if link.gcl_capacity != 0:
+        if gcl_capacity != 0:
             link_flow_periods_feature = np.array([
                 # num of flows of each period
-                self.link_flow_period_dict[link][period] / link.gcl_capacity
+                self.link_flow_period_dict[link][period] / gcl_capacity
                 for period in self.periods_list
             ])
         else:
@@ -120,22 +115,27 @@ class _StateEncoder:
         return feature
 
     def _flow_feature(self):
-        flow = self.env.flows[self.env.flow_index]
+        flow = self.env.current_flow()
 
         accum_jitter = 0
-        if len(self.env.flows_operations[flow]) != 0:
-            operation = self.env.flows_operations[flow][-1][1]
+        if len(self.env.temp_operations) != 0:
+            operation = self.env.temp_operations[-1][1]
             accum_jitter = operation.latest_time - operation.start_time
 
-        hop_index = len(self.env.flows_operations[flow])
+        link = self.env.current_link()
+        gcl_cycle = self.env.links_gcl[link].gcl_cycle
+
+        hop_index = len(self.env.temp_operations)
         flow_feature = np.concatenate([
             self.periods_one_hot_dict[flow.period],
             [
                 flow.period / Net.GCL_CYCLE_MAX,
+                flow.period / gcl_cycle if gcl_cycle != 1 else 1,
                 flow.payload / Net.MTU,
                 flow.jitter / flow.period,
+                flow.jitter / link.interference_time(),
                 min(1, accum_jitter / flow.jitter) if flow.jitter != 0 else int(accum_jitter > 0),
-                (hop_index + 1) / len(flow.path)
+                hop_index
             ]
         ], dtype=np.float32)
         return flow_feature
@@ -203,11 +203,11 @@ class _StateEncoder:
     def state(self):
         flow = self.env.flows[self.env.flow_index]
         hop_index = len(self.env.flows_operations[flow])
-        current_link = flow.path[hop_index]
+        current_link = self.env.current_link()
 
         flow_feature = self._flow_feature()
-        link_feature = self._link_feature(current_link)
-        edge_index, feature_matrix = self._neighbors_features(current_link)
+        link_feature = self._link_feature(current_link.link_id)
+        edge_index, feature_matrix = self._neighbors_features(current_link.link_id)
         remain_hops_feature = self._remain_nodes_features(flow, hop_index)
 
         return {
@@ -224,13 +224,18 @@ class NetEnv(gym.Env):
     beta: float = 10
     gamma: float = 0.1
 
-    def __init__(self, network:Network=None):
+    @dataclass
+    class GclInfo:
+        gcl_cycle: int = 1
+        gcl_length: int = 0
+
+    def __init__(self, network: Network = None):
         super().__init__()
 
         if network is None:
             graph = generate_cev()
             network = Network(graph, generate_flows(graph, 10))
-        
+
         self.graph = network.graph
         self.flows = network.flows
         self.line_graph, self.link_dict = network.line_graph, network.links_dict
@@ -244,7 +249,9 @@ class NetEnv(gym.Env):
         self.flows_operations: dict[Flow, list[tuple[Link, Operation]]] = defaultdict(list)
         self.links_operations: dict[Link, list[tuple[Flow, Operation]]] = defaultdict(list)
 
-        self.flows_scheduled: list[int] = [0 for _ in range(self.num_flows)]
+        self.temp_operations: list[tuple[Link, Operation]] = []
+
+        self.links_gcl: dict[Link, NetEnv.GclInfo] = defaultdict(lambda: self.GclInfo())
 
         self.flow_index: int = 0
 
@@ -274,9 +281,6 @@ class NetEnv(gym.Env):
 
         super().reset(seed=seed)
 
-        for link in self.link_dict.values():
-            link.reset()
-
         # shuffle the flows, thus
         #  a) to avoid local minimum,
         #  b) for generalization
@@ -287,9 +291,10 @@ class NetEnv(gym.Env):
         self.flows_operations.clear()
         self.links_operations.clear()
 
-        self.flows_scheduled = [0 for _ in range(self.num_flows)]
+        self.temp_operations.clear()
+        self.links_gcl.clear()
 
-        self.flow_index: int = 0
+        self.flow_index = 0
 
         self.reward = 0
 
@@ -298,29 +303,36 @@ class NetEnv(gym.Env):
     def _generate_state(self) -> ObsType:
         return self.state_encoder.state()
 
-    def action_masks(self) -> list[int]:
-        flow = self.flows[self.flow_index]
-        hop_index = len(self.flows_operations[flow])
-        link = self.link_dict[flow.path[hop_index]]
-        return [True, link.add_gating(flow.period, attempt=True)]
+    def current_flow(self) -> Flow:
+        return self.flows[self.flow_index]
 
-    def check_valid_flow(self, flow: Flow) -> Optional[int]:
+    def current_link(self) -> Link:
+        hop_index = len(self.temp_operations)
+        flow = self.current_flow()
+        link = self.link_dict[flow.path[hop_index]]
+        return link
+
+    def action_masks(self) -> np.ndarray:
+        # todo: add jitter masking
+        flow = self.current_flow()
+        link = self.current_link()
+        can_gating = self.add_gating(link, flow.period, attempt=True)
+        return np.array([True, can_gating])
+
+    def _check_temp_operations(self) -> Optional[int]:
         """
-        :param flow:
         :return: None if valid, else return the conflict operation
         """
-        # return
-        for link, operation in self.flows_operations[flow]:
-            offset = self.check_valid_link(link)
+        for link, operation in self.temp_operations:
+            offset = self._check_valid_link(link, operation)
             if isinstance(offset, int):
                 return offset
         return None
 
-    def check_valid_link(self, link: Link) -> Optional[int]:
+    def _check_valid_link(self, link: Link, operation: Operation) -> Optional[int]:
         # only needs to check whether the newly added operation is conflict with other operations.
-        flow, operation = self.links_operations[link][-1]
-
-        for flow_rhs, operation_rhs in self.links_operations[link][:-1]:
+        flow = self.current_flow()
+        for flow_rhs, operation_rhs in self.links_operations[link]:
             offset = check_operation_isolation(
                 (operation, flow.period),
                 (operation_rhs, flow_rhs.period)
@@ -348,10 +360,10 @@ class NetEnv(gym.Env):
         """
         gating = (action == 1)
 
-        flow = self.flows[self.flow_index]
+        flow = self.current_flow()
 
         try:
-            hop_index = len(self.flows_operations[flow])
+            hop_index = len(self.temp_operations)
 
             link = self.link_dict[flow.path[hop_index]]
 
@@ -362,7 +374,7 @@ class NetEnv(gym.Env):
                 earliest_enqueue_time = 0
                 latest_enqueue_time = 0
             else:
-                last_link, last_operation = self.flows_operations[flow][hop_index - 1]
+                last_link, last_operation = self.temp_operations[-1]
 
                 is_gating_last_link = self.last_action
                 if is_gating_last_link:
@@ -386,9 +398,9 @@ class NetEnv(gym.Env):
 
             # construct operation
             if gating:
-                wait_time = 0   # no-wait
+                wait_time = 0  # no-wait
             else:
-                wait_time = link.interference_time()    # might wait
+                wait_time = link.interference_time()  # might wait
             latest_dequeue_time = latest_enqueue_time + wait_time
 
             if hop_index == len(flow.path) - 1:
@@ -398,7 +410,7 @@ class NetEnv(gym.Env):
                     accumulated_jitter = latest_enqueue_time - earliest_enqueue_time
                     if accumulated_jitter > flow.jitter:
                         raise SchedulingError(ErrorType.JitterExceed,
-                                              "jitter constraint unsatisfied.")
+                                              f"jitter constraint unsatisfied. {accumulated_jitter} > {flow.jitter}")
 
             end_time = latest_dequeue_time + trans_time
 
@@ -413,20 +425,19 @@ class NetEnv(gym.Env):
                 end_time
             )
             if gating:
-                operation.gating_time = latest_dequeue_time    # always enable gating right after the latest enqueue time.
+                operation.gating_time = latest_dequeue_time  # always enable gating right after the latest enqueue time.
 
-            self.flows_operations[flow].append((link, operation))
-            self.links_operations[link].append((flow, operation))
+            self.temp_operations.append((link, operation))
 
             while True:
-                offset = self.check_valid_flow(flow)
+                offset = self._check_temp_operations()
                 if offset is None:
                     # find a valid solution that satisfies timing constraint
                     break
 
                 assert isinstance(offset, int)
 
-                for link, operation in self.flows_operations[flow]:
+                for link, operation in self.temp_operations:
                     operation.add(offset)
                     if operation.end_time > flow.period:
                         # cannot be scheduled
@@ -436,9 +447,9 @@ class NetEnv(gym.Env):
             if gating:
                 # check gating constraint
                 try:
-                    old_gcl = link.gcl_length
-                    link.add_gating(flow.period)
-                    new_gcl = link.gcl_length
+                    old_gcl = self.links_gcl[link].gcl_length
+                    self.add_gating(link, flow.period)
+                    new_gcl = self.links_gcl[link].gcl_length
                     gcl_added = new_gcl - old_gcl
                 except RuntimeError:
                     raise SchedulingError(ErrorType.GatingExceed,
@@ -450,7 +461,7 @@ class NetEnv(gym.Env):
                            - self.beta * wait_time / flow.e2e_delay)
 
         except SchedulingError as e:
-            self.logger.info(f"end of episode, reason: [{e.error_type}: {e.msg}]\tScheduled flows: {sum(self.flows_scheduled)}")
+            self.logger.info(f"end of episode, reason: [{e.error_type}: {e.msg}]\tScheduled flows: {self.flow_index}")
             if e.error_type == ErrorType.JitterExceed:
                 # self.reward -= 100
                 done = True
@@ -467,16 +478,22 @@ class NetEnv(gym.Env):
         done = False
         # successfully scheduling a flow
         if len(flow.path) == hop_index + 1:
-            # reach the dst
-            self.flows_scheduled[self.flow_index] = 1
+            # reach the dst, all temp operations are confirmed.
+            for link, operation in self.temp_operations:
+                self.links_operations[link].append((flow, operation))
+            self.flows_operations[flow] = self.temp_operations
+            self.temp_operations.clear()
+
             self.flow_index += 1
 
             if self.flow_index % math.ceil(self.num_flows * 0.1) == 0:
                 # give an extra reward when the agent schedule another set of flows.
                 self.reward += self.gamma * ((self.flow_index / self.num_flows) ** 2)
 
-            if all(self.flows_scheduled):
+            if self.flow_index == len(self.flows):
                 # all flows are scheduled.
+                assert len(self.flows_operations) == len(self.flows)
+
                 filename = os.path.join(OUT_DIR, f'schedule_rl_{id(self)}.log')
                 self.save_results(filename)
                 self.logger.info(f"Good job! Finish scheduling! Scheduling result is saved at {filename}.")
@@ -499,7 +516,7 @@ class NetEnv(gym.Env):
         Save the scheduling result to the dir, should only be called after all flows are scheduling.
         :return:
         """
-        assert all(self.flows_scheduled), "Flows are not yet scheduled, cannot save results."
+        assert len(self.flows_operations) == len(self.flows), "Flows are not yet scheduled, cannot save results."
 
         res = []
         for flow, link_operations in self.flows_operations.items():
@@ -516,6 +533,23 @@ class NetEnv(gym.Env):
     def close(self):
         return
 
+    def add_gating(self, link: Link, period: int, attempt: bool = False):
+        gcl_info = self.links_gcl[link]
+        gcl_cycle = gcl_info.gcl_cycle
+        gcl_length = gcl_info.gcl_length
+        new_cycle = math.lcm(gcl_cycle, period)
+        new_length = gcl_length * (new_cycle // gcl_cycle)
+        new_length += ((new_cycle // period) * 2)
+        if new_length > link.gcl_capacity:
+            if attempt:
+                return False
+            else:
+                raise RuntimeError("Gating constraint is not satisfied.")
+        elif not attempt:
+            gcl_info.gcl_cycle = new_cycle
+            gcl_info.gcl_length = new_length
+        return True
+
 
 class TrainingNetEnv(NetEnv):
     """
@@ -525,6 +559,7 @@ class TrainingNetEnv(NetEnv):
     pass the current env.
     Once the agent has learnt how to schedule current flows, generate a new flow set for training.
     """
+
     def __init__(self, graph, flow_generator, num_flows,
                  initial_ratio=0.2, step_ratio=0.05, changing_freq=10):
 

@@ -41,9 +41,6 @@ class Link:
         self.gcl_capacity = Net.GCL_LENGTH_MAX
         self.link_rate = link_rate
 
-        self.gcl_cycle = 1
-        self.gcl_length = 0
-
     def __hash__(self):
         return hash(self.link_id)
 
@@ -55,36 +52,12 @@ class Link:
     def __repr__(self):
         return f"Link{self.link_id}"
 
-    def reset(self):
-        self.gcl_cycle = 1
-        self.gcl_length = 0
-
     def interference_time(self) -> int:
         return self.transmission_time(Net.MTU)
 
     def transmission_time(self, payload: int) -> int:
         # 12 for interframe gap and 8 for preamble
         return math.ceil((payload + 12 + 8) * 8 / self.link_rate)
-
-    def add_gating(self, period: int, attempt=False) -> bool:
-        """
-        :return: True if can enable gating, otherwise depend on the value of attempt
-            return False if attempt is True,
-            otherwise raise RuntimeError
-        """
-        new_cycle = math.lcm(self.gcl_cycle, period)
-        new_length = self.gcl_length * (new_cycle // self.gcl_cycle)
-        new_length += ((new_cycle // period) * 2)
-        if new_length > self.gcl_capacity:
-            if attempt:
-                return False
-            else:
-                raise RuntimeError("Gating constraint is not satisfied.")
-        elif not attempt:
-            self.gcl_cycle = new_cycle
-            self.gcl_length = new_length
-        return True
-
 
 class Flow:
     def __init__(self, flow_id, src_id, dst_id, path,
@@ -302,7 +275,7 @@ class Network:
         self.line_graph, self.links_dict = _transform_line_graph(graph)
 
     def disable_gcl(self, num_nodes: int):
-        list_nodes = random.sample(self.graph.nodes, num_nodes)
+        list_nodes = random.sample(list(self.graph.nodes), num_nodes)
         list_links = [
             [link for link in self.links_dict.values() if node == link.link_id[0]]
             for node in list_nodes
