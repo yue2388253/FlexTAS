@@ -13,6 +13,14 @@ class TestDrl(unittest.TestCase):
         scheduler = DrlScheduler(network, num_envs=1)
         scheduler.schedule()
 
+    def test_drl_multi_envs(self):
+        logging.basicConfig(level=logging.DEBUG)
+        graph = generate_cev()
+        flows = generate_flows(graph, 5)
+        network = Network(graph, flows)
+        scheduler = DrlScheduler(network, num_envs=4)
+        scheduler.schedule()
+
     def test_time_limit(self):
         logging.basicConfig(level=logging.DEBUG)
         graph = generate_cev()

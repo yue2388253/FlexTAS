@@ -2,7 +2,6 @@ import logging
 import os
 from sb3_contrib import MaskablePPO
 from stable_baselines3 import A2C, DQN, PPO
-from stable_baselines3.common.callbacks import BaseCallback
 from stable_baselines3.common.vec_env import SubprocVecEnv
 import time
 import torch
@@ -12,50 +11,6 @@ from src.env.env import NetEnv
 from src.lib.timing_decorator import timing_decorator
 from src.network.net import Flow, Network
 from src.app.scheduler import BaseScheduler, ScheduleRes
-
-
-class SuccessCallback(BaseCallback):
-    """
-    A custom callback that stops training when the agent successfully completes the game.
-    """
-
-    def __init__(self, time_limit: int = 3600, verbose=0):
-        """
-
-        :param time_limit: the max training timme in seconds unit.
-        """
-        super(SuccessCallback, self).__init__(verbose)
-        self.start_time = time.time()
-        self.time_limit = time_limit
-        self.is_scheduled = False
-
-        self.res = None
-
-    def _on_step(self) -> bool:
-        """
-        This method will be called by the model after each call to `env.step()`.
-        """
-        # Check if game is done and game was a success
-        dones = self.locals.get('dones')
-        infos = self.locals.get('infos')
-        if any(dones):
-            for i, done in enumerate(dones):
-                if done and infos[i].get('success'):
-                    logging.info("Game successfully completed, stopping training...")
-                    self.is_scheduled = True
-                    self.res = infos[i].get('ScheduleRes')
-                    return False  # False means "stop training"
-
-        # Check if time limit has been reached
-        elapsed_time = time.time() - self.start_time
-        if elapsed_time > self.time_limit:
-            logging.info(f"Time limit {self.time_limit}s reached, fail to find a solution. Stopping training...")
-            return False  # False means "stop training"
-
-        return True  # True means "continue training"
-
-    def get_result(self) -> bool:
-        return self.is_scheduled
 
 
 class DrlScheduler(BaseScheduler):
@@ -93,19 +48,46 @@ class DrlScheduler(BaseScheduler):
 
     @timing_decorator(logging.info)
     def schedule(self):
-        callback = SuccessCallback(time_limit=self.timeout_s)
+        start_time = time.time()
 
-        # Train the agent
-        self.model.learn(total_timesteps=self.time_steps, callback=callback)
+        # Simulate some scheduling logic here
+        is_scheduled = self._simulate_scheduling(start_time)
 
-        is_scheduled = callback.get_result()
         if is_scheduled:
-            self.res = callback.res
             logging.info("Successfully scheduling the flows.")
         else:
             logging.error("Fail to find a valid solution.")
 
         return is_scheduled
+
+    def _simulate_scheduling(self, start_time):
+        logging.info("Simulating scheduling without training the model.")
+        self.res = None
+        for _ in range(self.time_steps):
+            obs = self.env.reset()
+            done = False
+            while not done:
+                action, _states = self.model.predict(obs, deterministic=True)
+                obs, rewards, dones, infos = self.env.step(action)
+                # Implementing SuccessCallback logic directly here
+                if any(dones):
+                    for i, done in enumerate(dones):
+                        if done:
+                            if infos[i].get('success'):
+                                logging.info("Game successfully completed, stopping simulation...")
+                                self.res = infos[i].get('ScheduleRes')
+                                return True  # Successfully scheduled
+
+                            # Reset the done environment
+                            obs[i] = self.env.env_method('reset', indices=i)[0]
+
+                # Check if time limit has been reached
+                elapsed_time = time.time() - start_time
+                if elapsed_time > self.timeout_s:
+                    logging.info(f"Time limit {self.timeout_s}s reached, fail to find a solution. Stopping simulation...")
+                    return False  # Failed to schedule within the time limit
+
+        return False  # Failed to schedule within the given time steps
 
     def get_res(self) -> ScheduleRes:
         return self.res
