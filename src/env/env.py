@@ -313,11 +313,21 @@ class NetEnv(gym.Env):
         return link
 
     def action_masks(self) -> np.ndarray:
-        # todo: add jitter masking
         flow = self.current_flow()
         link = self.current_link()
+
+        jitter_exceed = False
+        if len(self.temp_operations) + 1 == len(flow.path) and len(self.temp_operations) != 0:
+            # check accumulated jitter
+            operation = self.temp_operations[-1][1]
+            accum_jitter = operation.latest_time - operation.start_time \
+                if operation.gating_time is None else 0
+
+            if accum_jitter > flow.jitter:
+                jitter_exceed = True
+
         can_gating = self.add_gating(link, flow.period, attempt=True)
-        return np.array([True, can_gating])
+        return np.array([not jitter_exceed, can_gating])
 
     def _check_temp_operations(self) -> Optional[int]:
         """
