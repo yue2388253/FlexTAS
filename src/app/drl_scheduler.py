@@ -1,8 +1,9 @@
 import logging
 import os
+import numpy as np
 from sb3_contrib import MaskablePPO
 from stable_baselines3 import A2C, DQN, PPO
-from stable_baselines3.common.vec_env import SubprocVecEnv
+from stable_baselines3.common.vec_env import SubprocVecEnv, DummyVecEnv
 import time
 import torch
 
@@ -31,6 +32,9 @@ class DrlScheduler(BaseScheduler):
         self.device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
 
         self.env = SubprocVecEnv([lambda: NetEnv(network) for _ in range(self.num_envs)])
+        # for debug
+        # self.env = DummyVecEnv([lambda: NetEnv(network) for _ in range(self.num_envs)])
+
         policy_kwargs = dict(
             features_extractor_class=FeaturesExtractor,
         )
@@ -48,10 +52,10 @@ class DrlScheduler(BaseScheduler):
 
     @timing_decorator(logging.info)
     def schedule(self):
-        start_time = time.time()
 
+        # todo: learn to schedule
         # Simulate some scheduling logic here
-        is_scheduled = self._simulate_scheduling(start_time)
+        is_scheduled = self._simulate_scheduling()
 
         if is_scheduled:
             logging.info("Successfully scheduling the flows.")
@@ -60,14 +64,16 @@ class DrlScheduler(BaseScheduler):
 
         return is_scheduled
 
-    def _simulate_scheduling(self, start_time):
-        logging.info("Simulating scheduling without training the model.")
+    def _simulate_scheduling(self):
+        logging.info("Scheduling without training the model.")
+        start_time = time.time()
         self.res = None
         for _ in range(self.time_steps):
             obs = self.env.reset()
             done = False
             while not done:
-                action, _states = self.model.predict(obs, deterministic=True)
+                action_masks = np.array(self.env.env_method('action_masks'))
+                action, _states = self.model.predict(obs, deterministic=True, action_masks=action_masks)
                 obs, rewards, dones, infos = self.env.step(action)
                 # Implementing SuccessCallback logic directly here
                 if any(dones):

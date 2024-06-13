@@ -5,6 +5,7 @@ from src.app.drl_scheduler import DrlScheduler
 
 
 class TestDrl(unittest.TestCase):
+    # todo: load the model
     def test_drl(self):
         logging.basicConfig(level=logging.DEBUG)
         graph = generate_cev()
