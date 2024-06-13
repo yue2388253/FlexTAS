@@ -256,7 +256,7 @@ class NetEnv(gym.Env):
 
         self.temp_operations: list[tuple[Link, Operation]] = []
 
-        self.links_gcl: dict[Link, NetEnv.GclInfo] = defaultdict(lambda: self.GclInfo())
+        self.links_gcl: dict[Link, NetEnv.GclInfo] = defaultdict(self._default_gcl_info)
 
         self.flow_index: int = 0
 
@@ -274,6 +274,10 @@ class NetEnv(gym.Env):
         logger = logging.getLogger(f"{__name__}.{os.getpid()}")
         logger.setLevel(logging.INFO)
         self.logger = logger
+
+    def _default_gcl_info(self):
+        # This method will replace the lambda function
+        return self.GclInfo()
 
     def reset(
             self,
