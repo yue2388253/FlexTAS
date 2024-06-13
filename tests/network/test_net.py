@@ -1,3 +1,4 @@
+from copy import deepcopy
 import json
 import jsons
 import os.path
@@ -101,7 +102,6 @@ class TestFlowGenerator(unittest.TestCase):
         flows = flow_generator(num_flows)
         [self.assertIn(flow.jitter, [200, 400]) for flow in flows]
 
-
     def test_random_graph(self):
         graph = generate_graph("RRG", 100)
         num_flows = 10
@@ -109,5 +109,39 @@ class TestFlowGenerator(unittest.TestCase):
         self.assertEqual(len(flows), num_flows)
 
 
-if __name__ == '__main__':
-    unittest.main()
+class TestNetwork(unittest.TestCase):
+    def setUp(self):
+        self.graph = generate_cev()
+        self.flows = generate_flows(self.graph, 5)
+
+    def test_node_links(self):
+        network = Network(self.graph, self.flows)
+        node = "SW11"
+        links = [link for link in network.links_dict.values() if node == link.link_id[0]]
+
+        # SW11 has 5 ports
+        self.assertEqual(len(links), 5)
+
+        node = "SW7"
+        links = [link for link in network.links_dict.values() if node == link.link_id[0]]
+        self.assertEqual(len(links), 4)
+
+    def test_disable_gcl(self):
+        network = Network(self.graph, self.flows)
+        network.disable_gcl(2)
+        self.assertTrue(any(link.gcl_capacity == 0 for link in network.links_dict.values()))
+
+        # disable all nodes
+        network.disable_gcl(46)
+        self.assertTrue(all(link.gcl_capacity == 0 for link in network.links_dict.values()))
+
+        # try to disable larger than number of nodes would raise exception
+        with self.assertRaises(ValueError):
+            network.disable_gcl(47)
+
+    def test_deepcopy(self):
+        network = Network(self.graph, self.flows)
+        network_copy = deepcopy(network)
+        network_copy.disable_gcl(2)
+        # disable the copy class should not affect the original class.
+        self.assertTrue(all(link.gcl_capacity != 0 for link in network.links_dict.values()))

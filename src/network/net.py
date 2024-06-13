@@ -301,6 +301,19 @@ class Network:
         # construct links
         self.line_graph, self.links_dict = _transform_line_graph(graph)
 
+    def disable_gcl(self, num_nodes: int):
+        list_nodes = random.sample(self.graph.nodes, num_nodes)
+        list_links = [
+            [link for link in self.links_dict.values() if node == link.link_id[0]]
+            for node in list_nodes
+        ]
+
+        # flatten the list
+        list_links = [item for sublist in list_links for item in sublist]
+
+        for link in list_links:
+            link.gcl_capacity = 0
+
 
 class FlowGenerator:
     def __init__(self, graph, seed:int=None, period_set=None, jitters=None) -> None:
