@@ -108,19 +108,21 @@ class SchedulerTester(IStressTester):
         self.scheduler = scheduler
 
     def stress_test(self) -> dict:
+        start_time = time.time()
+
         try:
-            start_time = time.time()
             ok = self.scheduler.schedule()
-            scheduling_time = time.time() - start_time
         except RuntimeError as e:
             logging.info(e)
             ok = False
 
-        if not ok:
-            return {}
+        scheduling_time = time.time() - start_time
+        res = {'scheduling_time': scheduling_time}
 
-        res = ResAnalyzer(self.network, self.scheduler.get_res()).analyze()
-        res['scheduling_time'] = scheduling_time
+        if not ok:
+            return res
+
+        res |= ResAnalyzer(self.network, self.scheduler.get_res()).analyze()
         return res
 
 
