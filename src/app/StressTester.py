@@ -134,6 +134,7 @@ class StressTestSettings:
     jitters: List[float] = field(default_factory=lambda: [0.1])
     periods: List[int] = field(default_factory=lambda: [2000, 4000, 8000, 16000, 32000, 64000, 128000])
     timeout: int = 5
+    num_non_tsn_devices: int = 0        # for heterogeneous network test
     test_gcl: bool = False              # test how many GCLs needed, ignoring the scheduling
     # the following flags involves the corresponding scheduler to schedule
     # and give an analysis of the schedule, e.g., GCLs needed, link_utilization, etc.
@@ -159,6 +160,11 @@ def stress_test_single(settings: StressTestSettings,
         )
         flows = flow_generator(num_flows)
         network = Network(graph, flows)
+
+        if settings.num_non_tsn_devices > 0:
+            # heterogeneous network
+            assert isinstance(settings.num_non_tsn_devices, int)
+            network.disable_gcl(settings.num_non_tsn_devices)
 
         stat = dict_settings.copy()
         stat['test_id'] = seed + i
@@ -212,6 +218,7 @@ def stress_test(topos: List[str], list_num_flows: List[int],
                 drl_model: str=None,
                 jitters: List[float]=None,
                 periods: List[int]=None,
+                num_non_tsn_devices: int=0,
                 to_csv: str=None,
                 seed: int=None,
                 timeout: int=None):
@@ -237,6 +244,7 @@ def stress_test(topos: List[str], list_num_flows: List[int],
     list_settings = [
         StressTestSettings(
             topo, num_flow, link_rate,
+            num_non_tsn_devices=num_non_tsn_devices,
             test_gcl=test_gcl,
             test_all_gate=test_all_gate,
             test_no_gate=test_no_gate,
