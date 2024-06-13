@@ -215,11 +215,13 @@ def stress_test(topos: List[str], list_num_flows: List[int],
                 timeout: int=None):
     """
     Args:
-        list_obj: valid options: "gcl", "uti", "drl", "smt"
+        list_obj: valid options: "gcl", "all_gate", "no_gate", "random_gate", "drl", "smt"
     """
     list_df = []
     test_gcl = "gcl" in list_obj
-    test_uti = "uti" in list_obj
+    test_all_gate = "all_gate" in list_obj
+    test_no_gate = "no_gate" in list_obj
+    test_random_gate = "random_gate" in list_obj
 
     test_drl = "drl" in list_obj
     if test_drl:
@@ -234,9 +236,9 @@ def stress_test(topos: List[str], list_num_flows: List[int],
         StressTestSettings(
             topo, num_flow, link_rate,
             test_gcl=test_gcl,
-            test_all_gate=test_uti,
-            test_no_gate=test_uti,
-            test_random_gate=test_uti,
+            test_all_gate=test_all_gate,
+            test_no_gate=test_no_gate,
+            test_random_gate=test_random_gate,
             test_drl=drl_model,
             test_smt=test_smt,
         )

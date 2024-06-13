@@ -39,7 +39,7 @@ class TestBatch(unittest.TestCase):
             [10],
             100,
             5,
-            ['gcl', 'uti', 'drl', 'smt'],
+            ['gcl', 'all_gate', 'drl', 'smt'],
             os.path.join(ROOT_DIR, r'model/best_model_general.zip')
         )
         has_nan = df.isnull().any().any()
