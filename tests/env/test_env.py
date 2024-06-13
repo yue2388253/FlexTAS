@@ -55,19 +55,49 @@ class TestEnv(unittest.TestCase):
 
 
 class TestEnvInfo(unittest.TestCase):
-    def test_success(self):
-        graph = generate_linear_5()
+    def setUp(self):
+        self.graph = generate_linear_5()
+
         path = [("E1", "S1"), ("S1", "S2"), ("S2", "E2")]
-        flow = Flow(f"F0", "E1", "E2", path, payload=64, period=2000)
-        flows = [flow]
-        network = Network(graph, flows)
+        flow0 = Flow(f"F0", "E1", "E2", path, payload=64, period=2000, jitter=2000)
+        flow1 = Flow(f"F1", "E1", "E2", path, payload=64, period=4000, jitter=2000)
+        self.flows = [flow0, flow1]
+
+    def test_success_all_gate(self):
+        network = Network(self.graph, self.flows)
         env = NetEnv(network)
-        for i in range(3):
+        for i in range(6):
             _, _, done, _, info = env.step(1)
-            if i == 2:
+            if i == 5:
                 self.assertTrue(done)
                 self.assertTrue(info['success'])
-                env.save_results(os.path.join(OUT_DIR, "schedule.txt"))
+                env.save_results(os.path.join(OUT_DIR, "schedule_drl_l5_all_gate.txt"))
             else:
                 self.assertFalse(done)
                 self.assertFalse(info['success'])
+
+    def test_success_no_gate(self):
+        network = Network(self.graph, self.flows)
+        env = NetEnv(network)
+        for i in range(6):
+            _, _, done, _, info = env.step(0)
+            if i == 5:
+                self.assertTrue(done)
+                self.assertTrue(info['success'])
+                env.save_results(os.path.join(OUT_DIR, "schedule_drl_l5_no_gate.txt"))
+            else:
+                self.assertFalse(done)
+                self.assertFalse(info['success'])
+
+    def test_limited_gcl(self):
+        network = Network(self.graph, self.flows)
+        for link in network.links_dict.values():
+            link.gcl_capacity = 5
+        env = NetEnv(network)
+        for i in range(4):
+            _, _, done, _, info = env.step(1)
+            if i == 3:
+                # gating is invalid since there is no gcl available.
+                self.assertTrue(done)
+            else:
+                self.assertFalse(done)
