@@ -22,8 +22,7 @@ class TestLimitedGcl(unittest.TestCase):
 
     def _test_single_cls(self, scheduler_cls, num_gcl_max):
         network = Network(self.graph, self.flows)
-        for link in network.links_dict.values():
-            link.gcl_capacity = num_gcl_max
+        network.set_gcl(num_gcl_max)
         scheduler = scheduler_cls(network)
         self.assertTrue(scheduler.schedule())
 

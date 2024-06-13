@@ -287,6 +287,10 @@ class Network:
         for link in list_links:
             link.gcl_capacity = 0
 
+    def set_gcl(self, num_gcl: int):
+        for link in self.links_dict.values():
+            link.gcl_capacity = num_gcl
+
 
 class FlowGenerator:
     def __init__(self, graph, seed:int=None, period_set=None, jitters=None) -> None:
