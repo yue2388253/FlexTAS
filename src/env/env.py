@@ -499,7 +499,7 @@ class NetEnv(gym.Env):
             for link, operation in self.temp_operations:
                 self.links_operations[link].append((flow, operation))
             self.flows_operations[flow] = self.temp_operations
-            self.temp_operations.clear()
+            self.temp_operations = []
 
             self.flow_index += 1
 
