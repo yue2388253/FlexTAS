@@ -88,7 +88,6 @@ class TestEnvInfo(unittest.TestCase):
             if i == 5:
                 self.assertTrue(done)
                 self.assertTrue(info['success'])
-                env.save_results(os.path.join(OUT_DIR, "schedule_drl_l5_all_gate.txt"))
             else:
                 # success
                 self.assertFalse(done)
@@ -102,7 +101,6 @@ class TestEnvInfo(unittest.TestCase):
             if i == 5:
                 self.assertTrue(done)
                 self.assertTrue(info['success'])
-                env.save_results(os.path.join(OUT_DIR, "schedule_drl_l5_no_gate.txt"))
             else:
                 # success
                 self.assertFalse(done)

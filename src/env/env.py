@@ -181,13 +181,18 @@ class _StateEncoder:
         feature_matrix = np.array(feature_matrix, dtype=np.float32)
         return edge_index, feature_matrix
 
-    def _remain_nodes_features(self, flow, hop_index):
+    def _remain_nodes_features(self, flow, current_link):
         path = flow.path
         features = []
+        current_hop = None
         for i, link in enumerate(path):
-            if i < hop_index:
-                continue
-            features.append(self._link_feature(link))
+            if current_link.link_id == link:
+                current_hop = i
+                break
+        assert current_hop is not None
+
+        for i in range(current_hop, len(path)):
+            features.append(self._link_feature(path[i]))
 
         # features must not be empty
         assert len(features) > 0
@@ -207,13 +212,12 @@ class _StateEncoder:
 
     def state(self):
         flow = self.env.flows[self.env.flow_index]
-        hop_index = len(self.env.flows_operations[flow])
         current_link = self.env.current_link()
 
         flow_feature = self._flow_feature()
         link_feature = self._link_feature(current_link.link_id)
         edge_index, feature_matrix = self._neighbors_features(current_link.link_id)
-        remain_hops_feature = self._remain_nodes_features(flow, hop_index)
+        remain_hops_feature = self._remain_nodes_features(flow, current_link)
 
         return {
             "flow_feature": flow_feature,
@@ -249,9 +253,6 @@ class NetEnv(gym.Env):
 
         self.num_flows: int = len(self.flows)
 
-        # todo: flows operations is not needed. consider remove it.
-        #  use temp_operations instead to present the operations that have not been confirmed.
-        self.flows_operations: dict[Flow, list[tuple[Link, Operation]]] = defaultdict(list)
         self.links_operations: dict[Link, list[tuple[Flow, Operation]]] = defaultdict(list)
 
         self.temp_operations: list[tuple[Link, Operation]] = []
@@ -295,7 +296,6 @@ class NetEnv(gym.Env):
         #  d) for learning efficiency,
         #  etc.
         random.shuffle(self.flows)
-        self.flows_operations.clear()
         self.links_operations.clear()
 
         self.temp_operations.clear()
@@ -473,9 +473,9 @@ class NetEnv(gym.Env):
                                           "gating constraint unsatisfied.")
 
             # self.reward += 0.1
-            self.reward = (1
-                           - self.alpha * gcl_added / link.gcl_capacity
-                           - self.beta * wait_time / flow.e2e_delay)
+            reward_gcl = 0 - self.alpha * gcl_added / link.gcl_capacity if link.gcl_capacity != 0 else 0
+            reward_time = 0 - self.beta * wait_time / flow.e2e_delay
+            self.reward = 1 + reward_gcl + reward_time
 
         except SchedulingError as e:
             self.logger.info(f"end of episode, reason: [{e.error_type}: {e.msg}]\tScheduled flows: {self.flow_index}")
@@ -498,7 +498,6 @@ class NetEnv(gym.Env):
             # reach the dst, all temp operations are confirmed.
             for link, operation in self.temp_operations:
                 self.links_operations[link].append((flow, operation))
-            self.flows_operations[flow] = self.temp_operations
             self.temp_operations = []
 
             self.flow_index += 1
@@ -508,13 +507,6 @@ class NetEnv(gym.Env):
                 self.reward += self.gamma * ((self.flow_index / self.num_flows) ** 2)
 
             if self.flow_index == len(self.flows):
-                # all flows are scheduled.
-                assert len(self.flows_operations) == len(self.flows)
-
-                filename = os.path.join(OUT_DIR, f'schedule_rl_{id(self)}.log')
-                self.save_results(filename)
-                self.logger.info(f"Good job! Finish scheduling! Scheduling result is saved at {filename}.")
-
                 return (self.observation_space.sample(), self.reward, True, False,
                         {'success': True, 'ScheduleRes': self.links_operations.copy()})
 
@@ -527,25 +519,6 @@ class NetEnv(gym.Env):
         gating = self.last_action
         self.logger.debug(f"Action: {gating}, Reward: {self.reward}")
         return
-
-    def save_results(self, filename: str | os.PathLike):
-        """
-        Save the scheduling result to the dir, should only be called after all flows are scheduling.
-        :return:
-        """
-        assert len(self.flows_operations) == len(self.flows), "Flows are not yet scheduled, cannot save results."
-
-        res = []
-        for flow, link_operations in self.flows_operations.items():
-            res.append(
-                str(len(res)) + '. ' + str(flow) + '\n'
-                + '\n'.join([f"\t{link.link_id}, {operation}" for link, operation in link_operations])
-                + '\n'
-            )
-
-        os.makedirs(os.path.dirname(filename), exist_ok=True)
-        with open(filename, 'w') as f:
-            f.writelines(res)
 
     def close(self):
         return
