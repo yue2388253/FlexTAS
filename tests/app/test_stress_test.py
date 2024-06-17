@@ -40,9 +40,9 @@ class TestBatch(unittest.TestCase):
             100,
             5,
             ['gcl', 'all_gate', 'drl', 'smt'],
-            os.path.join(ROOT_DIR, r'model/best_model_general.zip')
+            os.path.join(ROOT_DIR, r'model/best_model_21469.zip')
         )
         has_nan = df.isnull().any().any()
         # an easy scheduling task, all tests should pass
-        self.assertFalse(has_nan)
         # df.to_csv("tmp.csv")
+        self.assertFalse(has_nan)
