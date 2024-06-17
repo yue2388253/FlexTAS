@@ -15,6 +15,7 @@ from src.app.scheduler import BaseScheduler, ScheduleRes
 
 
 class DrlScheduler(BaseScheduler):
+    # todo: only Maskable PPO
     SUPPORTING_ALG = {
         'A2C': A2C,
         'DQN': DQN,
@@ -22,6 +23,7 @@ class DrlScheduler(BaseScheduler):
         'MaskablePPO': MaskablePPO
     }
 
+    # todo: should specify model, otherwise load the default model.
     def __init__(self, network: Network,
                  num_envs: int = 1, time_steps=100000, **kwargs):
         super().__init__(network,  **kwargs)
