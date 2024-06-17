@@ -3,7 +3,7 @@ import os.path
 import unittest
 
 from definitions import ROOT_DIR
-from src.app.StressTester import GCLTester, SchedulerTester, stress_test
+from src.app.evaluation import GCLTester, SchedulerTester, evaluate_experiments
 from src.network.net import generate_cev, generate_flows, Network
 from src.app.no_wait_tabu_scheduler import TimeTablingScheduler
 from src.app.smt_scheduler import NoWaitSmtScheduler
@@ -34,7 +34,7 @@ class TestStressTest(unittest.TestCase):
 class TestBatch(unittest.TestCase):
     def test_batch(self):
         logging.basicConfig(level=logging.DEBUG)
-        df = stress_test(
+        df = evaluate_experiments(
             ["RRG", "ERG"],
             [10],
             100,

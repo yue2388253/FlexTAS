@@ -30,6 +30,5 @@ class TestLimitedGcl(unittest.TestCase):
         self._test_single_cls(DrlScheduler, 6)
 
     def test_ok_again(self):
-        # todo: should load model
         # Drl should pass since it do not require all gate
         self._test_single_cls(DrlScheduler, 2)

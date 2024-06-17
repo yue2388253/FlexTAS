@@ -127,7 +127,7 @@ class SchedulerTester(IStressTester):
 
 
 @dataclass
-class StressTestSettings:
+class ExpSettings:
     topo: str
     num_flows: int
     link_rate: int
@@ -145,8 +145,8 @@ class StressTestSettings:
     test_smt: bool = False
 
 
-def stress_test_single(settings: StressTestSettings,
-                       num_tests: int, seed: int):
+def evaluate_single(settings: ExpSettings,
+                    num_tests: int, seed: int):
     list_stats = []
     topo, num_flows, link_rate = settings.topo, settings.num_flows, settings.link_rate
     dict_settings = asdict(settings)
@@ -212,16 +212,16 @@ def stress_test_single(settings: StressTestSettings,
     return df
 
 
-def stress_test(topos: List[str], list_num_flows: List[int],
-                link_rate: int, num_tests: int,
-                list_obj: List[str],
-                drl_model: str=None,
-                jitters: List[float]=None,
-                periods: List[int]=None,
-                num_non_tsn_devices: int=0,
-                to_csv: str=None,
-                seed: int=None,
-                timeout: int=None):
+def evaluate_experiments(topos: List[str], list_num_flows: List[int],
+                         link_rate: int, num_tests: int,
+                         list_obj: List[str],
+                         drl_model: str=None,
+                         jitters: List[float]=None,
+                         periods: List[int]=None,
+                         num_non_tsn_devices: int=0,
+                         to_csv: str=None,
+                         seed: int=None,
+                         timeout: int=None):
     """
     Args:
         list_obj: valid options: "gcl", "all_gate", "no_gate", "random_gate", "drl", "smt"
@@ -242,7 +242,7 @@ def stress_test(topos: List[str], list_num_flows: List[int],
     test_smt = "smt" in list_obj
 
     list_settings = [
-        StressTestSettings(
+        ExpSettings(
             topo, num_flow, link_rate,
             num_non_tsn_devices=num_non_tsn_devices,
             test_gcl=test_gcl,
@@ -278,7 +278,7 @@ def stress_test(topos: List[str], list_num_flows: List[int],
     df = None
     for i, settings in enumerate(list_settings):
         logging.info(f"Progress: {i/len(list_settings)*100:.2f}%\t{settings}")
-        df = stress_test_single(settings, num_tests, seed)
+        df = evaluate_single(settings, num_tests, seed)
         list_df.append(df)
 
         if to_csv:
@@ -297,7 +297,7 @@ if __name__ == '__main__':
     log_config(log_file, level=logging.INFO)
 
     # run the tests
-    df = execute_from_command_line(stress_test)
+    df = execute_from_command_line(evaluate_experiments)
 
     filename = os.path.join(OUT_DIR, "stress_test.csv")
     df.to_csv(filename)
