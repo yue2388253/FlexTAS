@@ -1,5 +1,6 @@
 from collections import defaultdict
 from dataclasses import dataclass, asdict
+import logging
 import math
 import numpy as np
 import os
@@ -75,6 +76,7 @@ class ResAnalyzer:
         os.makedirs(os.path.dirname(filename), exist_ok=True)
         with open(filename, 'w') as f:
             f.writelines(res)
+            logging.info(f"Schedule result dump to {filename}")
 
     def analyze(self) -> Dict:
         return self._analyze_link_uti() | self._analyze_gcl() | self._analyze_flows()
