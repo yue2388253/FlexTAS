@@ -8,32 +8,26 @@ from src.network.net import generate_cev, generate_flows, generate_linear_5
 class TestTimeTablingScheduler(unittest.TestCase):
     def setUp(self):
         logging.basicConfig(level=logging.DEBUG)
-        self.old_gcl_limit = Net.GCL_LENGTH_MAX
-        Net.GCL_LENGTH_MAX = sys.maxsize
         graph = generate_cev()
         flows = generate_flows(graph,  10)
         self.network = Network(graph, flows)
+        for link in self.network.links_dict.values():
+            link.gcl_capacity = sys.maxsize
 
     def tearDown(self):
-        Net.GCL_LENGTH_MAX = self.old_gcl_limit
-
-    def test_schedule(self):
-        scheduler = TimeTablingScheduler(self.network)
-        self.assertTrue(scheduler.schedule())
-        scheduler.dump_res()
-        res = scheduler.get_res()
+        self.assertTrue(self.scheduler.schedule())
+        res = self.scheduler.get_res()
         analyzer = ResAnalyzer(self.network, res)
         analyzer.analyze()
 
+    def test_schedule(self):
+        self.scheduler = TimeTablingScheduler(self.network)
+
     def test_no_gate(self):
-        scheduler = TimeTablingScheduler(self.network, GatingStrategy.NoGate)
-        self.assertTrue(scheduler.schedule())
-        scheduler.dump_res()
+        self.scheduler = TimeTablingScheduler(self.network, GatingStrategy.NoGate)
 
     def test_random_gating(self):
-        scheduler = TimeTablingScheduler(self.network, GatingStrategy.RandomGate)
-        self.assertTrue(scheduler.schedule())
-        scheduler.dump_res()
+        self.scheduler = TimeTablingScheduler(self.network, GatingStrategy.RandomGate)
 
 
 class TestNoWaitTabuScheduler(unittest.TestCase):
@@ -54,4 +48,3 @@ class TestNoWaitTabuScheduler(unittest.TestCase):
         network = Network(graph, flows)
         scheduler = NoWaitTabuScheduler(network)
         self.assertTrue(scheduler.schedule())
-        scheduler.dump_res()

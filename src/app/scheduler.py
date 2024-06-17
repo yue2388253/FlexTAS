@@ -33,9 +33,6 @@ class BaseScheduler:
         pass
 
 
-# todo: add a tester that check the schedule is valid.
-
-
 class ResAnalyzer:
     def __init__(self, network: Network, links_operations: ScheduleRes):
         self.graph = network.graph

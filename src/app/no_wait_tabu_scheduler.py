@@ -27,8 +27,6 @@ class TimeTablingScheduler(BaseScheduler):
                  **kwargs):
         super().__init__(network, **kwargs)
 
-        # todo: flows operations is not needed. consider remove it
-        self.flows_operations = {}
         self.links_operations = defaultdict(list)
 
         self.makespan = 0
@@ -118,7 +116,6 @@ class TimeTablingScheduler(BaseScheduler):
             offset = self._check_operations(operations, flow)
             if offset is None:
                 # successfully schedule, apply changes
-                self.flows_operations[flow] = operations
                 for link, operation in operations.items():
                     self.links_operations[link].append((flow, operation))
 
@@ -150,14 +147,6 @@ class TimeTablingScheduler(BaseScheduler):
             if offset is not None:
                 return offset
         return None
-
-    def dump_res(self):
-        for flow, operations in self.flows_operations.items():
-            logging.debug(flow)
-            i = 0
-            for link, operation in operations.items():
-                logging.debug(f"{' ' * i}link: {str(link).ljust(25)}{operation}")
-                i += 1
 
     def get_makespan(self):
         return self.makespan
@@ -319,8 +308,3 @@ class NoWaitTabuScheduler(BaseScheduler):
     def get_res(self):
         assert self.best_scheduler is not None, "No best scheduler found."
         return self.best_scheduler.get_res()
-
-    def dump_res(self):
-        if self.best_scheduler is None:
-            raise ValueError("No best scheduler found.")
-        self.best_scheduler.dump_res()
