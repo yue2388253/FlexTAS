@@ -1,44 +1,44 @@
-# DeepFTAS
+# FlexTAS
 
-灵活门控，全量调度，No-wait
+A deep reinforcement learning-based scheduler for TSN scheduling.
 
-# action
+This repo also contains Tabu and TimeTabling scheduler.
 
-选择哪一条流进行调度，参考论文 
-Learning to Dispatch for Job Shop Scheduling via Deep Reinforcement Learning
+# How to use
+
+* Run tests
+
+```shell
+PYTHONPATH=. python -m unittest
+```
+
+* Train the model
+
+```shell
+PYTHONPATH=. python app/train.py --time_steps 1_000_000 --jitters 0.1 
+```
+
+* Run the experiments
+
+```shell
+PYTHONPATH=. python src/app/evaluation.py \
+    --topos RRG,ERG,BAG --list_num_flows 10,60,110,160,210,260,310 \
+    --link_rate 100 --num_tests 100 --list_obj drl --jitters 0.1,0.2,0.5 \
+    --seed 2345 --num_non_tsn_devices 2 --drl_model model/best_model.zip \
+    --to_csv out/test.csv --timeout 5
+```
+
+Plz check the codes for more available options.
 
 # Prerequisite
 
-z3
-
-```shell
-cd /path/to/your/project
-git clone https://https://github.com/Z3Prover/z3.git
-cd z3
-mkdir build
-cd build
-cmake ..
-make 
-sudo make install
-```
-
-Some other packages (might lack some packages and need to be resolved manually.)
-
-```shell
-# assume an Ubuntu OS
-sudo apt install graphviz
-```
-
-Python-related packages are managed by `conda`.
-
-Note that the pytorch version specified by the file is NOT GPU-enabled.
-You might need to reinstall pytorch if you have a GPU-enabled machine.
+We provide two `yml` files for create conda env, one is for CPU-only machine, and the other is for GPU-enabled machine.
 
 ```shell
 conda env create -f conda_env.yml
 ```
 
-# Known issues
+## Known issues
 
 Issue 1. After installing conda env, it may still have problems.
 
