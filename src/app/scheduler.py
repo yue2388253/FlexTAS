@@ -1,10 +1,13 @@
+from collections import defaultdict
 from dataclasses import dataclass, asdict
 import math
 import numpy as np
+import os
 from typing import List, Dict, Tuple
 
+from definitions import OUT_DIR
 from src.network.net import Flow, Link, Network, Net
-from src.lib.operation import Operation
+from src.lib.operation import Operation, check_operation_isolation
 
 
 LinkOperations = List[Tuple[Flow, Operation]]
@@ -38,6 +41,40 @@ class ResAnalyzer:
         self.flows = network.flows
         self.network = network
         self.links_operations = links_operations
+        self._check_valid()
+        filename = os.path.join(OUT_DIR, f'schedule_res_{id(self)}.log')
+        self.dump_res(filename)
+
+    def _check_valid(self):
+        for operations in self.links_operations.values():
+            num_operations = len(operations)
+            for i in range(num_operations - 1):
+                flow_0, operation_0 = operations[i]
+                for j in range(i+1, num_operations):
+                    flow_1, operation_1 = operations[j]
+                    assert (check_operation_isolation((operation_0, flow_0.period),
+                                                      (operation_1, flow_1.period))
+                            is None)
+
+    def dump_res(self, filename):
+        flows_operations = defaultdict(lambda: defaultdict(Operation))
+        for link, operations in self.links_operations.items():
+            for flow, operation in operations:
+                flows_operations[flow][link.link_id] = operation
+
+        res = []
+        for flow, operations in flows_operations.items():
+            path = flow.path
+            s = str(len(res)) + '. ' + str(flow) + '\n'
+            for link_id in path:
+                assert link_id in operations
+                operation = operations[link_id]
+                s += f"\t{link_id}, {operation}\n"
+            res.append(s)
+
+        os.makedirs(os.path.dirname(filename), exist_ok=True)
+        with open(filename, 'w') as f:
+            f.writelines(res)
 
     def analyze(self) -> Dict:
         return self._analyze_link_uti() | self._analyze_gcl() | self._analyze_flows()
