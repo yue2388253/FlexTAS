@@ -90,20 +90,6 @@ class Flow:
         return f"Flow {self.flow_id} [{self.src_id}-->{self.dst_id}] with period {self.period}, payload {self.payload}B," \
                f" e2e delay {self.e2e_delay}us, jitter {self.jitter}us"
 
-    def embedding(self) -> np.ndarray:
-        return np.array([self.period / Net.PERIOD_MAX,
-                         self.payload / Net.MTU,
-                         self.e2e_delay / self.period,
-                         self.jitter / self.period])
-
-    def _wait_time_allowed(self, link_rate: int) -> int:
-        assert isinstance(link_rate, int) and link_rate > 0
-        num_hops = len(self.path)
-        num_switches = num_hops - 1
-        transmission_time = num_hops * math.ceil(self.payload * 8 / link_rate)
-        return self.e2e_delay - transmission_time - num_hops * (Net.SYNC_PRECISION + Net.DELAY_PROP) \
-            - num_switches * Net.DELAY_PROC_MAX
-
 
 def generate_linear_5(link_rate=100) -> nx.DiGraph:
     graph = nx.DiGraph()

@@ -1,11 +1,8 @@
 from copy import deepcopy
-import json
-import jsons
 import os.path
 import unittest
 
 from definitions import ROOT_DIR, OUT_DIR
-from src.network.from_json import generate_net_flows_from_json
 from src.network.net import *
 
 
@@ -44,32 +41,6 @@ class TestRandomGraph(unittest.TestCase):
             self.assertIsNotNone(graph)
             self.assertTrue(len(graph.nodes) == num_nodes)
             self.assertEqual(len(graph.edges), (num_nodes - 3) * 3 * 2)
-
-
-class TestFlow(unittest.TestCase):
-    def setUp(self) -> None:
-        self.G, self.flows = generate_net_flows_from_json(os.path.join(ROOT_DIR, 'data/input/smt_output.json'))
-
-    def test_flow_wait_time_budget(self):
-        flow = self.flows[0]
-        self.assertEqual(flow._wait_time_allowed(100), 1643)
-
-    def test_path(self):
-        print(self.flows[0].path)
-
-    def test_export_and_import(self):
-        filename = os.path.join(OUT_DIR, 'flows.json')
-        with open(filename, 'w') as f:
-            f.write(jsons.dumps(self.flows, {"indent": 4}))
-
-        with open(filename, 'r') as f:
-            flows_json = f.read()
-
-        # Parse the JSON string to a Python object.
-        flows_list = json.loads(flows_json)
-
-        self.import_flows = jsons.load(flows_list, list[Flow])
-        print([str(flow) for flow in self.import_flows])
 
 
 class TestFlowGenerator(unittest.TestCase):
