@@ -12,6 +12,24 @@ Note: This repo also contains other schedulers such as Tabu[1], and Oliver2018[2
 
 [2] R. Serna Oliver, S. S. Craciunas and W. Steiner, "IEEE 802.1Qbv Gate Control List Synthesis Using Array Theory Encoding," 2018 IEEE Real-Time and Embedded Technology and Applications Symposium (RTAS), Porto, Portugal, 2018, pp. 13-24, doi: 10.1109/RTAS.2018.00008. keywords: {Logic gates;Schedules;Indexes;Microsoft Windows;Switches;Real-time systems;Synchronization;tsn;scheduling;networks;smt},
 
+# Citation
+
+FlexTAS has been accepted by IEEE Transactions on Industrial Informatics. For more details, please refer to our paper below.
+
+[FlexTAS: Flexible Gating Control for Enhanced Time-Sensitive Networking Deployment](https://ieeexplore.ieee.org/abstract/document/10959319)
+
+```
+@ARTICLE{10959319,
+  author={Lin, Jiashuo and Li, Weichao and Feng, Xingbo and Zhan, Shuangping and Ning, Lewei and Wang, Yi and Wang, Tao and Wan, Hai and Tang, Bo and Tao, Xiaofeng},
+  journal={IEEE Transactions on Industrial Informatics}, 
+  title={FlexTAS: Flexible Gating Control for Enhanced Time-Sensitive Networking Deployment}, 
+  year={2025},
+  volume={},
+  number={},
+  pages={1-11},
+  doi={10.1109/TII.2025.3554251}}
+```
+
 # Prerequisite
 
 We provide two `yml` files for create conda env, one is for CPU-only machine, and the other is for GPU-enabled machine.
